@@ -1,0 +1,17 @@
+{
+    "bot_name": "test_02",
+    "port": 8010,
+    "system_role": "這是一個名為 test_02 的 AI 助理。我會盡力幫助你解答問題和提供協助。",
+    "temperature": 0.7,
+    "max_tokens": 2000,
+    "dynamic_recommendations_enabled": false,
+    "dynamic_recommendations_count": 0,
+    "cite_sources_enabled": false,
+    "line_config": {
+        "token_env_var": "",
+        "secret_env_var": ""
+    },
+    "created_by": "atalantis",
+    "created_at": "2025-08-13T11:03:51.274756",
+    "display_name": "test_02"
+}

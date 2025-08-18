@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- 動態標題：使用顯示名稱 -->
+    <title>{{ display_name or bot_name }}</title>
+    
+    <!-- 🔧 修復：使用相對路徑，確保靜態文件正確載入 -->
+    <link rel="stylesheet" href="/modern/static/chat.css">
+    
+    <!-- 🔧 修復：使用簡單的 emoji favicon 避免 404 錯誤 -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>">
+    
+    <!-- 🔧 新增：預載入關鍵資源 -->
+    <link rel="preload" href="/modern/static/chat.js" as="script">
+</head>
+<body>
+    <!-- 主聊天容器 -->
+    <div id="chat-container">
+        <!-- 聊天界面頂部標題 -->
+        <header id="chat-header">
+            <div class="header-content">
+                <div class="bot-info">
+                    <!-- 🔧 修復：簡化顯示邏輯 -->
+                    <h2 class="bot-title">{{ display_name or bot_name }}</h2>
+                </div>
+                
+                <!-- 頂部控制區域 -->
+                <div id="header-controls">
+                    <!-- 字體大小選擇器 -->
+                    <select id="font-size-selector" aria-label="選擇字體大小">
+                        <option value="small">小</option>
+                        <option value="medium" selected>中</option>
+                        <option value="large">大</option>
+                    </select>
+                    
+                    <!-- 主題顏色選擇器 -->
+                    <div id="theme-controls" role="group" aria-label="主題選擇">
+                        <button class="theme-selector" id="theme-blue" data-theme="blue" title="藍色主題" aria-label="藍色主題"></button>
+                        <button class="theme-selector" id="theme-green" data-theme="green" title="綠色主題" aria-label="綠色主題"></button>
+                        <button class="theme-selector" id="theme-orange" data-theme="orange" title="橘色主題" aria-label="橘色主題"></button>
+                    </div>
+                    
+                    <!-- 狀態指示器 -->
+                    <div class="status-indicator" aria-live="polite">
+                        <span class="status-dot" aria-hidden="true"></span>
+                        <span class="status-text">服務中</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- 聊天消息區域 -->
+        <main id="chat-messages" role="log" aria-live="polite" aria-label="聊天消息">
+            <!-- 歡迎消息 -->
+            <div class="welcome-message" role="article">
+                <div class="bot-avatar" aria-hidden="true">🤖</div>
+                <div class="message-content">
+                    <!-- 🔧 修復：簡化歡迎消息 -->
+                    <h3>歡迎使用 {{ display_name or bot_name }}！</h3>
+                    <p>我是您的智能助理，隨時準備為您提供幫助。您可以問我任何問題，我會盡力為您解答。</p>
+                    <!-- 🔧 新增：功能提示 -->
+                    <p><small>💡 提示：您可以直接輸入問題，或點擊下方推薦問題開始對話</small></p>
+                </div>
+            </div>
+        </main>
+
+        <!-- 推薦問題區域 -->
+        <div id="recommended-questions-container" role="region" aria-label="推薦問題">
+            <!-- 推薦問題將通過 JavaScript 動態添加 -->
+        </div>
+
+        <!-- 輸入區域 -->
+        <footer id="chat-input-container">
+            <div class="input-wrapper">
+                <textarea 
+                    id="chat-input" 
+                    placeholder="輸入您的問題..." 
+                    rows="1"
+                    autocomplete="off"
+                    spellcheck="false"
+                    aria-label="輸入消息"
+                    maxlength="2000"
+                ></textarea>
+                <!-- 🔧 修復：字符計數器位置 -->
+                <span id="char-counter" class="char-counter" aria-live="polite">0/2000</span>
+            </div>
+            <button id="send-button" type="button" aria-label="發送消息" disabled>
+                <!-- 🔧 修復：載入狀態圖標 -->
+                <span class="send-icon">發送</span>
+                <span class="loading-icon" style="display: none;">⏳</span>
+            </button>
+        </footer>
+
+        <!-- 底部控制信息 -->
+        <div id="font-controls">
+            <small>💡 提示：按 Enter 發送，Shift+Enter 換行 | 最多 2000 字符</small>
+        </div>
+    </div>
+
+    <!-- 🔧 新增：載入狀態遮罩 -->
+    <div id="loading-overlay" style="display: none;">
+        <div class="loading-spinner">
+            <div class="spinner"></div>
+            <p>正在初始化...</p>
+        </div>
+    </div>
+
+    <!-- 🔧 新增：錯誤提示 -->
+    <div id="error-toast" class="error-toast" style="display: none;">
+        <span id="error-message"></span>
+        <button id="error-close" aria-label="關閉錯誤提示">×</button>
+    </div>
+
+    <!-- 🔧 修復：確保 JavaScript 正確載入 -->
+    <script>
+        // 🔧 全局變數：機器人資訊
+        window.BOT_CONFIG = {
+            name: '{{ bot_name }}',
+            displayName: '{{ display_name or bot_name }}',
+            // 可以在此添加更多配置
+        };
+        
+        // 🔧 錯誤處理：檢查必要元素是否存在
+        document.addEventListener('DOMContentLoaded', function() {
+            const requiredElements = [
+                'chat-messages', 'chat-input', 'send-button', 
+                'recommended-questions-container'
+            ];
+            
+            for (const id of requiredElements) {
+                if (!document.getElementById(id)) {
+                    console.error(`必要元素缺失: ${id}`);
+                }
+            }
+        });
+    </script>
+    <script src="/modern/static/chat.js"></script>
+</body>
+</html>
