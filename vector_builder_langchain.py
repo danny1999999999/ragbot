@@ -296,39 +296,79 @@ def detect_railway_environment():
     return is_railway
 
 def get_postgres_config():
-    """獲取PostgreSQL配置，優先使用Railway的DATABASE_URL"""
+    """獲取PostgreSQL配置，優先使用Railway的DATABASE_URL - 修正版"""
     
-    # 🔧 優先嘗試Railway的DATABASE_URL
-    database_url = os.getenv("DATABASE_URL")
-    if database_url:
-        # 🔧 確保包含SSL配置（Railway需要）
-        if "sslmode=" not in database_url:
-            database_url += "?sslmode=require"
-        print("✅ 使用Railway DATABASE_URL")
-        return database_url
+    # 🔍 檢測 Railway 環境
+    is_railway = bool(os.getenv("RAILWAY_PROJECT_ID"))
     
-    # 🔧 備用：從環境變量構建連接字符串
-    host = os.getenv("POSTGRES_HOST", "localhost")
-    port = os.getenv("POSTGRES_PORT", "5432")
-    database = os.getenv("POSTGRES_DATABASE", "chatbot_system")
-    user = os.getenv("POSTGRES_USER", "postgres")
-    password = os.getenv("POSTGRES_PASSWORD", "")
-    
-    # 🛠️ 重要：對密碼進行URL編碼，處理特殊字符
-    if password:
-        encoded_password = quote_plus(password)
-        print(f"🔒 密碼已編碼: {password[:4]}*** -> {encoded_password[:4]}***")
+    if is_railway:
+        print("🚂 Railway 環境檢測")
+        
+        # 🎯 方法 1：直接使用 Railway 提供的 DATABASE_URL
+        database_url = os.getenv("DATABASE_URL")
+        if database_url and database_url.startswith("postgresql://"):
+            print("✅ 使用 Railway DATABASE_URL")
+            # 確保有 SSL 參數
+            if "sslmode=" not in database_url:
+                separator = "&" if "?" in database_url else "?"
+                database_url += f"{separator}sslmode=require"
+            
+            print(f"🔗 Railway 連接字符串已準備就緒")
+            return database_url
+        
+        # 🔧 方法 2：從環境變數構建（如果 DATABASE_URL 不可用）
+        pg_components = {
+            "user": os.getenv("PGUSER", "postgres"),
+            "password": os.getenv("PGPASSWORD"),
+            "host": os.getenv("PGHOST"),
+            "port": os.getenv("PGPORT", "5432"),
+            "database": os.getenv("PGDATABASE", "railway")
+        }
+        
+        # 檢查必需的組件
+        missing = [k for k, v in pg_components.items() if not v and k != "user"]
+        if not missing:
+            if pg_components["password"]:
+                encoded_password = quote_plus(pg_components["password"])
+                connection_url = (
+                    f"postgresql://{pg_components['user']}:{encoded_password}"
+                    f"@{pg_components['host']}:{pg_components['port']}"
+                    f"/{pg_components['database']}?sslmode=require"
+                )
+            else:
+                connection_url = (
+                    f"postgresql://{pg_components['user']}"
+                    f"@{pg_components['host']}:{pg_components['port']}"
+                    f"/{pg_components['database']}?sslmode=require"
+                )
+            
+            print("🔧 從環境變數構建連接字符串")
+            print(f"🔗 目標主機: {pg_components['host']}:{pg_components['port']}")
+            return connection_url
+        else:
+            print(f"❌ 缺少環境變數: {missing}")
+            
     else:
-        encoded_password = ""
+        # 🏠 本地環境
+        print("💻 本地環境")
+        host = os.getenv("POSTGRES_HOST", "localhost")
+        port = os.getenv("POSTGRES_PORT", "5432")
+        database = os.getenv("POSTGRES_DATABASE", "chatbot_system")
+        user = os.getenv("POSTGRES_USER", "postgres")
+        password = os.getenv("POSTGRES_PASSWORD", "")
+        
+        if password:
+            encoded_password = quote_plus(password)
+            connection_string = f"postgresql://{user}:{encoded_password}@{host}:{port}/{database}?sslmode=prefer"
+        else:
+            connection_string = f"postgresql://{user}@{host}:{port}/{database}?sslmode=prefer"
+        
+        print(f"🔗 本地連接字符串: postgresql://{user}:***@{host}:{port}/{database}")
+        return connection_string
     
-    # 構建連接字符串
-    if encoded_password:
-        connection_string = f"postgresql://{user}:{encoded_password}@{host}:{port}/{database}?sslmode=require"
-    else:
-        connection_string = f"postgresql://{user}@{host}:{port}/{database}?sslmode=require"
-    
-    print(f"🔗 構建的連接字符串: postgresql://{user}:***@{host}:{port}/{database}")
-    return connection_string
+    # 🚨 所有方法都失敗
+    print("❌ 無法構建有效的連接字符串")
+    return None
 
 # 添加 PostgreSQL 連接檢查：
 def check_postgresql_connection():
