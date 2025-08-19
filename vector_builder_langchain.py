@@ -306,6 +306,8 @@ def get_postgres_config():
         
         # 🎯 方法 1：直接使用 Railway 提供的 DATABASE_URL
         database_url = os.getenv("DATABASE_URL")
+        print(f"--- DEBUG: DATABASE_URL from env is:{database_url} ---")
+
         if database_url and database_url.startswith("postgresql://"):
             print("✅ 使用 Railway DATABASE_URL")
             # 確保有 SSL 參數
