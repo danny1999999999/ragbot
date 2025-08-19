@@ -33,31 +33,46 @@ def check_port(port):
         print(f"端口檢查失敗: {e}")
         return True  # 假設可用
 
-def wait_for_service(url, timeout=30, service_name="服務"):
-    """等待服務啟動"""
+def wait_for_service(url, timeout=180, service_name="服務"):  # 🔧 大幅增加超時時間
+    """等待服務啟動 - Railway 專用版本"""
     if not REQUESTS_AVAILABLE:
         print(f"⚠️ 無法進行 {service_name} 健康檢查，等待固定時間...")
-        time.sleep(5)
+        time.sleep(15)  # 增加等待時間
         return True
     
-    print(f"⏳ 等待 {service_name} 啟動...", end="", flush=True)
+    print(f"⏳ 等待 {service_name} 啟動 (最多 {timeout}s)...", end="", flush=True)
     start_time = time.time()
+    
+    # Railway 特定的檢查邏輯
+    check_interval = 5  # 每5秒檢查一次
+    last_status_time = start_time
     
     while time.time() - start_time < timeout:
         try:
-            response = requests.get(url, timeout=5)
+            response = requests.get(url, timeout=20)  # 增加請求超時
             if response.status_code == 200:
-                print(f" ✅ {service_name} 健康檢查通過")
+                elapsed = time.time() - start_time
+                print(f" ✅ {service_name} 健康檢查通過 ({elapsed:.1f}s)")
                 return True
+            else:
+                print(f"({response.status_code})", end="", flush=True)
         except requests.exceptions.RequestException:
-            pass
+            print(".", end="", flush=True)
         except Exception as e:
-            print(f"\n健康檢查異常: {e}")
+            print(f"(E)", end="", flush=True)
         
-        time.sleep(1)
-        print(".", end="", flush=True)
+        # 每30秒顯示一次狀態
+        current_time = time.time()
+        if current_time - last_status_time >= 30:
+            elapsed = current_time - start_time
+            remaining = timeout - elapsed
+            print(f"\n   ⏳ {service_name} 仍在啟動中... ({elapsed:.0f}s/{timeout}s, 剩餘 {remaining:.0f}s)", end="", flush=True)
+            last_status_time = current_time
+        
+        time.sleep(check_interval)
     
-    print(f"\n⚠️ {service_name} 健康檢查超時")
+    elapsed = time.time() - start_time
+    print(f"\n⚠️ {service_name} 健康檢查超時 ({elapsed:.1f}s)")
     return False
 
 def create_directories():
@@ -220,8 +235,14 @@ def stop_services(services):
         print(f"⚠️ 清理PID文件失敗: {e}")
 
 def main():
-    """主函數"""
-    print("🚀 啟動聊天機器人系統...")
+    """主函數 - Railway 快速修復版"""
+    print("🚀 啟動聊天機器人系統 (Railway 優化版)...")
+    
+    # 檢測 Railway 環境
+    is_railway = bool(os.getenv("RAILWAY_PROJECT_ID"))
+    if is_railway:
+        print("🚂 Railway 環境檢測到 - 使用擴展超時設置")
+    
     print("=" * 50)
     
     # 創建必要目錄
@@ -244,20 +265,28 @@ def main():
         if vector_process:
             services.append(("向量API服務", vector_process))
             
-            # 等待服務啟動
-            if wait_for_service("http://localhost:9002/health", service_name="向量API服務"):
+            # Railway 環境使用更長的等待時間
+            vector_timeout = 300 if is_railway else 60  # 5分鐘 vs 1分鐘
+            
+            print(f"⏳ 向量API服務初始化中... (這可能需要 {vector_timeout//60} 分鐘)")
+            
+            if wait_for_service("http://localhost:9002/health", timeout=vector_timeout, service_name="向量API服務"):
                 print("✅ 向量API服務就緒")
             else:
-                print("⚠️ 向量API服務可能啟動異常，但繼續啟動其他服務")
+                print("⚠️ 向量API服務健康檢查超時")
+                print("💡 服務可能仍在後台初始化，繼續啟動其他服務...")
         else:
             print("❌ 向量API服務啟動失敗")
-            return 1
+            print("💡 將繼續嘗試啟動其他服務...")
         
-        # 給向量API一些額外時間完全初始化
-        print("⏳ 等待向量系統完全初始化...")
-        time.sleep(3)
+        # 給向量系統更多初始化時間
+        if is_railway:
+            print("⏳ Railway 環境：額外等待向量系統初始化...")
+            time.sleep(30)  # Railway 需要更多時間
+        else:
+            time.sleep(5)
         
-        # 2. 🆕 啟動 Gateway 服務 (最重要的修復)
+        # 2. 🆕 啟動 Gateway 服務
         print("\n🌐 Step 2: 啟動 Gateway 服務...")
         gateway_process = start_service(
             "gateway_server.py",
@@ -269,14 +298,15 @@ def main():
         if gateway_process:
             services.append(("Gateway服務", gateway_process))
             
-            # 等待服務啟動
-            if wait_for_service("http://localhost:8000/health", service_name="Gateway服務"):
+            # Gateway 服務通常啟動較快
+            gateway_timeout = 120 if is_railway else 60
+            
+            if wait_for_service("http://localhost:8000/health", timeout=gateway_timeout, service_name="Gateway服務"):
                 print("✅ Gateway 服務就緒")
             else:
                 print("⚠️ Gateway 服務可能啟動異常")
         else:
-            print("❌ Gateway 服務啟動失敗，機器人訪問將會有問題")
-            # 不直接返回，讓用戶決定是否繼續
+            print("❌ Gateway 服務啟動失敗")
         
         # 3. 啟動管理器服務
         print("\n👑 Step 3: 啟動管理器服務...")
@@ -290,11 +320,16 @@ def main():
         if manager_process:
             services.append(("管理器服務", manager_process))
             
-            # 等待服務啟動
-            if wait_for_service("http://localhost:9001/health", service_name="管理器服務"):
+            # 管理器服務依賴向量API，需要最長時間
+            manager_timeout = 400 if is_railway else 90  # 約7分鐘 vs 1.5分鐘
+            
+            print(f"⏳ 管理器服務啟動中... (依賴向量API，最多等待 {manager_timeout//60} 分鐘)")
+            
+            if wait_for_service("http://localhost:9001/health", timeout=manager_timeout, service_name="管理器服務"):
                 print("✅ 管理器服務就緒")
             else:
-                print("⚠️ 管理器服務可能啟動異常")
+                print("⚠️ 管理器服務健康檢查超時")
+                print("💡 這通常是因為向量API服務仍在初始化中")
         else:
             print("⚠️ 管理器服務啟動失敗")
         
@@ -306,30 +341,39 @@ def main():
         print("\n🎉 系統核心服務啟動完成！")
         print("=" * 50)
         
-        # 顯示訪問地址
-        if gateway_process and gateway_process.poll() is None:
-            print("🌐 Gateway 路由: http://localhost:8000/")
-            print("   機器人訪問格式: http://localhost:8000/<機器人名稱>/")
-        if manager_process and manager_process.poll() is None:
-            print("📊 管理界面: http://localhost:9001/manager")
-            print("🔐 登錄頁面: http://localhost:9001/login")
-        if vector_process and vector_process.poll() is None:
-            print("🔍 向量API文檔: http://localhost:9002/docs")
-            print("🔍 向量API健康檢查: http://localhost:9002/health")
+        # 詳細的服務狀態
+        running_services = []
+        failed_services = []
         
-        print("\n📋 服務運行狀態:")
         for name, process in services:
-            status = "✅ 運行中" if process.poll() is None else "❌ 已停止"
-            print(f"   {name}: {status}")
+            if process.poll() is None:
+                running_services.append(name)
+                print(f"   {name}: ✅ 運行中")
+            else:
+                failed_services.append((name, process.returncode))
+                print(f"   {name}: ❌ 已停止 (退出碼: {process.returncode})")
         
-        print("\n🔧 端口分配:")
-        print("   8000 - Gateway (機器人路由)")
-        print("   9001 - 管理器 (bot_service_manager)")
-        print("   9002 - 向量API (vector_api_service)")
-        print("   8003+ - 機器人實例 (通過管理界面啟動)")
+        # Railway 特定的狀態報告
+        if is_railway:
+            print(f"\n🚂 Railway 部署狀態:")
+            print(f"   ✅ 運行中服務: {len(running_services)}")
+            print(f"   ❌ 失敗服務: {len(failed_services)}")
+            
+            if len(running_services) >= 1:  # 至少有一個服務運行
+                print(f"   📊 系統狀態: 部分功能可用")
+                railway_url = os.getenv("RAILWAY_STATIC_URL") or os.getenv("RAILWAY_PUBLIC_DOMAIN")
+                if railway_url:
+                    print(f"   🌐 訪問地址: https://{railway_url}/")
+            else:
+                print(f"   📊 系統狀態: 所有服務均失敗")
         
-        # 監控循環
-        monitor_services(services)
+        # 服務監控
+        if running_services:
+            print(f"\n⏳ 開始監控運行中的服務...")
+            monitor_services(services)
+        else:
+            print(f"\n❌ 沒有服務成功運行，退出...")
+            return 1
         
     except Exception as e:
         print(f"❌ 系統啟動異常: {e}")
