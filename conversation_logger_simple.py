@@ -1,8 +1,8 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-conversation_logger_simple.py - 🗃️ PostgreSQL版對話記錄器（修正版）
-使用database_adapter.py抽象層，支援SQLite和PostgreSQL
+conversation_logger_simple.py - PostgreSQL版對話記錄器（修正版）
+使用database_adapter.py抽象層，支持SQLite和PostgreSQL
 """
 
 import json
@@ -21,22 +21,35 @@ logger = logging.getLogger(__name__)
 class PostgreSQLConversationLogger:
     """PostgreSQL版對話記錄器 - 修正版，使用數據庫抽象層"""
     
-    def __init__(self, db_config: Dict = None):
+    def __init__(self, db_config: Dict = None, db_path: str = None):
         """
-        初始化對話記錄器
+        初始化對話記錄器 - 向後兼容版本
         
         Args:
-            db_config: 數據庫配置字典，如果為None則從環境變量讀取
+            db_config: 數據庫配置字典（新格式）
+            db_path: SQLite 數據庫路徑（舊格式，向後兼容）
         """
+        # 向後兼容處理：如果傳入 db_path，轉換為 SQLite 配置
+        if db_path is not None and db_config is None:
+            db_config = {
+                "type": "sqlite",
+                "db_file": db_path,
+                "timeout": 30.0,
+                "journal_mode": "WAL", 
+                "synchronous": "NORMAL",
+                "cache_size": 2000
+            }
+            print(f"📝 向後兼容模式：使用 SQLite 數據庫 {db_path}")
+        
         if db_config is None:
             # 從環境變量自動創建適配器
             self.db_adapter = DatabaseFactory.create_from_env("conversations")
         else:
             # 使用提供的配置
-            db_type = db_config.get("type", "postgresql")
+            db_type = db_config.get("type", "sqlite")
             self.db_adapter = DatabaseFactory.create_adapter(db_type, db_config)
         
-        # 🔧 修正：更可靠的數據庫類型檢測
+        # 修正：更可靠的數據庫類型檢測
         self.db_type = self._detect_database_type()
         
         self.init_database()
@@ -200,18 +213,18 @@ class PostgreSQLConversationLogger:
                     chunk_indices: Optional[List[int]] = None) -> str:
         """記錄對話 - 修正版，正確處理 chunk 索引"""
         try:
-            # 🔧 修正：使用正確的事務處理
+            # 修正：使用正確的事務處理
             with self.db_adapter.transaction():
                 # 處理檢索文檔和相似度
                 retrieved_docs_json = json.dumps(retrieved_docs or [], ensure_ascii=False)
                 doc_similarities_json = json.dumps(doc_similarities or [], ensure_ascii=False)
                 
-                # 🔧 修復：正確處理 chunk 索引
+                # 修復：正確處理 chunk 索引
                 if chunk_references is None:
                     chunk_references = []
                     if retrieved_docs and doc_similarities:
                         for i, (doc, similarity) in enumerate(zip(retrieved_docs, doc_similarities)):
-                            # 🆕 使用傳入的真實 chunk 索引，而不是循環變數
+                            # 使用傳入的真實 chunk 索引，而不是循環變數
                             actual_index = chunk_indices[i] if chunk_indices and i < len(chunk_indices) else None
                             
                             chunk_ref = {
@@ -220,7 +233,7 @@ class PostgreSQLConversationLogger:
                                 "similarity": round(similarity, 4),
                             }
                             
-                            # 🔧 只有在有真實索引時才添加 index 字段
+                            # 只有在有真實索引時才添加 index 字段
                             if actual_index is not None:
                                 chunk_ref["index"] = actual_index
                                 logger.debug(f"🔍 對話 chunk {i+1} 使用真實索引: {actual_index}")
@@ -231,7 +244,7 @@ class PostgreSQLConversationLogger:
                 
                 chunk_references_json = json.dumps(chunk_references, ensure_ascii=False)
                 
-                # 🔧 修正：使用統一的參數佔位符
+                # 修正：使用統一的參數佔位符
                 placeholders = self._get_placeholder(14)  # 14個參數
                 insert_sql = f'''
                     INSERT INTO conversations (
@@ -252,7 +265,7 @@ class PostgreSQLConversationLogger:
                 # 更新統計信息
                 self._update_daily_stats()
                 
-                # 🆕 改進日誌信息
+                # 改進日誌信息
                 valid_chunk_count = len([ref for ref in chunk_references if 'index' in ref])
                 logger.info(f"✅ 記錄對話成功: ID {conversation_id}, chunks: {len(chunk_references)}, 有效索引: {valid_chunk_count}")
                 return f"conv_{conversation_id}"
@@ -316,19 +329,19 @@ class PostgreSQLConversationLogger:
             
             rows = self.db_adapter.execute_query(query, params)
             
-            # 轉換為字典並解析 JSON 字段
+            # 轉為字典並解析 JSON 字段
             conversations = []
             for row in rows:
                 conv = dict(row)
                 
-                # 🔧 修復：正確解析 JSON 字段並提取 chunk_ids
+                # 修復：正確解析 JSON 字段並提取 chunk_ids
                 try:
                     conv['retrieved_docs'] = json.loads(conv.get('retrieved_docs') or '[]')
                     conv['doc_similarities'] = json.loads(conv.get('doc_similarities') or '[]')
                     chunk_refs = json.loads(conv.get('chunk_references') or '[]')
                     conv['chunk_references'] = chunk_refs
                     
-                    # 🔧 修復：只提取有效的 chunk 索引
+                    # 修復：只提取有效的 chunk 索引
                     chunk_ids = []
                     if isinstance(chunk_refs, list):
                         for ref in chunk_refs:
@@ -431,7 +444,7 @@ class PostgreSQLConversationLogger:
             result = self.db_adapter.execute_query("SELECT COUNT(*) as count FROM conversations")
             stats['total_conversations'] = result[0]['count'] if result else 0
             
-            # 今日對話數 - 🔧 修正：使用適配的SQL
+            # 今日對話數 - 修正：使用適配的SQL
             if self.db_type == "sqlite":
                 today_sql = "SELECT COUNT(*) as count FROM conversations WHERE DATE(timestamp) = DATE('now')"
             else:
@@ -473,7 +486,7 @@ class PostgreSQLConversationLogger:
             result = self.db_adapter.execute_query(image_sql, (True,))
             stats['image_generations'] = result[0]['count'] if result else 0
             
-            # 活躍會話數 - 🔧 修正：使用適配的SQL
+            # 活躍會話數 - 修正：使用適配的SQL
             if self.db_type == "sqlite":
                 active_sql = "SELECT COUNT(DISTINCT user_id) as count FROM conversations WHERE DATE(timestamp) = DATE('now')"
             else:
@@ -508,7 +521,7 @@ class PostgreSQLConversationLogger:
         try:
             today = datetime.now().date()
             
-            # 🔧 修正：使用適配的SQL和參數佔位符
+            # 修正：使用適配的SQL和參數佔位符
             today_placeholder = self._get_placeholder()
             
             if self.db_type == "sqlite":
@@ -544,7 +557,7 @@ class PostgreSQLConversationLogger:
             result = self.db_adapter.execute_query(avg_sql, (today,))
             avg_time_today = result[0]['avg_time'] or 0 if result else 0
             
-            # 🔧 修正：使用適配的UPSERT語法
+            # 修正：使用適配的UPSERT語法
             if self.db_type == "postgresql":
                 upsert_placeholder = self._get_placeholder(6)
                 upsert_sql = f'''
@@ -578,9 +591,7 @@ class PostgreSQLConversationLogger:
     def cleanup_old_records(self, days_to_keep: int = 30):
         """清理舊記錄"""
         try:
-            # 🔧 修正：使用適配的日期函數
-            days_placeholder = self._get_placeholder()
-            
+            # 修正：使用適配的日期函數
             if self.db_type == "postgresql":
                 cleanup_sql = f'''
                     DELETE FROM conversations 
@@ -642,20 +653,16 @@ def create_logger_instance(db_config: Dict = None):
     return PostgreSQLConversationLogger(db_config)
 
 
+# 為了向後兼容，創建別名
+EnhancedConversationLogger = PostgreSQLConversationLogger
+
+# 導出列表
+__all__ = ['PostgreSQLConversationLogger', 'EnhancedConversationLogger', 'create_logger_instance']
+
+
 # 測試函數
 if __name__ == "__main__":
-    # 測試PostgreSQL配置
-    pg_config = {
-        "type": "postgresql",
-        "host": "localhost",
-        "port": 5432,
-        "database": "chatbot_conversations",
-        "user": "postgres",
-        "password": "your_password",
-        "schema": "public"
-    }
-    
-    # 測試SQLite配置（向後兼容）
+    # 測試SQLite配置（如果PostgreSQL不可用）
     sqlite_config = {
         "type": "sqlite",
         "db_file": "test_pg_conversations.db"
@@ -664,7 +671,6 @@ if __name__ == "__main__":
     print("🧪 測試PostgreSQL版對話記錄器（修正版）")
     print("=" * 50)
     
-    # 使用SQLite進行測試（如果PostgreSQL不可用）
     try:
         logger_instance = PostgreSQLConversationLogger(sqlite_config)
         print(f"✅ 使用{logger_instance.db_type.upper()}適配器測試")
@@ -676,13 +682,12 @@ if __name__ == "__main__":
     conv_id = logger_instance.log_conversation(
         user_id="test_user_pg_001",
         user_query="什麼是PostgreSQL？",
-        ai_response="PostgreSQL是一個強大的開源關聯式資料庫...",
+        ai_response="PostgreSQL是一個強大的開源關係式資料庫...",
         collection_used="collection_database",
         retrieved_docs=["PostgreSQL文檔1內容", "PostgreSQL文檔2內容"],
         doc_similarities=[0.87, 0.74],
         processing_time_ms=1800,
         user_role="user",
-        # 🆕 測試：傳入真實的 chunk 索引
         chunk_indices=[25, 58]  # 真實的向量資料庫索引
     )
     
@@ -701,16 +706,12 @@ if __name__ == "__main__":
     stats = logger_instance.get_statistics()
     print(f"統計信息: {stats}")
     
-    # 測試導出
-    logger_instance.export_conversations("test_pg_export.json", "json")
-    print("導出測試完成")
-    
     # 關閉連接
     logger_instance.close()
     
     # 清理測試文件
     import os
-    test_files = ["test_pg_conversations.db", "test_pg_export.json"]
+    test_files = ["test_pg_conversations.db"]
     for file in test_files:
         if os.path.exists(file):
             os.remove(file)
