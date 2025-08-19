@@ -1,0 +1,107 @@
+INFO:auth_middleware:✅ user_manager 載入成功
+INFO:__main__:✅ 統一認證中間件載入成功
+Building prefix dict from the default dictionary ...
+DEBUG:jieba:Building prefix dict from the default dictionary ...
+Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+DEBUG:jieba:Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+Loading model cost 0.401 seconds.
+DEBUG:jieba:Loading model cost 0.401 seconds.
+Prefix dict has been built successfully.
+DEBUG:jieba:Prefix dict has been built successfully.
+INFO:__main__:✅ 向量知識庫系統載入成功
+INFO:__main__:✅ PostgreSQL對話記錄器工廠函數載入成功
+INFO:__main__:✅ 使用統一認證的機器人服務管理器初始化完成
+INFO:__main__:📝 沒有找到需要遷移的記錄文件
+INFO:     Started server process [30240]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:9001 (Press CTRL+C to quit)
+✅ 數據庫抽象層可用
+📦 使用傳統 SQLite 模式初始化...
+✅ 連接到現有資料庫: user_management.db
+✅ 資料庫結構驗證通過
+✅ 用戶管理器初始化成功（傳統模式）
+✅ 增強版用戶管理器初始化成功
+✅ PGVector 可用
+✅ OpenAI Embeddings 可用
+✅ OpenAI API Key 格式正確
+   API Key: sk-proj-***-2kA
+✅ OpenAI 環境檢查通過
+✅ EPUB 讀取功能已完整修復！
+📚 支援功能:
+   • 自動提取章節內容
+   • 智能章節標題識別
+   • 中文文本標準化
+   • 書籍元資料提取
+   • HTML 標籤清理
+   • 多章節智能分割
+✅ DOCX 支援已啟用 (docx2txt)
+✅ EPUB 支援已啟用
+✅ PostgreSQL 連接正常
+🔧 初始化 OpenAI Embeddings...
+✅ OpenAI Embeddings 初始化成功
+🔤 繁簡轉換器初始化完成
+🔤 繁簡轉換器初始化完成
+✅ 文本處理組件初始化完成
+🔤 繁簡轉換器初始化完成
+🔧 優化版文本分割器初始化完成
+   📏 支持 11 種文本類型
+   🧠 智能策略選擇
+   ⚡ 性能優化
+🚀 完整優化版向量系統初始化完成
+   🤖 嵌入模型: openai
+   📁 數據目錄: data
+   🗄️ 向量庫: chroma_langchain_db
+   🧠 智能文本處理: ✅
+   🔧 自適應批次: ✅
+🔗 管理器使用向量API模式: http://localhost:9002
+============================================================
+🤖 聊天機器人服務管理器 - 統一認證版
+============================================================
+🌐 服務端口: 9001
+🔗 登入頁面: http://localhost:9001/login
+🖥️ 管理界面: http://localhost:9001/manager
+📁 配置目錄: C:\Users\danny\pyRag\bot_lang\cloud\bot_configs
+📁 數據目錄: C:\Users\danny\pyRag\bot_lang\cloud\data
+
+🎯 系統狀態:
+  用戶管理: ✅
+  認證系統: ✅ 統一JWT認證
+  向量系統: ✅
+  對話記錄器: ✅ PostgreSQL版
+  機器人實例腳本: ✅
+============================================================
+INFO:     127.0.0.1:53438 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63292 - "GET /login HTTP/1.1" 200 OK
+INFO:__main__:✅ 用戶 atalantis 登入機器人管理器成功
+INFO:     127.0.0.1:63292 - "POST /api/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63292 - "GET /manager HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63292 - "GET /api/bots HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63292 - "GET /api/bots/test_01/config HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: GET http://localhost:9002/collections/collection_test_01/files "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:63292 - "GET /api/bots/test_01/knowledge/files HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: POST http://localhost:9002/upload "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:57953 - "POST /api/bots/test_01/knowledge/upload HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: GET http://localhost:9002/collections/collection_test_01/files "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:57953 - "GET /api/bots/test_01/knowledge/files HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65336 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:59790 - "GET /manager HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59790 - "GET /api/bots HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59790 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:59790 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:59790 - "GET /manager HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59790 - "GET /api/bots HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51957 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:51957 - "GET /manager HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51957 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:51957 - "GET /api/bots HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59790 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:59790 - "GET /manager HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59790 - "GET /manager HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59790 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:59790 - "GET /api/bots HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51957 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:51957 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:51957 - "GET /api/bots/test_01/config HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: GET http://localhost:9002/collections/collection_test_01/files "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:51957 - "GET /api/bots/test_01/knowledge/files HTTP/1.1" 200 OK

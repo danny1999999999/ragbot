@@ -1,0 +1,736 @@
+INFO:auth_middleware:✅ user_manager 載入成功
+Building prefix dict from the default dictionary ...
+DEBUG:jieba:Building prefix dict from the default dictionary ...
+Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+DEBUG:jieba:Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+Loading model cost 0.453 seconds.
+DEBUG:jieba:Loading model cost 0.453 seconds.
+Prefix dict has been built successfully.
+DEBUG:jieba:Prefix dict has been built successfully.
+INFO:__main__:为机器人 test_02 自动添加显示名称: test_02
+INFO:__main__:✅ 向量系统初始化成功 (机器人: test_02)
+INFO:__main__:🔗 使用向量API模式: http://localhost:9002
+INFO:__main__:ℹ️ ProxyHeadersMiddleware 不可用，使用本地開發模式
+INFO:__main__:✅ 静态文件挂载成功: C:\Users\danny\pyRag\bot_lang\chatbot_templates\modern\static
+INFO:__main__:✅ 机器人实例 'test_02' 初始化完成，对话记录数据库：test_02_conversations.db
+INFO:__main__:🤖 机器人 'test_02' 正在 http://localhost:8010 上启动
+INFO:__main__:📊 对话记录数据库：test_02_conversations.db
+INFO:__main__:📚 知识库集合：collection_test_02
+INFO:__main__:🔍 搜索模式：api
+INFO:__main__:🔗 向量API地址：http://localhost:9002
+INFO:__main__:🔧 调试模式已启用，将输出详细的对话记录和推荐问题生成日志
+INFO:     Started server process [17600]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8010 (Press CTRL+C to quit)
+INFO:auth_middleware:✅ user_manager 載入成功
+Building prefix dict from the default dictionary ...
+DEBUG:jieba:Building prefix dict from the default dictionary ...
+Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+DEBUG:jieba:Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+Loading model cost 0.424 seconds.
+DEBUG:jieba:Loading model cost 0.424 seconds.
+Prefix dict has been built successfully.
+DEBUG:jieba:Prefix dict has been built successfully.
+INFO:__main__:✅ 向量系统初始化成功 (机器人: test_02)
+INFO:__main__:🔗 使用向量API模式: http://localhost:9002
+INFO:__main__:ℹ️ ProxyHeadersMiddleware 不可用，使用本地開發模式
+INFO:__main__:✅ 静态文件挂载成功: C:\Users\danny\pyRag\bot_lang\chatbot_templates\modern\static
+INFO:__main__:✅ 机器人实例 'test_02' 初始化完成，对话记录数据库：test_02_conversations.db
+INFO:__main__:🤖 机器人 'test_02' 正在 http://localhost:8010 上启动
+INFO:__main__:📊 对话记录数据库：test_02_conversations.db
+INFO:__main__:📚 知识库集合：collection_test_02
+INFO:__main__:🔍 搜索模式：api
+INFO:__main__:🔗 向量API地址：http://localhost:9002
+INFO:__main__:🔧 调试模式已启用，将输出详细的对话记录和推荐问题生成日志
+INFO:     Started server process [25936]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8010 (Press CTRL+C to quit)
+✅ 連接到現有資料庫: user_management.db
+✅ 資料庫結構驗證通過
+✅ 修正版用戶管理器初始化成功
+✅ 增強版對話數據庫初始化成功 (自動欄位修復已啟用)
+✅ httpx 可用，支持向量API模式
+✅ 使用新版 langchain-chroma
+✅ 使用新版 langchain-huggingface
+✅ OpenAI Embeddings 可用
+✅ OpenAI API Key 格式正確
+   API Key: sk-proj-***-2kA
+✅ OpenAI 環境檢查通過
+✅ EPUB 讀取功能已完整修復！
+📚 支援功能:
+   • 自動提取章節內容
+   • 智能章節標題識別
+   • 中文文本標準化
+   • 書籍元資料提取
+   • HTML 標籤清理
+   • 多章節智能分割
+✅ DOCX 支援已啟用 (docx2txt)
+✅ EPUB 支援已啟用
+✅ 向量系统可用
+🔧 初始化 OpenAI Embeddings...
+✅ OpenAI Embeddings 初始化成功
+🔤 繁簡轉換器初始化完成
+🔤 繁簡轉換器初始化完成
+✅ 文本處理組件初始化完成
+🔤 繁簡轉換器初始化完成
+🔧 優化版文本分割器初始化完成
+   📏 支持 11 種文本類型
+   🧠 智能策略選擇
+   ⚡ 性能優化
+🚀 完整優化版向量系統初始化完成
+   🤖 嵌入模型: openai
+   📁 數據目錄: data
+   🗄️ 向量庫: chroma_langchain_db
+   🧠 智能文本處理: ✅
+   🔧 自適應批次: ✅
+✅ 增強版對話數據庫初始化成功 (自動欄位修復已啟用)
+INFO:     127.0.0.1:0 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET / HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [25936]
+INFO:auth_middleware:✅ user_manager 載入成功
+Building prefix dict from the default dictionary ...
+DEBUG:jieba:Building prefix dict from the default dictionary ...
+Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+DEBUG:jieba:Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+Loading model cost 0.436 seconds.
+DEBUG:jieba:Loading model cost 0.436 seconds.
+Prefix dict has been built successfully.
+DEBUG:jieba:Prefix dict has been built successfully.
+INFO:__main__:✅ 向量系统初始化成功 (机器人: test_02)
+INFO:__main__:🔗 使用向量API模式: http://localhost:9002
+INFO:__main__:ℹ️ ProxyHeadersMiddleware 不可用，使用本地開發模式
+INFO:__main__:✅ 静态文件挂载成功: C:\Users\danny\pyRag\bot_lang\chatbot_templates\modern\static
+INFO:__main__:✅ 机器人实例 'test_02' 初始化完成，对话记录数据库：test_02_conversations.db
+INFO:__main__:🤖 机器人 'test_02' 正在 http://localhost:8010 上启动
+INFO:__main__:📊 对话记录数据库：test_02_conversations.db
+INFO:__main__:📚 知识库集合：collection_test_02
+INFO:__main__:🔍 搜索模式：api
+INFO:__main__:🔗 向量API地址：http://localhost:9002
+INFO:__main__:🔧 调试模式已启用，将输出详细的对话记录和推荐问题生成日志
+INFO:     Started server process [28376]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8010 (Press CTRL+C to quit)
+✅ 連接到現有資料庫: user_management.db
+✅ 資料庫結構驗證通過
+✅ 修正版用戶管理器初始化成功
+✅ 增強版對話數據庫初始化成功 (自動欄位修復已啟用)
+✅ httpx 可用，支持向量API模式
+✅ 使用新版 langchain-chroma
+✅ 使用新版 langchain-huggingface
+✅ OpenAI Embeddings 可用
+✅ OpenAI API Key 格式正確
+   API Key: sk-proj-***-2kA
+✅ OpenAI 環境檢查通過
+✅ EPUB 讀取功能已完整修復！
+📚 支援功能:
+   • 自動提取章節內容
+   • 智能章節標題識別
+   • 中文文本標準化
+   • 書籍元資料提取
+   • HTML 標籤清理
+   • 多章節智能分割
+✅ DOCX 支援已啟用 (docx2txt)
+✅ EPUB 支援已啟用
+✅ 向量系统可用
+🔧 初始化 OpenAI Embeddings...
+✅ OpenAI Embeddings 初始化成功
+🔤 繁簡轉換器初始化完成
+🔤 繁簡轉換器初始化完成
+✅ 文本處理組件初始化完成
+🔤 繁簡轉換器初始化完成
+🔧 優化版文本分割器初始化完成
+   📏 支持 11 種文本類型
+   🧠 智能策略選擇
+   ⚡ 性能優化
+🚀 完整優化版向量系統初始化完成
+   🤖 嵌入模型: openai
+   📁 數據目錄: data
+   🗄️ 向量庫: chroma_langchain_db
+   🧠 智能文本處理: ✅
+   🔧 自適應批次: ✅
+✅ 增強版對話數據庫初始化成功 (自動欄位修復已啟用)
+INFO:     127.0.0.1:0 - "GET / HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [28376]
+INFO:auth_middleware:✅ user_manager 載入成功
+Building prefix dict from the default dictionary ...
+DEBUG:jieba:Building prefix dict from the default dictionary ...
+Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+DEBUG:jieba:Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+Loading model cost 0.443 seconds.
+DEBUG:jieba:Loading model cost 0.443 seconds.
+Prefix dict has been built successfully.
+DEBUG:jieba:Prefix dict has been built successfully.
+INFO:__main__:✅ 向量系统初始化成功 (机器人: test_02)
+INFO:__main__:🔗 使用向量API模式: http://localhost:9002
+INFO:__main__:ℹ️ ProxyHeadersMiddleware 不可用，使用本地開發模式
+INFO:__main__:✅ 静态文件挂载成功: C:\Users\danny\pyRag\bot_lang\chatbot_templates\modern\static
+INFO:__main__:✅ 机器人实例 'test_02' 初始化完成，对话记录数据库：test_02_conversations.db
+INFO:__main__:🤖 机器人 'test_02' 正在 http://localhost:8010 上启动
+INFO:__main__:📊 对话记录数据库：test_02_conversations.db
+INFO:__main__:📚 知识库集合：collection_test_02
+INFO:__main__:🔍 搜索模式：api
+INFO:__main__:🔗 向量API地址：http://localhost:9002
+INFO:__main__:🔧 调试模式已启用，将输出详细的对话记录和推荐问题生成日志
+INFO:     Started server process [23948]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8010 (Press CTRL+C to quit)
+✅ 連接到現有資料庫: user_management.db
+✅ 資料庫結構驗證通過
+✅ 修正版用戶管理器初始化成功
+✅ 增強版對話數據庫初始化成功 (自動欄位修復已啟用)
+✅ httpx 可用，支持向量API模式
+✅ 使用新版 langchain-chroma
+✅ 使用新版 langchain-huggingface
+✅ OpenAI Embeddings 可用
+✅ OpenAI API Key 格式正確
+   API Key: sk-proj-***-2kA
+✅ OpenAI 環境檢查通過
+✅ EPUB 讀取功能已完整修復！
+📚 支援功能:
+   • 自動提取章節內容
+   • 智能章節標題識別
+   • 中文文本標準化
+   • 書籍元資料提取
+   • HTML 標籤清理
+   • 多章節智能分割
+✅ DOCX 支援已啟用 (docx2txt)
+✅ EPUB 支援已啟用
+✅ 向量系统可用
+🔧 初始化 OpenAI Embeddings...
+✅ OpenAI Embeddings 初始化成功
+🔤 繁簡轉換器初始化完成
+🔤 繁簡轉換器初始化完成
+✅ 文本處理組件初始化完成
+🔤 繁簡轉換器初始化完成
+🔧 優化版文本分割器初始化完成
+   📏 支持 11 種文本類型
+   🧠 智能策略選擇
+   ⚡ 性能優化
+🚀 完整優化版向量系統初始化完成
+   🤖 嵌入模型: openai
+   📁 數據目錄: data
+   🗄️ 向量庫: chroma_langchain_db
+   🧠 智能文本處理: ✅
+   🔧 自適應批次: ✅
+✅ 增強版對話數據庫初始化成功 (自動欄位修復已啟用)
+INFO:     127.0.0.1:0 - "GET / HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [23948]
+INFO:auth_middleware:✅ user_manager 載入成功
+Building prefix dict from the default dictionary ...
+DEBUG:jieba:Building prefix dict from the default dictionary ...
+Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+DEBUG:jieba:Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+Loading model cost 0.396 seconds.
+DEBUG:jieba:Loading model cost 0.396 seconds.
+Prefix dict has been built successfully.
+DEBUG:jieba:Prefix dict has been built successfully.
+INFO:__main__:✅ 向量系统初始化成功 (机器人: test_02)
+INFO:__main__:🔗 使用向量API模式: http://localhost:9002
+INFO:__main__:ℹ️ ProxyHeadersMiddleware 不可用，使用本地開發模式
+INFO:__main__:✅ 静态文件挂载成功: C:\Users\danny\pyRag\bot_lang\chatbot_templates\modern\static
+INFO:__main__:✅ 机器人实例 'test_02' 初始化完成，对话记录数据库：test_02_conversations.db
+INFO:__main__:🤖 机器人 'test_02' 正在 http://localhost:8010 上启动
+INFO:__main__:📊 对话记录数据库：test_02_conversations.db
+INFO:__main__:📚 知识库集合：collection_test_02
+INFO:__main__:🔍 搜索模式：api
+INFO:__main__:🔗 向量API地址：http://localhost:9002
+INFO:__main__:🔧 调试模式已启用，将输出详细的对话记录和推荐问题生成日志
+INFO:     Started server process [9528]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8010 (Press CTRL+C to quit)
+✅ 連接到現有資料庫: user_management.db
+✅ 資料庫結構驗證通過
+✅ 修正版用戶管理器初始化成功
+✅ 增強版對話數據庫初始化成功 (自動欄位修復已啟用)
+✅ httpx 可用，支持向量API模式
+✅ 使用新版 langchain-chroma
+✅ 使用新版 langchain-huggingface
+✅ OpenAI Embeddings 可用
+✅ OpenAI API Key 格式正確
+   API Key: sk-proj-***-2kA
+✅ OpenAI 環境檢查通過
+✅ EPUB 讀取功能已完整修復！
+📚 支援功能:
+   • 自動提取章節內容
+   • 智能章節標題識別
+   • 中文文本標準化
+   • 書籍元資料提取
+   • HTML 標籤清理
+   • 多章節智能分割
+✅ DOCX 支援已啟用 (docx2txt)
+✅ EPUB 支援已啟用
+✅ 向量系统可用
+🔧 初始化 OpenAI Embeddings...
+✅ OpenAI Embeddings 初始化成功
+🔤 繁簡轉換器初始化完成
+🔤 繁簡轉換器初始化完成
+✅ 文本處理組件初始化完成
+🔤 繁簡轉換器初始化完成
+🔧 優化版文本分割器初始化完成
+   📏 支持 11 種文本類型
+   🧠 智能策略選擇
+   ⚡ 性能優化
+🚀 完整優化版向量系統初始化完成
+   🤖 嵌入模型: openai
+   📁 數據目錄: data
+   🗄️ 向量庫: chroma_langchain_db
+   🧠 智能文本處理: ✅
+   🔧 自適應批次: ✅
+✅ 增強版對話數據庫初始化成功 (自動欄位修復已啟用)
+INFO:     127.0.0.1:0 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /modern/static/chat.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /modern/static/chat.js HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [9528]
+INFO:auth_middleware:✅ user_manager 載入成功
+Building prefix dict from the default dictionary ...
+DEBUG:jieba:Building prefix dict from the default dictionary ...
+Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+DEBUG:jieba:Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+Loading model cost 0.450 seconds.
+DEBUG:jieba:Loading model cost 0.450 seconds.
+Prefix dict has been built successfully.
+DEBUG:jieba:Prefix dict has been built successfully.
+INFO:__main__:✅ 向量系统初始化成功 (机器人: test_02)
+INFO:__main__:🔗 使用向量API模式: http://localhost:9002
+INFO:__main__:ℹ️ ProxyHeadersMiddleware 不可用，使用本地開發模式
+INFO:__main__:✅ 静态文件挂载成功: C:\Users\danny\pyRag\bot_lang\chatbot_templates\modern\static
+INFO:__main__:✅ 机器人实例 'test_02' 初始化完成，对话记录数据库：test_02_conversations.db
+INFO:__main__:🤖 机器人 'test_02' 正在 http://localhost:8010 上启动
+INFO:__main__:📊 对话记录数据库：test_02_conversations.db
+INFO:__main__:📚 知识库集合：collection_test_02
+INFO:__main__:🔍 搜索模式：api
+INFO:__main__:🔗 向量API地址：http://localhost:9002
+INFO:__main__:🔧 调试模式已启用，将输出详细的对话记录和推荐问题生成日志
+INFO:     Started server process [9068]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8010 (Press CTRL+C to quit)
+INFO:auth_middleware:✅ user_manager 載入成功
+Building prefix dict from the default dictionary ...
+DEBUG:jieba:Building prefix dict from the default dictionary ...
+Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+DEBUG:jieba:Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+Loading model cost 0.425 seconds.
+DEBUG:jieba:Loading model cost 0.425 seconds.
+Prefix dict has been built successfully.
+DEBUG:jieba:Prefix dict has been built successfully.
+INFO:__main__:✅ 向量系统初始化成功 (机器人: test_02)
+INFO:__main__:🔗 使用向量API模式: http://localhost:9002
+INFO:__main__:ℹ️ ProxyHeadersMiddleware 不可用，使用本地開發模式
+INFO:__main__:✅ 静态文件挂载成功: C:\Users\danny\pyRag\bot_lang\chatbot_templates\modern\static
+INFO:__main__:✅ 机器人实例 'test_02' 初始化完成，对话记录数据库：test_02_conversations.db
+INFO:__main__:🤖 机器人 'test_02' 正在 http://localhost:8010 上启动
+INFO:__main__:📊 对话记录数据库：test_02_conversations.db
+INFO:__main__:📚 知识库集合：collection_test_02
+INFO:__main__:🔍 搜索模式：api
+INFO:__main__:🔗 向量API地址：http://localhost:9002
+INFO:__main__:🔧 调试模式已启用，将输出详细的对话记录和推荐问题生成日志
+INFO:     Started server process [14212]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8010 (Press CTRL+C to quit)
+✅ 連接到現有資料庫: user_management.db
+✅ 資料庫結構驗證通過
+✅ 修正版用戶管理器初始化成功
+✅ 增強版對話數據庫初始化成功 (自動欄位修復已啟用)
+✅ httpx 可用，支持向量API模式
+✅ 使用新版 langchain-chroma
+✅ 使用新版 langchain-huggingface
+✅ OpenAI Embeddings 可用
+✅ OpenAI API Key 格式正確
+   API Key: sk-proj-***-2kA
+✅ OpenAI 環境檢查通過
+✅ EPUB 讀取功能已完整修復！
+📚 支援功能:
+   • 自動提取章節內容
+   • 智能章節標題識別
+   • 中文文本標準化
+   • 書籍元資料提取
+   • HTML 標籤清理
+   • 多章節智能分割
+✅ DOCX 支援已啟用 (docx2txt)
+✅ EPUB 支援已啟用
+✅ 向量系统可用
+🔧 初始化 OpenAI Embeddings...
+✅ OpenAI Embeddings 初始化成功
+🔤 繁簡轉換器初始化完成
+🔤 繁簡轉換器初始化完成
+✅ 文本處理組件初始化完成
+🔤 繁簡轉換器初始化完成
+🔧 優化版文本分割器初始化完成
+   📏 支持 11 種文本類型
+   🧠 智能策略選擇
+   ⚡ 性能優化
+🚀 完整優化版向量系統初始化完成
+   🤖 嵌入模型: openai
+   📁 數據目錄: data
+   🗄️ 向量庫: chroma_langchain_db
+   🧠 智能文本處理: ✅
+   🔧 自適應批次: ✅
+✅ 增強版對話數據庫初始化成功 (自動欄位修復已啟用)
+INFO:     127.0.0.1:0 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /modern/static/chat.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /modern/static/chat.js HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [14212]
+INFO:auth_middleware:✅ user_manager 載入成功
+Building prefix dict from the default dictionary ...
+DEBUG:jieba:Building prefix dict from the default dictionary ...
+Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+DEBUG:jieba:Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+Loading model cost 0.416 seconds.
+DEBUG:jieba:Loading model cost 0.416 seconds.
+Prefix dict has been built successfully.
+DEBUG:jieba:Prefix dict has been built successfully.
+INFO:__main__:✅ 向量系统初始化成功 (机器人: test_02)
+INFO:__main__:🔗 使用向量API模式: http://localhost:9002
+INFO:__main__:ℹ️ ProxyHeadersMiddleware 不可用，使用本地開發模式
+INFO:__main__:✅ 静态文件挂载成功: C:\Users\danny\pyRag\bot_lang\chatbot_templates\modern\static
+INFO:__main__:✅ 机器人实例 'test_02' 初始化完成，对话记录数据库：test_02_conversations.db
+INFO:__main__:🤖 机器人 'test_02' 正在 http://localhost:8010 上启动
+INFO:__main__:📊 对话记录数据库：test_02_conversations.db
+INFO:__main__:📚 知识库集合：collection_test_02
+INFO:__main__:🔍 搜索模式：api
+INFO:__main__:🔗 向量API地址：http://localhost:9002
+INFO:__main__:🔧 调试模式已启用，将输出详细的对话记录和推荐问题生成日志
+INFO:     Started server process [13272]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8010 (Press CTRL+C to quit)
+✅ 連接到現有資料庫: user_management.db
+✅ 資料庫結構驗證通過
+✅ 修正版用戶管理器初始化成功
+✅ 增強版對話數據庫初始化成功 (自動欄位修復已啟用)
+✅ httpx 可用，支持向量API模式
+✅ 使用新版 langchain-chroma
+✅ 使用新版 langchain-huggingface
+✅ OpenAI Embeddings 可用
+✅ OpenAI API Key 格式正確
+   API Key: sk-proj-***-2kA
+✅ OpenAI 環境檢查通過
+✅ EPUB 讀取功能已完整修復！
+📚 支援功能:
+   • 自動提取章節內容
+   • 智能章節標題識別
+   • 中文文本標準化
+   • 書籍元資料提取
+   • HTML 標籤清理
+   • 多章節智能分割
+✅ DOCX 支援已啟用 (docx2txt)
+✅ EPUB 支援已啟用
+✅ 向量系统可用
+🔧 初始化 OpenAI Embeddings...
+✅ OpenAI Embeddings 初始化成功
+🔤 繁簡轉換器初始化完成
+🔤 繁簡轉換器初始化完成
+✅ 文本處理組件初始化完成
+🔤 繁簡轉換器初始化完成
+🔧 優化版文本分割器初始化完成
+   📏 支持 11 種文本類型
+   🧠 智能策略選擇
+   ⚡ 性能優化
+🚀 完整優化版向量系統初始化完成
+   🤖 嵌入模型: openai
+   📁 數據目錄: data
+   🗄️ 向量庫: chroma_langchain_db
+   🧠 智能文本處理: ✅
+   🔧 自適應批次: ✅
+✅ 增強版對話數據庫初始化成功 (自動欄位修復已啟用)
+INFO:     127.0.0.1:0 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /modern/static/chat.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /modern/static/chat.js HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [13272]
+INFO:auth_middleware:✅ user_manager 載入成功
+Building prefix dict from the default dictionary ...
+DEBUG:jieba:Building prefix dict from the default dictionary ...
+Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+DEBUG:jieba:Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+Loading model cost 0.428 seconds.
+DEBUG:jieba:Loading model cost 0.428 seconds.
+Prefix dict has been built successfully.
+DEBUG:jieba:Prefix dict has been built successfully.
+INFO:__main__:✅ 向量系统初始化成功 (机器人: test_02)
+INFO:__main__:🔗 使用向量API模式: http://localhost:9002
+INFO:__main__:ℹ️ ProxyHeadersMiddleware 不可用，使用本地開發模式
+INFO:__main__:✅ 静态文件挂载成功: C:\Users\danny\pyRag\bot_lang\chatbot_templates\modern\static
+INFO:__main__:✅ 机器人实例 'test_02' 初始化完成，对话记录数据库：test_02_conversations.db
+INFO:__main__:🤖 机器人 'test_02' 正在 http://localhost:8010 上启动
+INFO:__main__:📊 对话记录数据库：test_02_conversations.db
+INFO:__main__:📚 知识库集合：collection_test_02
+INFO:__main__:🔍 搜索模式：api
+INFO:__main__:🔗 向量API地址：http://localhost:9002
+INFO:__main__:🔧 调试模式已启用，将输出详细的对话记录和推荐问题生成日志
+INFO:     Started server process [27408]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8010 (Press CTRL+C to quit)
+✅ 連接到現有資料庫: user_management.db
+✅ 資料庫結構驗證通過
+✅ 修正版用戶管理器初始化成功
+✅ 增強版對話數據庫初始化成功 (自動欄位修復已啟用)
+✅ httpx 可用，支持向量API模式
+✅ 使用新版 langchain-chroma
+✅ 使用新版 langchain-huggingface
+✅ OpenAI Embeddings 可用
+✅ OpenAI API Key 格式正確
+   API Key: sk-proj-***-2kA
+✅ OpenAI 環境檢查通過
+✅ EPUB 讀取功能已完整修復！
+📚 支援功能:
+   • 自動提取章節內容
+   • 智能章節標題識別
+   • 中文文本標準化
+   • 書籍元資料提取
+   • HTML 標籤清理
+   • 多章節智能分割
+✅ DOCX 支援已啟用 (docx2txt)
+✅ EPUB 支援已啟用
+✅ 向量系统可用
+🔧 初始化 OpenAI Embeddings...
+✅ OpenAI Embeddings 初始化成功
+🔤 繁簡轉換器初始化完成
+🔤 繁簡轉換器初始化完成
+✅ 文本處理組件初始化完成
+🔤 繁簡轉換器初始化完成
+🔧 優化版文本分割器初始化完成
+   📏 支持 11 種文本類型
+   🧠 智能策略選擇
+   ⚡ 性能優化
+🚀 完整優化版向量系統初始化完成
+   🤖 嵌入模型: openai
+   📁 數據目錄: data
+   🗄️ 向量庫: chroma_langchain_db
+   🧠 智能文本處理: ✅
+   🔧 自適應批次: ✅
+✅ 增強版對話數據庫初始化成功 (自動欄位修復已啟用)
+INFO:     127.0.0.1:0 - "GET / HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [27408]
+INFO:auth_middleware:✅ user_manager 載入成功
+Building prefix dict from the default dictionary ...
+DEBUG:jieba:Building prefix dict from the default dictionary ...
+Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+DEBUG:jieba:Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+Loading model cost 0.425 seconds.
+DEBUG:jieba:Loading model cost 0.425 seconds.
+Prefix dict has been built successfully.
+DEBUG:jieba:Prefix dict has been built successfully.
+INFO:__main__:✅ 向量系统初始化成功 (机器人: test_02)
+INFO:__main__:🔗 使用向量API模式: http://localhost:9002
+INFO:__main__:ℹ️ ProxyHeadersMiddleware 不可用，使用本地開發模式
+INFO:__main__:✅ 静态文件挂载成功: C:\Users\danny\pyRag\bot_lang\chatbot_templates\modern\static
+INFO:__main__:✅ 机器人实例 'test_02' 初始化完成，对话记录数据库：test_02_conversations.db
+INFO:__main__:🤖 机器人 'test_02' 正在 http://localhost:8010 上启动
+INFO:__main__:📊 对话记录数据库：test_02_conversations.db
+INFO:__main__:📚 知识库集合：collection_test_02
+INFO:__main__:🔍 搜索模式：api
+INFO:__main__:🔗 向量API地址：http://localhost:9002
+INFO:__main__:🔧 调试模式已启用，将输出详细的对话记录和推荐问题生成日志
+INFO:     Started server process [28836]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8010 (Press CTRL+C to quit)
+✅ 連接到現有資料庫: user_management.db
+✅ 資料庫結構驗證通過
+✅ 修正版用戶管理器初始化成功
+✅ 增強版對話數據庫初始化成功 (自動欄位修復已啟用)
+✅ httpx 可用，支持向量API模式
+✅ 使用新版 langchain-chroma
+✅ 使用新版 langchain-huggingface
+✅ OpenAI Embeddings 可用
+✅ OpenAI API Key 格式正確
+   API Key: sk-proj-***-2kA
+✅ OpenAI 環境檢查通過
+✅ EPUB 讀取功能已完整修復！
+📚 支援功能:
+   • 自動提取章節內容
+   • 智能章節標題識別
+   • 中文文本標準化
+   • 書籍元資料提取
+   • HTML 標籤清理
+   • 多章節智能分割
+✅ DOCX 支援已啟用 (docx2txt)
+✅ EPUB 支援已啟用
+✅ 向量系统可用
+🔧 初始化 OpenAI Embeddings...
+✅ OpenAI Embeddings 初始化成功
+🔤 繁簡轉換器初始化完成
+🔤 繁簡轉換器初始化完成
+✅ 文本處理組件初始化完成
+🔤 繁簡轉換器初始化完成
+🔧 優化版文本分割器初始化完成
+   📏 支持 11 種文本類型
+   🧠 智能策略選擇
+   ⚡ 性能優化
+🚀 完整優化版向量系統初始化完成
+   🤖 嵌入模型: openai
+   📁 數據目錄: data
+   🗄️ 向量庫: chroma_langchain_db
+   🧠 智能文本處理: ✅
+   🔧 自適應批次: ✅
+✅ 增強版對話數據庫初始化成功 (自動欄位修復已啟用)
+INFO:     127.0.0.1:0 - "GET / HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [28836]
+INFO:auth_middleware:✅ user_manager 載入成功
+Building prefix dict from the default dictionary ...
+DEBUG:jieba:Building prefix dict from the default dictionary ...
+Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+DEBUG:jieba:Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+Loading model cost 0.441 seconds.
+DEBUG:jieba:Loading model cost 0.441 seconds.
+Prefix dict has been built successfully.
+DEBUG:jieba:Prefix dict has been built successfully.
+INFO:__main__:✅ 向量系统初始化成功 (机器人: test_02)
+INFO:__main__:🔗 使用向量API模式: http://localhost:9002
+INFO:__main__:ℹ️ ProxyHeadersMiddleware 不可用，使用本地開發模式
+INFO:__main__:✅ 静态文件挂载成功: C:\Users\danny\pyRag\bot_lang\chatbot_templates\modern\static
+INFO:__main__:✅ 机器人实例 'test_02' 初始化完成，对话记录数据库：test_02_conversations.db
+INFO:__main__:🤖 机器人 'test_02' 正在 http://localhost:8010 上启动
+INFO:__main__:📊 对话记录数据库：test_02_conversations.db
+INFO:__main__:📚 知识库集合：collection_test_02
+INFO:__main__:🔍 搜索模式：api
+INFO:__main__:🔗 向量API地址：http://localhost:9002
+INFO:__main__:🔧 调试模式已启用，将输出详细的对话记录和推荐问题生成日志
+INFO:     Started server process [20492]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8010 (Press CTRL+C to quit)
+✅ 連接到現有資料庫: user_management.db
+✅ 資料庫結構驗證通過
+✅ 修正版用戶管理器初始化成功
+✅ 增強版對話數據庫初始化成功 (自動欄位修復已啟用)
+✅ httpx 可用，支持向量API模式
+✅ 使用新版 langchain-chroma
+✅ 使用新版 langchain-huggingface
+✅ OpenAI Embeddings 可用
+✅ OpenAI API Key 格式正確
+   API Key: sk-proj-***-2kA
+✅ OpenAI 環境檢查通過
+✅ EPUB 讀取功能已完整修復！
+📚 支援功能:
+   • 自動提取章節內容
+   • 智能章節標題識別
+   • 中文文本標準化
+   • 書籍元資料提取
+   • HTML 標籤清理
+   • 多章節智能分割
+✅ DOCX 支援已啟用 (docx2txt)
+✅ EPUB 支援已啟用
+✅ 向量系统可用
+🔧 初始化 OpenAI Embeddings...
+✅ OpenAI Embeddings 初始化成功
+🔤 繁簡轉換器初始化完成
+🔤 繁簡轉換器初始化完成
+✅ 文本處理組件初始化完成
+🔤 繁簡轉換器初始化完成
+🔧 優化版文本分割器初始化完成
+   📏 支持 11 種文本類型
+   🧠 智能策略選擇
+   ⚡ 性能優化
+🚀 完整優化版向量系統初始化完成
+   🤖 嵌入模型: openai
+   📁 數據目錄: data
+   🗄️ 向量庫: chroma_langchain_db
+   🧠 智能文本處理: ✅
+   🔧 自適應批次: ✅
+✅ 增強版對話數據庫初始化成功 (自動欄位修復已啟用)
+INFO:     127.0.0.1:0 - "GET / HTTP/1.1" 200 OK
+INFO:__main__:📩 机器人 'test_02' 收到查询 [auth_user_2_atalantis]: 內湖最不推薦的三個餐廳...
+INFO:httpx:HTTP Request: POST http://localhost:9002/search "HTTP/1.1 200 OK"
+INFO:__main__:API搜索成功: 0 个结果
+WARNING:__main__:API模式无结果，尝试直接模式...
+INFO:chromadb.telemetry.product.posthog:Anonymized telemetry enabled. See                     https://docs.trychroma.com/telemetry for more information.
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+WARNING:__main__:🔍 机器人 'test_02' 未找到相关文档
+INFO:__main__:🔍 当前查询: 內湖最不推薦的三個餐廳
+INFO:__main__:📄 检索到 0 个文档
+INFO:__main__:🔍 机器人 'test_02' 检索结果: 0 个文档, chunk_refs: 0
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:__main__:🔍 机器人 'test_02' 推荐问题调试:
+INFO:__main__:  - should_recommend: False
+INFO:__main__:  - recommend_count: 0
+INFO:__main__:  - conversation_count: 1
+INFO:__main__:❌ 机器人 'test_02' 推荐问题未启用或超出限制
+INFO:conversation_logger_simple:✅ 記錄對話成功: ID 1, chunks: 0
+INFO:__main__:✅ 对话记录成功：ID=conv_1, 机器人：test_02, chunks=0
+INFO:__main__:📤 机器人 'test_02' API 回应调试:
+INFO:__main__:  - response_text 长度: 289
+INFO:__main__:  - recommended_questions: []
+INFO:__main__:  - 找到文档数量: 0
+INFO:__main__:  - chunk_references: 0
+INFO:__main__:  - 处理时间: 11284ms
+✅ 向量存儲就緒: collection_test_02
+INFO:     127.0.0.1:0 - "POST /api/chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /modern/static/chat.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /modern/static/chat.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /modern/static/chat.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /modern/static/chat.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /modern/static/chat.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /modern/static/chat.js HTTP/1.1" 200 OK
+INFO:__main__:📩 机器人 'test_02' 收到查询 [auth_user_2_atalantis]: 推薦首爾的餐廳，適合全家吃的...
+INFO:httpx:HTTP Request: POST http://localhost:9002/search "HTTP/1.1 200 OK"
+INFO:__main__:API搜索成功: 0 个结果
+WARNING:__main__:API模式无结果，尝试直接模式...
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+WARNING:__main__:🔍 机器人 'test_02' 未找到相关文档
+INFO:__main__:🔍 当前查询: 推薦首爾的餐廳，適合全家吃的
+INFO:__main__:📄 检索到 0 个文档
+INFO:__main__:🔍 机器人 'test_02' 检索结果: 0 个文档, chunk_refs: 0
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:__main__:🔍 机器人 'test_02' 推荐问题调试:
+INFO:__main__:  - should_recommend: False
+INFO:__main__:  - recommend_count: 0
+INFO:__main__:  - conversation_count: 2
+INFO:__main__:❌ 机器人 'test_02' 推荐问题未启用或超出限制
+INFO:conversation_logger_simple:✅ 記錄對話成功: ID 2, chunks: 0
+INFO:__main__:✅ 对话记录成功：ID=conv_2, 机器人：test_02, chunks=0
+INFO:__main__:📤 机器人 'test_02' API 回应调试:
+INFO:__main__:  - response_text 长度: 425
+INFO:__main__:  - recommended_questions: []
+INFO:__main__:  - 找到文档数量: 0
+INFO:__main__:  - chunk_references: 0
+INFO:__main__:  - 处理时间: 10394ms
+INFO:     127.0.0.1:0 - "POST /api/chat HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [20492]

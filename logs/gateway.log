@@ -1,0 +1,14 @@
+INFO:     Started server process [28080]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+============================================================
+🌐 API Gateway
+============================================================
+🚀 服務端口: 8000
+📁 Bot 設定: C:\Users\danny\pyRag\bot_lang\cloud\bot_configs
+⚠️  開發模式未設 GATEWAY_ADMIN_TOKEN（正式環境請務必設定）
+🏥 健康檢查: http://localhost:8000/health
+🔌 使用方式: http://localhost:8000/<bot>/ ... 例如 http://localhost:8000/test_01/health
+============================================================
+INFO:     127.0.0.1:53426 - "GET /health HTTP/1.1" 200 OK

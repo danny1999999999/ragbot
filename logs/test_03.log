@@ -1,0 +1,90 @@
+INFO:auth_middleware:✅ user_manager 載入成功
+Building prefix dict from the default dictionary ...
+DEBUG:jieba:Building prefix dict from the default dictionary ...
+Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+DEBUG:jieba:Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+Loading model cost 0.418 seconds.
+DEBUG:jieba:Loading model cost 0.418 seconds.
+Prefix dict has been built successfully.
+DEBUG:jieba:Prefix dict has been built successfully.
+INFO:__main__:为机器人 test_03 自动添加显示名称: test_03
+INFO:__main__:✅ 向量系统初始化成功 (机器人: test_03)
+INFO:__main__:🔗 使用向量API模式: http://localhost:9002
+INFO:__main__:ℹ️ ProxyHeadersMiddleware 不可用，使用本地開發模式
+INFO:__main__:✅ 静态文件挂载成功: C:\Users\danny\pyRag\bot_lang\chatbot_templates\modern\static
+INFO:__main__:✅ 机器人实例 'test_03' 初始化完成，对话记录数据库：test_03_conversations.db
+INFO:__main__:🤖 机器人 'test_03' 正在 http://localhost:8011 上启动
+INFO:__main__:📊 对话记录数据库：test_03_conversations.db
+INFO:__main__:📚 知识库集合：collection_test_03
+INFO:__main__:🔍 搜索模式：api
+INFO:__main__:🔗 向量API地址：http://localhost:9002
+INFO:__main__:🔧 调试模式已启用，将输出详细的对话记录和推荐问题生成日志
+INFO:     Started server process [6380]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8011 (Press CTRL+C to quit)
+INFO:auth_middleware:✅ user_manager 載入成功
+Building prefix dict from the default dictionary ...
+DEBUG:jieba:Building prefix dict from the default dictionary ...
+Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+DEBUG:jieba:Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+Loading model cost 0.411 seconds.
+DEBUG:jieba:Loading model cost 0.411 seconds.
+Prefix dict has been built successfully.
+DEBUG:jieba:Prefix dict has been built successfully.
+INFO:__main__:✅ 向量系统初始化成功 (机器人: test_03)
+INFO:__main__:🔗 使用向量API模式: http://localhost:9002
+INFO:__main__:ℹ️ ProxyHeadersMiddleware 不可用，使用本地開發模式
+INFO:__main__:✅ 静态文件挂载成功: C:\Users\danny\pyRag\bot_lang\chatbot_templates\modern\static
+INFO:__main__:✅ 机器人实例 'test_03' 初始化完成，对话记录数据库：test_03_conversations.db
+INFO:__main__:🤖 机器人 'test_03' 正在 http://localhost:8011 上启动
+INFO:__main__:📊 对话记录数据库：test_03_conversations.db
+INFO:__main__:📚 知识库集合：collection_test_03
+INFO:__main__:🔍 搜索模式：api
+INFO:__main__:🔗 向量API地址：http://localhost:9002
+INFO:__main__:🔧 调试模式已启用，将输出详细的对话记录和推荐问题生成日志
+INFO:     Started server process [3484]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8011 (Press CTRL+C to quit)
+✅ 連接到現有資料庫: user_management.db
+✅ 資料庫結構驗證通過
+✅ 修正版用戶管理器初始化成功
+✅ 增強版對話數據庫初始化成功 (自動欄位修復已啟用)
+✅ httpx 可用，支持向量API模式
+✅ 使用新版 langchain-chroma
+✅ 使用新版 langchain-huggingface
+✅ OpenAI Embeddings 可用
+✅ OpenAI API Key 格式正確
+   API Key: sk-proj-***-2kA
+✅ OpenAI 環境檢查通過
+✅ EPUB 讀取功能已完整修復！
+📚 支援功能:
+   • 自動提取章節內容
+   • 智能章節標題識別
+   • 中文文本標準化
+   • 書籍元資料提取
+   • HTML 標籤清理
+   • 多章節智能分割
+✅ DOCX 支援已啟用 (docx2txt)
+✅ EPUB 支援已啟用
+✅ 向量系统可用
+🔧 初始化 OpenAI Embeddings...
+✅ OpenAI Embeddings 初始化成功
+🔤 繁簡轉換器初始化完成
+🔤 繁簡轉換器初始化完成
+✅ 文本處理組件初始化完成
+🔤 繁簡轉換器初始化完成
+🔧 優化版文本分割器初始化完成
+   📏 支持 11 種文本類型
+   🧠 智能策略選擇
+   ⚡ 性能優化
+🚀 完整優化版向量系統初始化完成
+   🤖 嵌入模型: openai
+   📁 數據目錄: data
+   🗄️ 向量庫: chroma_langchain_db
+   🧠 智能文本處理: ✅
+   🔧 自適應批次: ✅
+✅ 增強版對話數據庫初始化成功 (自動欄位修復已啟用)
+INFO:     127.0.0.1:50278 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50278 - "GET /favicon.ico HTTP/1.1" 404 Not Found

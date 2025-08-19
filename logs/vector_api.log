@@ -1,0 +1,134 @@
+Building prefix dict from the default dictionary ...
+Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+Loading model cost 0.375 seconds.
+Prefix dict has been built successfully.
+INFO:__main__:✅ 向量系统初始化成功
+INFO:     Started server process [8676]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:9002 (Press CTRL+C to quit)
+WARNING:vector_builder_langchain:獲取集合統計失敗 collection_test_01: 'PGVector' object has no attribute '_collection'
+✅ PGVector 可用
+✅ OpenAI Embeddings 可用
+✅ OpenAI API Key 格式正確
+   API Key: sk-proj-***-2kA
+✅ OpenAI 環境檢查通過
+✅ EPUB 讀取功能已完整修復！
+📚 支援功能:
+   • 自動提取章節內容
+   • 智能章節標題識別
+   • 中文文本標準化
+   • 書籍元資料提取
+   • HTML 標籤清理
+   • 多章節智能分割
+✅ DOCX 支援已啟用 (docx2txt)
+✅ EPUB 支援已啟用
+✅ 向量系统导入成功
+============================================================
+🔍 向量数据库API服务 v1.0
+============================================================
+📍 服务端口: 9002
+📖 API文档: http://localhost:9002/docs
+🔍 健康检查: http://localhost:9002/health
+🤖 向量系统: ✅ 可用
+============================================================
+🔧 初始化向量系统...
+✅ PostgreSQL 連接正常
+🔧 初始化 OpenAI Embeddings...
+✅ OpenAI Embeddings 初始化成功
+🔤 繁簡轉換器初始化完成
+🔤 繁簡轉換器初始化完成
+✅ 文本處理組件初始化完成
+🔤 繁簡轉換器初始化完成
+🔧 優化版文本分割器初始化完成
+   📏 支持 11 種文本類型
+   🧠 智能策略選擇
+   ⚡ 性能優化
+🚀 完整優化版向量系統初始化完成
+   🤖 嵌入模型: openai
+   📁 數據目錄: data
+   🗄️ 向量庫: chroma_langchain_db
+   🧠 智能文本處理: ✅
+   🔧 自適應批次: ✅
+✅ PGVector 向量存儲就緒: collection_test_01
+INFO:     127.0.0.1:53403 - "GET /health HTTP/1.1" 200 OK
+INFO:vector_builder_langchain:--- SANITIZED VERSION: Manually building a safe response. ---
+ERROR:vector_builder_langchain:SANITIZED VERSION FAILED: 'PGVector' object has no attribute 'get'
+Traceback (most recent call last):
+  File "C:\Users\danny\pyRag\bot_lang\cloud\vector_builder_langchain.py", line 3165, in get_collection_documents
+    all_docs_raw = vectorstore.get() # This is the suspected problem source
+                   ^^^^^^^^^^^^^^^
+AttributeError: 'PGVector' object has no attribute 'get'
+INFO:     127.0.0.1:57969 - "GET /collections/collection_test_01/files HTTP/1.1" 200 OK
+INFO:__main__:📤 上传请求: 【教養新視野】認識抖音腦：短影音如何影響我們的下一代？_msjh.pdf -> collection_test_01
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+INFO:vector_builder_langchain:📁 文件記錄已保存到data目錄:
+INFO:vector_builder_langchain:   📁 集合數: 1
+INFO:vector_builder_langchain:   📄 總檔案: 15
+INFO:__main__:✅ 上传完成: 【教養新視野】認識抖音腦：短影音如何影響我們的下一代？_msjh.pdf (2.58s)
+⚠️ 檔案 【教養新視野】認識抖音腦：短影音如何影響我們的下一代？_msjh.pdf 已存在，將會覆蓋
+💾 保存檔案到: data\test_01\【教養新視野】認識抖音腦：短影音如何影響我們的下一代？_msjh.pdf
+✅ 檔案保存成功: data\test_01\【教養新視野】認識抖音腦：短影音如何影響我們的下一代？_msjh.pdf (234874 bytes)
+📄 開始處理檔案: 【教養新視野】認識抖音腦：短影音如何影響我們的下一代？_msjh.pdf
+📊 文本分析: long_text (2,000 字符)
+   🎯 處理策略: chapter_aware
+   📈 質量分數: 1.00
+   🗣️ 主要語言: chinese
+   📚 長文本精細化分割 - 檢測到 6 個章節
+   📑 長文本精細化分割 (目標大小: 500)
+   📑 長文本精細化分割 (目標大小: 500)
+   📑 長文本精細化分割 (目標大小: 500)
+   📑 長文本精細化分割 (目標大小: 500)
+   📑 長文本精細化分割 (目標大小: 500)
+📄 文檔載入完成: 【教養新視野】認識抖音腦：短影音如何影響我們的下一代？_msjh.pdf (5 個分塊)
+⚠️ 刪除條件 {'source': 'data\\test_01\\【教養新視野】認識抖音腦：短影音如何影響我們的下一代？_msjh.pdf'} 時出現警告: 'PGVector' object has no attribute 'get'
+⚠️ 刪除條件 {'original_filename': '【教養新視野】認識抖音腦：短影音如何影響我們的下一代？_msjh.pdf'} 時出現警告: 'PGVector' object has no attribute 'get'
+⚠️ 刪除條件 {'filename': '【教養新視野】認識抖音腦：短影音如何影響我們的下一代？_msjh.pdf'} 時出現警告: 'PGVector' object has no attribute 'get'
+🔄 開始向量化處理...
+🔧 創建智能批次...
+   📄 總文檔數: 5
+   📏 Token 限制: 150,000
+   📦 最大批次大小: 8
+   🧠 自適應批次: ✅
+✅ 智能批次創建完成:
+   📦 總批次數: 1
+   📄 總文檔數: 5
+   📏 總 tokens: 1,067
+   📊 平均 tokens/批次: 1067
+   💰 估算成本: $0.0000
+
+🔄 開始批次向量化...
+   📦 總批次數: 1
+   📄 總文檔數: 5
+
+   📦 批次 1/1
+      📄 文檔數: 5
+      📏 tokens: 1,067
+      📊 使用率: 0.7%
+      🏷️ 類型: long_text:5
+      🚀 開始處理批次 1...
+      📡 正在調用 OpenAI API... (這可能需要 30-60 秒)
+      🔧 已處理 5 個文檔的元數據，確保類型兼容
+      ✅ 批次 1 完成 (1.8s)
+      📊 總進度: 5/5 (100.0%)
+✅ 文件上傳完成: 【教養新視野】認識抖音腦：短影音如何影響我們的下一代？_msjh.pdf
+   📁 保存位置: data\test_01\【教養新視野】認識抖音腦：短影音如何影響我們的下一代？_msjh.pdf
+   📄 分塊數量: 5
+   ✅ 成功向量化: 5
+INFO:     127.0.0.1:57990 - "POST /upload HTTP/1.1" 200 OK
+INFO:vector_builder_langchain:--- SANITIZED VERSION: Manually building a safe response. ---
+ERROR:vector_builder_langchain:SANITIZED VERSION FAILED: 'PGVector' object has no attribute 'get'
+Traceback (most recent call last):
+  File "C:\Users\danny\pyRag\bot_lang\cloud\vector_builder_langchain.py", line 3165, in get_collection_documents
+    all_docs_raw = vectorstore.get() # This is the suspected problem source
+                   ^^^^^^^^^^^^^^^
+AttributeError: 'PGVector' object has no attribute 'get'
+INFO:     127.0.0.1:58000 - "GET /collections/collection_test_01/files HTTP/1.1" 200 OK
+INFO:vector_builder_langchain:--- SANITIZED VERSION: Manually building a safe response. ---
+ERROR:vector_builder_langchain:SANITIZED VERSION FAILED: 'PGVector' object has no attribute 'get'
+Traceback (most recent call last):
+  File "C:\Users\danny\pyRag\bot_lang\cloud\vector_builder_langchain.py", line 3165, in get_collection_documents
+    all_docs_raw = vectorstore.get() # This is the suspected problem source
+                   ^^^^^^^^^^^^^^^
+AttributeError: 'PGVector' object has no attribute 'get'
+INFO:     127.0.0.1:64414 - "GET /collections/collection_test_01/files HTTP/1.1" 200 OK

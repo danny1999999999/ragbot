@@ -1,0 +1,4 @@
+  File "C:\Users\danny\pyRag\bot_lang\start_admin_with_auth.py", line 1855
+    main())
+          ^
+SyntaxError: unmatched ')'

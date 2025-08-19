@@ -1,0 +1,3152 @@
+INFO:auth_middleware:✅ user_manager 載入成功
+Building prefix dict from the default dictionary ...
+DEBUG:jieba:Building prefix dict from the default dictionary ...
+Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+DEBUG:jieba:Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+Loading model cost 0.459 seconds.
+DEBUG:jieba:Loading model cost 0.459 seconds.
+Prefix dict has been built successfully.
+DEBUG:jieba:Prefix dict has been built successfully.
+INFO:__main__:✅ 向量系统初始化成功 (机器人: test_01)
+INFO:__main__:🔗 使用向量API模式: http://localhost:9002
+INFO:__main__:✅ 静态文件挂载成功: C:\Users\danny\pyRag\bot_lang\chatbot_templates\modern\static
+INFO:__main__:✅ 机器人实例 'test_01' 初始化完成，对话记录数据库：test_01_conversations.db
+INFO:__main__:🤖 机器人 'test_01' 正在 http://localhost:9003 上启动
+INFO:__main__:📊 对话记录数据库：test_01_conversations.db
+INFO:__main__:📚 知识库集合：collection_test_01
+INFO:__main__:🔍 搜索模式：api
+INFO:__main__:🔗 向量API地址：http://localhost:9002
+INFO:__main__:🔧 调试模式已启用，将输出详细的对话记录和推荐问题生成日志
+INFO:     Started server process [12356]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:9003 (Press CTRL+C to quit)
+✅ 連接到現有資料庫: user_management.db
+✅ 資料庫結構驗證通過
+✅ 修正版用戶管理器初始化成功
+✅ 增強版對話數據庫初始化成功 (自動欄位修復已啟用)
+✅ httpx 可用，支持向量API模式
+✅ 使用新版 langchain-chroma
+✅ 使用新版 langchain-huggingface
+✅ OpenAI Embeddings 可用
+✅ OpenAI API Key 格式正確
+   API Key: sk-proj-***-2kA
+✅ OpenAI 環境檢查通過
+✅ EPUB 讀取功能已完整修復！
+📚 支援功能:
+   • 自動提取章節內容
+   • 智能章節標題識別
+   • 中文文本標準化
+   • 書籍元資料提取
+   • HTML 標籤清理
+   • 多章節智能分割
+✅ DOCX 支援已啟用 (docx2txt)
+✅ EPUB 支援已啟用
+✅ 向量系统可用
+🔧 初始化 OpenAI Embeddings...
+✅ OpenAI Embeddings 初始化成功
+🔤 繁簡轉換器初始化完成
+🔤 繁簡轉換器初始化完成
+✅ 文本處理組件初始化完成
+🔤 繁簡轉換器初始化完成
+🔧 優化版文本分割器初始化完成
+   📏 支持 11 種文本類型
+   🧠 智能策略選擇
+   ⚡ 性能優化
+🚀 完整優化版向量系統初始化完成
+   🤖 嵌入模型: openai
+   📁 數據目錄: data
+   🗄️ 向量庫: chroma_langchain_db
+   🧠 智能文本處理: ✅
+   🔧 自適應批次: ✅
+✅ 增強版對話數據庫初始化成功 (自動欄位修復已啟用)
+INFO:     127.0.0.1:59523 - "GET / HTTP/1.1" 200 OK
+INFO:__main__:📩 机器人 'test_01' 收到查询 [auth_user_2_atalantis]: 魔法親親好看嗎...
+INFO:httpx:HTTP Request: POST http://localhost:9002/search "HTTP/1.1 200 OK"
+INFO:__main__:API搜索成功: 3 个结果
+INFO:__main__:🔍 机器人 'test_01' API检索结果: 3 个文档
+INFO:__main__:🔍 当前查询: 魔法親親好看嗎
+INFO:__main__:📄 检索到 3 个文档
+INFO:__main__:📄 文档 1:
+INFO:__main__:  内容预览: 書名:魔法親親（安撫孩子分離焦慮的最佳圖畫書）
+https://www.hsinyishop.com/products/h000000035755
+
+《魔法親親》是讓孩子安心上學的魔法！一個留在掌心的
+INFO:__main__:  包含连接: https://www.hsinyishop.com/products/h000000035755
+INFO:__main__:  来源文件: 書名魔法親親（安撫孩子分離焦慮的最佳圖畫書）.txt
+INFO:__main__:📄 文档 2:
+INFO:__main__:  内容预览: 
+這一系列關於正向教養的分享，不只是希望帶來阿德勒心理學的觀點，更是陪你一起練習理解自己的情緒與限制，看見孩子的困難，也看見自己需要被支持的地方。讓我們一起努力，用正向的眼光看見孩子，也學著用同樣溫柔
+INFO:__main__:  包含连接: 
+INFO:__main__:  来源文件: 理智斷線.txt
+INFO:__main__:📄 文档 3:
+INFO:__main__:  内容预览: 很順利，
+因為他們得面對無數個「轉變」。
+從「家裡」變成「學校」；
+從「一個人獨處」變成「和大家相處」；
+從「獨占」變成「分享」……
+這麼多的轉變，不要說小小孩，連大人都必須適應一陣子，
+比如上班時也
+INFO:__main__:  包含连接: 
+INFO:__main__:  来源文件: 書名魔法親親（安撫孩子分離焦慮的最佳圖畫書）.txt
+INFO:__main__:🔍 机器人 'test_01' 检索结果: 3 个文档, chunk_refs: 3
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:__main__:🔍 机器人 'test_01' 推荐问题调试:
+INFO:__main__:  - should_recommend: True
+INFO:__main__:  - recommend_count: 0
+INFO:__main__:  - conversation_count: 1
+INFO:__main__:✅ 机器人 'test_01' 开始生成推荐问题...
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:__main__:🤖 机器人 'test_01' LLM 原始回应:
+INFO:__main__:'《魔法親親》適合什麼年齡段的孩子閱讀？  
+這本書有哪些插圖風格或藝術特色？  
+除了《魔法親親》，還有其他類似主題的書籍推薦嗎？'
+INFO:__main__:📝 机器人 'test_01' 解析后的推荐问题: ['《魔法親親》適合什麼年齡段的孩子閱讀？', '這本書有哪些插圖風格或藝術特色？', '除了《魔法親親》，還有其他類似主題的書籍推薦嗎？']
+INFO:__main__:从元数据中提取到 1 个连接
+INFO:__main__:✅ 新连接: 書名:魔法親親（安撫孩子分離焦慮的最佳圖畫書）
+INFO:__main__:🔗 添加了 1 个参考连接
+INFO:conversation_logger_simple:✅ 記錄對話成功: ID 94, chunks: 3
+INFO:__main__:✅ 对话记录成功：ID=conv_94, 机器人：test_01, chunks=3
+INFO:__main__:📤 机器人 'test_01' API 回应调试:
+INFO:__main__:  - response_text 长度: 657
+INFO:__main__:  - recommended_questions: ['《魔法親親》適合什麼年齡段的孩子閱讀？', '這本書有哪些插圖風格或藝術特色？', '除了《魔法親親》，還有其他類似主題的書籍推薦嗎？']
+INFO:__main__:  - 找到文档数量: 3
+INFO:__main__:  - chunk_references: 3
+INFO:__main__:  - 处理时间: 13354ms
+INFO:     127.0.0.1:59659 - "POST /api/chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59661 - "POST /api/link_click HTTP/1.1" 404 Not Found
+INFO:__main__:📩 机器人 'test_01' 收到查询 [auth_user_2_atalantis]: 東港海為小漁村好看嗎...
+INFO:httpx:HTTP Request: POST http://localhost:9002/search "HTTP/1.1 200 OK"
+INFO:__main__:API搜索成功: 3 个结果
+INFO:__main__:🔍 机器人 'test_01' API检索结果: 3 个文档
+INFO:__main__:🔍 当前查询: 東港海為小漁村好看嗎
+INFO:__main__:📄 检索到 3 个文档
+INFO:__main__:📄 文档 1:
+INFO:__main__:  内容预览: 寫作這本遊記時，在這個歷史悠久的老漁村裡四處探索的時光，是充滿喜悅，充滿收穫的。
+莊嚴的廟宇，訴說討海人恆久不變的祈求，期待平安、期待滿載歸來；累了，坐在港邊看漁船，欣賞漁村風光；餓了，到市場逛一逛，
+INFO:__main__:  包含连接: 
+INFO:__main__:  来源文件: 我的小遊記東港海味漁村.txt
+INFO:__main__:📄 文档 2:
+INFO:__main__:  内容预览: 作者的話
+後記 文／岑澎維
+居住在屏東，每當寫作告一段落時，藉地利之便，到鄰近的「東港」走走，來一趟小旅行，成了犒賞自己的方式。
+要怎麼形容東港呢？
+鹹鹹的海風、淳樸的人情、迷人的飲食、虔誠的信仰、吆
+INFO:__main__:  包含连接: 
+INFO:__main__:  来源文件: 我的小遊記東港海味漁村.txt
+INFO:__main__:📄 文档 3:
+INFO:__main__:  内容预览: 書名:我的小遊記！東港海味漁村
+產品網址 https://www.hsinyishop.com/products/h000000039139
+
+
+跟著海風吹來的同學，出發！在地遊記體故事，看小學生尤盛
+INFO:__main__:  包含连接: https://www.hsinyishop.com/products/h000000039139
+INFO:__main__:  来源文件: 我的小遊記東港海味漁村.txt
+INFO:__main__:🔍 机器人 'test_01' 检索结果: 3 个文档, chunk_refs: 3
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:__main__:🔍 机器人 'test_01' 推荐问题调试:
+INFO:__main__:  - should_recommend: True
+INFO:__main__:  - recommend_count: 0
+INFO:__main__:  - conversation_count: 2
+INFO:__main__:✅ 机器人 'test_01' 开始生成推荐问题...
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:__main__:🤖 机器人 'test_01' LLM 原始回应:
+INFO:__main__:'東港有哪些著名的廟宇值得參觀？  
+在東港，有哪些必試的當地小吃？  
+東港的自然景觀有哪些特別的地方可以欣賞？'
+INFO:__main__:📝 机器人 'test_01' 解析后的推荐问题: ['東港有哪些著名的廟宇值得參觀？', '在東港，有哪些必試的當地小吃？', '東港的自然景觀有哪些特別的地方可以欣賞？']
+INFO:__main__:从元数据中提取到 1 个连接
+INFO:__main__:✅ 新连接: 書名:我的小遊記！東港海味漁村
+INFO:__main__:🔗 添加了 1 个参考连接
+INFO:conversation_logger_simple:✅ 記錄對話成功: ID 95, chunks: 3
+INFO:__main__:✅ 对话记录成功：ID=conv_95, 机器人：test_01, chunks=3
+INFO:__main__:📤 机器人 'test_01' API 回应调试:
+INFO:__main__:  - response_text 长度: 647
+INFO:__main__:  - recommended_questions: ['東港有哪些著名的廟宇值得參觀？', '在東港，有哪些必試的當地小吃？', '東港的自然景觀有哪些特別的地方可以欣賞？']
+INFO:__main__:  - 找到文档数量: 3
+INFO:__main__:  - chunk_references: 3
+INFO:__main__:  - 处理时间: 17576ms
+INFO:     127.0.0.1:62196 - "POST /api/chat HTTP/1.1" 200 OK
+INFO:__main__:📩 机器人 'test_01' 收到查询 [auth_user_2_atalantis]: 孩子兩歲學爬樓梯會不會再太早太危險...
+INFO:httpx:HTTP Request: POST http://localhost:9002/search "HTTP/1.1 200 OK"
+INFO:__main__:API搜索成功: 3 个结果
+INFO:__main__:🔍 机器人 'test_01' API检索结果: 3 个文档
+INFO:__main__:🔍 当前查询: 孩子兩歲學爬樓梯會不會再太早太危險
+INFO:__main__:📄 检索到 3 个文档
+INFO:__main__:📄 文档 1:
+INFO:__main__:  内容预览: 等到2歲半，孩子多半就有足夠的能力以兩腳輪流踩踏階梯，爬上爬下囉！
+孩子爬樓梯能力的進展
+你家孩子的上下樓梯的動作發展是否符合他的年齡呢？請參考以下指標，適時給予引導。
+ 
+年齡	上下樓梯表現
+ 1 
+INFO:__main__:  包含连接: https://parents.hsin-yi.org.tw/Library/Article/6553
+INFO:__main__:  来源文件: 爬樓梯，愈來愈靈活.txt
+INFO:__main__:📄 文档 2:
+INFO:__main__:  内容预览: 爬樓梯，愈來愈靈活
+更新 : 2022-01-18
+小蕾從會走路之後，不知道何時開始愛上爬樓梯，先是從手腳並用上上下下，後來竟能扶著欄杆，自己嘗試著跨步呢！
+
+先學會往上跪爬、用坐姿往下移動
+剛學會走
+INFO:__main__:  包含连接: 
+INFO:__main__:  来源文件: 爬樓梯，愈來愈靈活.txt
+INFO:__main__:📄 文档 3:
+INFO:__main__:  内容预览: 嬰幼兒時期的身體活動不僅是促進動作發展的關鍵，也是孩子認知外界、啟發創造力及探索自我的重要媒介；規律且充足的運動更可以幫助孩子維持骨骼、肌肉與關節的健康，也有利於心肺功能的運作。讓孩子充滿活力、勇於探
+INFO:__main__:  包含连接: 
+INFO:__main__:  来源文件: 丟跑旋轉是打底的功夫.txt
+INFO:__main__:🔍 机器人 'test_01' 检索结果: 3 个文档, chunk_refs: 3
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:__main__:🔍 机器人 'test_01' 推荐问题调试:
+INFO:__main__:  - should_recommend: True
+INFO:__main__:  - recommend_count: 0
+INFO:__main__:  - conversation_count: 3
+INFO:__main__:✅ 机器人 'test_01' 开始生成推荐问题...
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:__main__:🤖 机器人 'test_01' LLM 原始回应:
+INFO:__main__:'孩子在學習爬樓梯的過程中，如何判斷他們是否已經具備足夠的能力？
+
+除了爬樓梯，還有哪些適合兩歲孩子的運動可以促進他們的發展？
+
+如果孩子在爬樓梯時摔倒了，家長應該如何處理和安撫他們？'
+INFO:__main__:📝 机器人 'test_01' 解析后的推荐问题: ['孩子在學習爬樓梯的過程中，如何判斷他們是否已經具備足夠的能力？', '除了爬樓梯，還有哪些適合兩歲孩子的運動可以促進他們的發展？', '如果孩子在爬樓梯時摔倒了，家長應該如何處理和安撫他們？']
+INFO:__main__:从元数据中提取到 1 个连接
+INFO:__main__:✅ 新连接: 延伸閱讀│循序漸進，安全為要，讓孩子開心學爬樓梯
+INFO:__main__:🔗 添加了 1 个参考连接
+INFO:conversation_logger_simple:✅ 記錄對話成功: ID 96, chunks: 3
+INFO:__main__:✅ 对话记录成功：ID=conv_96, 机器人：test_01, chunks=3
+INFO:__main__:📤 机器人 'test_01' API 回应调试:
+INFO:__main__:  - response_text 长度: 728
+INFO:__main__:  - recommended_questions: ['孩子在學習爬樓梯的過程中，如何判斷他們是否已經具備足夠的能力？', '除了爬樓梯，還有哪些適合兩歲孩子的運動可以促進他們的發展？', '如果孩子在爬樓梯時摔倒了，家長應該如何處理和安撫他們？']
+INFO:__main__:  - 找到文档数量: 3
+INFO:__main__:  - chunk_references: 3
+INFO:__main__:  - 处理时间: 18778ms
+INFO:     127.0.0.1:62399 - "POST /api/chat HTTP/1.1" 200 OK
+INFO:__main__:📩 机器人 'test_01' 收到查询 [auth_user_2_atalantis]: 小孩不愛運動怎麼培養呢...
+INFO:httpx:HTTP Request: POST http://localhost:9002/search "HTTP/1.1 200 OK"
+INFO:__main__:API搜索成功: 3 个结果
+INFO:__main__:🔍 机器人 'test_01' API检索结果: 3 个文档
+INFO:__main__:🔍 当前查询: 小孩不愛運動怎麼培養呢
+INFO:__main__:📄 检索到 3 个文档
+INFO:__main__:📄 文档 1:
+INFO:__main__:  内容预览: 運動很重要，但不知道怎麼陪孩子玩？孩子走沒幾步就覺得喘、不想動？孩子不敢爬高，好不容易爬上去卻又下不來？為臺灣孩子設計的第一本體能促進寶典，家長、老師必備！「在未來高壓的生活環境中，幫助孩子從小培養足
+INFO:__main__:  包含连接: 
+INFO:__main__:  来源文件: 書名愛運動的孩子更聰明.txt
+INFO:__main__:📄 文档 2:
+INFO:__main__:  内容预览: 如同作者提到的身體教育「3要素、2原則」，在孩子學習動作技能時，給予溫暖的情感支持與「鼓勵」，父母在旁陪伴輔以動作上的「引導」，並提供孩子多元的「練習」機會，即所謂「3要素」。孩子在運動時難免會遇到難
+INFO:__main__:  包含连接: 
+INFO:__main__:  来源文件: 書名愛運動的孩子更聰明.txt
+INFO:__main__:📄 文档 3:
+INFO:__main__:  内容预览: 以跳遠來說，孩子跳得不夠遠只是一個結果，爸媽或老師看到這個結果，應回頭檢視是否在過程中出了問題，孩子的動作夠不夠正確？還是其他原因？然後提供孩子改善的處方，例如指導孩子正確的動作要領，而不只是一再地要
+INFO:__main__:  包含连接: 
+INFO:__main__:  来源文件: 丟跑旋轉是打底的功夫.txt
+INFO:__main__:🔍 机器人 'test_01' 检索结果: 3 个文档, chunk_refs: 3
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:__main__:🔍 机器人 'test_01' 推荐问题调试:
+INFO:__main__:  - should_recommend: True
+INFO:__main__:  - recommend_count: 0
+INFO:__main__:  - conversation_count: 4
+INFO:__main__:✅ 机器人 'test_01' 开始生成推荐问题...
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:__main__:🤖 机器人 'test_01' LLM 原始回应:
+INFO:__main__:'如何選擇適合孩子的運動項目？  
+有哪些運動可以在家中進行，讓孩子也能享受運動的樂趣？  
+如何鼓勵孩子在運動中克服挫折感？'
+INFO:__main__:📝 机器人 'test_01' 解析后的推荐问题: ['如何選擇適合孩子的運動項目？', '有哪些運動可以在家中進行，讓孩子也能享受運動的樂趣？', '如何鼓勵孩子在運動中克服挫折感？']
+INFO:__main__:从元数据中提取到 0 个连接
+INFO:__main__:📝 未在文档内容中找到可引用的URL
+INFO:conversation_logger_simple:✅ 記錄對話成功: ID 97, chunks: 3
+INFO:__main__:✅ 对话记录成功：ID=conv_97, 机器人：test_01, chunks=3
+INFO:__main__:📤 机器人 'test_01' API 回应调试:
+INFO:__main__:  - response_text 长度: 629
+INFO:__main__:  - recommended_questions: ['如何選擇適合孩子的運動項目？', '有哪些運動可以在家中進行，讓孩子也能享受運動的樂趣？', '如何鼓勵孩子在運動中克服挫折感？']
+INFO:__main__:  - 找到文档数量: 3
+INFO:__main__:  - chunk_references: 3
+INFO:__main__:  - 处理时间: 17815ms
+INFO:     127.0.0.1:62523 - "POST /api/chat HTTP/1.1" 200 OK
+INFO:__main__:📩 机器人 'test_01' 收到查询 [auth_user_2_atalantis]: 愛運動的孩子真的會更聰明?...
+INFO:httpx:HTTP Request: POST http://localhost:9002/search "HTTP/1.1 200 OK"
+INFO:__main__:API搜索成功: 3 个结果
+INFO:__main__:🔍 机器人 'test_01' API检索结果: 3 个文档
+INFO:__main__:🔍 当前查询: 愛運動的孩子真的會更聰明?
+INFO:__main__:📄 检索到 3 个文档
+INFO:__main__:📄 文档 1:
+INFO:__main__:  内容预览: 書名:愛運動的孩子更聰明！
+從觀念到實踐，全面解析幼兒身體動作、設計活動並解答疑惑，幫助家長與老師一起動起來，帶領孩子養成好體力！
+https://www.hsinyishop.com/product
+INFO:__main__:  包含连接: https://www.hsinyishop.com/products/h000000036004
+INFO:__main__:  来源文件: 書名愛運動的孩子更聰明.txt
+INFO:__main__:📄 文档 2:
+INFO:__main__:  内容预览: 運動很重要，但不知道怎麼陪孩子玩？孩子走沒幾步就覺得喘、不想動？孩子不敢爬高，好不容易爬上去卻又下不來？為臺灣孩子設計的第一本體能促進寶典，家長、老師必備！「在未來高壓的生活環境中，幫助孩子從小培養足
+INFO:__main__:  包含连接: 
+INFO:__main__:  来源文件: 書名愛運動的孩子更聰明.txt
+INFO:__main__:📄 文档 3:
+INFO:__main__:  内容预览: 孩子需要自己學會解決問題
+
+2025年01月 (更新 : 2025-01-16)
+
+本篇文章來源網址https://parents.hsin-yi.org.tw/Library/Article/288
+INFO:__main__:  包含连接: https://parents.hsin-yi.org.tw/Library/Article/28819
+INFO:__main__:  来源文件: 孩子需要自己解決問題.docx
+INFO:__main__:🔍 机器人 'test_01' 检索结果: 3 个文档, chunk_refs: 3
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:__main__:🔍 机器人 'test_01' 推荐问题调试:
+INFO:__main__:  - should_recommend: True
+INFO:__main__:  - recommend_count: 0
+INFO:__main__:  - conversation_count: 5
+INFO:__main__:✅ 机器人 'test_01' 开始生成推荐问题...
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:__main__:🤖 机器人 'test_01' LLM 原始回应:
+INFO:__main__:'運動對孩子的學習成就有多大影響？  
+除了運動，還有哪些活動能促進孩子的智力發展？  
+如何平衡孩子的運動和學業時間？'
+INFO:__main__:📝 机器人 'test_01' 解析后的推荐问题: ['運動對孩子的學習成就有多大影響？', '除了運動，還有哪些活動能促進孩子的智力發展？', '如何平衡孩子的運動和學業時間？']
+INFO:__main__:从元数据中提取到 2 个连接
+INFO:__main__:✅ 新连接: 書名:愛運動的孩子更聰明！
+INFO:__main__:✅ 新连接: 年01月 (更新 : 2025-01-16)
+INFO:__main__:🔗 添加了 2 个参考连接
+INFO:conversation_logger_simple:✅ 記錄對話成功: ID 98, chunks: 3
+INFO:__main__:✅ 对话记录成功：ID=conv_98, 机器人：test_01, chunks=3
+INFO:__main__:📤 机器人 'test_01' API 回应调试:
+INFO:__main__:  - response_text 长度: 757
+INFO:__main__:  - recommended_questions: ['運動對孩子的學習成就有多大影響？', '除了運動，還有哪些活動能促進孩子的智力發展？', '如何平衡孩子的運動和學業時間？']
+INFO:__main__:  - 找到文档数量: 3
+INFO:__main__:  - chunk_references: 3
+INFO:__main__:  - 处理时间: 16017ms
+INFO:     127.0.0.1:63146 - "POST /api/chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63251 - "POST /api/link_click HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:63370 - "POST /api/link_click HTTP/1.1" 404 Not Found
+INFO:auth_middleware:✅ user_manager 載入成功
+Building prefix dict from the default dictionary ...
+DEBUG:jieba:Building prefix dict from the default dictionary ...
+Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+DEBUG:jieba:Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+Loading model cost 0.387 seconds.
+DEBUG:jieba:Loading model cost 0.387 seconds.
+Prefix dict has been built successfully.
+DEBUG:jieba:Prefix dict has been built successfully.
+✅ 連接到現有資料庫: user_management.db
+✅ 資料庫結構驗證通過
+✅ 修正版用戶管理器初始化成功
+✅ 增強版對話數據庫初始化成功 (自動欄位修復已啟用)
+✅ httpx 可用，支持向量API模式
+✅ 使用新版 langchain-chroma
+✅ 使用新版 langchain-huggingface
+✅ OpenAI Embeddings 可用
+✅ OpenAI API Key 格式正確
+   API Key: sk-proj-***-2kA
+✅ OpenAI 環境檢查通過
+✅ EPUB 讀取功能已完整修復！
+📚 支援功能:
+   • 自動提取章節內容
+   • 智能章節標題識別
+   • 中文文本標準化
+   • 書籍元資料提取
+   • HTML 標籤清理
+   • 多章節智能分割
+✅ DOCX 支援已啟用 (docx2txt)
+✅ EPUB 支援已啟用
+✅ 向量系统可用
+Traceback (most recent call last):
+  File "C:\Users\danny\pyRag\bot_lang\chatbot_instance.py", line 62, in <module>
+    from starlette.middleware.proxy_headers import ProxyHeadersMiddleware
+ModuleNotFoundError: No module named 'starlette.middleware.proxy_headers'
+INFO:auth_middleware:✅ user_manager 載入成功
+Building prefix dict from the default dictionary ...
+DEBUG:jieba:Building prefix dict from the default dictionary ...
+Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+DEBUG:jieba:Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+Loading model cost 0.408 seconds.
+DEBUG:jieba:Loading model cost 0.408 seconds.
+Prefix dict has been built successfully.
+DEBUG:jieba:Prefix dict has been built successfully.
+✅ 連接到現有資料庫: user_management.db
+✅ 資料庫結構驗證通過
+✅ 修正版用戶管理器初始化成功
+✅ 增強版對話數據庫初始化成功 (自動欄位修復已啟用)
+✅ httpx 可用，支持向量API模式
+✅ 使用新版 langchain-chroma
+✅ 使用新版 langchain-huggingface
+✅ OpenAI Embeddings 可用
+✅ OpenAI API Key 格式正確
+   API Key: sk-proj-***-2kA
+✅ OpenAI 環境檢查通過
+✅ EPUB 讀取功能已完整修復！
+📚 支援功能:
+   • 自動提取章節內容
+   • 智能章節標題識別
+   • 中文文本標準化
+   • 書籍元資料提取
+   • HTML 標籤清理
+   • 多章節智能分割
+✅ DOCX 支援已啟用 (docx2txt)
+✅ EPUB 支援已啟用
+✅ 向量系统可用
+Traceback (most recent call last):
+  File "C:\Users\danny\pyRag\bot_lang\chatbot_instance.py", line 62, in <module>
+    from starlette.middleware.proxy_headers import ProxyHeadersMiddleware
+ModuleNotFoundError: No module named 'starlette.middleware.proxy_headers'
+INFO:auth_middleware:✅ user_manager 載入成功
+Building prefix dict from the default dictionary ...
+DEBUG:jieba:Building prefix dict from the default dictionary ...
+Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+DEBUG:jieba:Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+Loading model cost 0.421 seconds.
+DEBUG:jieba:Loading model cost 0.421 seconds.
+Prefix dict has been built successfully.
+DEBUG:jieba:Prefix dict has been built successfully.
+INFO:__main__:✅ 向量系统初始化成功 (机器人: test_01)
+INFO:__main__:🔗 使用向量API模式: http://localhost:9002
+ERROR:__main__:❌ 启动机器人 'test_01' 失败: No module named 'starlette.middleware.proxy_headers'
+Traceback (most recent call last):
+  File "C:\Users\danny\pyRag\bot_lang\chatbot_instance.py", line 1113, in main
+    instance = ChatbotInstance(args.bot_name)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\danny\pyRag\bot_lang\chatbot_instance.py", line 108, in __init__
+    from starlette.middleware.proxy_headers import ProxyHeadersMiddleware
+ModuleNotFoundError: No module named 'starlette.middleware.proxy_headers'
+✅ 連接到現有資料庫: user_management.db
+✅ 資料庫結構驗證通過
+✅ 修正版用戶管理器初始化成功
+✅ 增強版對話數據庫初始化成功 (自動欄位修復已啟用)
+✅ httpx 可用，支持向量API模式
+✅ 使用新版 langchain-chroma
+✅ 使用新版 langchain-huggingface
+✅ OpenAI Embeddings 可用
+✅ OpenAI API Key 格式正確
+   API Key: sk-proj-***-2kA
+✅ OpenAI 環境檢查通過
+✅ EPUB 讀取功能已完整修復！
+📚 支援功能:
+   • 自動提取章節內容
+   • 智能章節標題識別
+   • 中文文本標準化
+   • 書籍元資料提取
+   • HTML 標籤清理
+   • 多章節智能分割
+✅ DOCX 支援已啟用 (docx2txt)
+✅ EPUB 支援已啟用
+✅ 向量系统可用
+🔧 初始化 OpenAI Embeddings...
+✅ OpenAI Embeddings 初始化成功
+🔤 繁簡轉換器初始化完成
+🔤 繁簡轉換器初始化完成
+✅ 文本處理組件初始化完成
+🔤 繁簡轉換器初始化完成
+🔧 優化版文本分割器初始化完成
+   📏 支持 11 種文本類型
+   🧠 智能策略選擇
+   ⚡ 性能優化
+🚀 完整優化版向量系統初始化完成
+   🤖 嵌入模型: openai
+   📁 數據目錄: data
+   🗄️ 向量庫: chroma_langchain_db
+   🧠 智能文本處理: ✅
+   🔧 自適應批次: ✅
+✅ 增強版對話數據庫初始化成功 (自動欄位修復已啟用)
+INFO:auth_middleware:✅ user_manager 載入成功
+Building prefix dict from the default dictionary ...
+DEBUG:jieba:Building prefix dict from the default dictionary ...
+Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+DEBUG:jieba:Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+Loading model cost 0.424 seconds.
+DEBUG:jieba:Loading model cost 0.424 seconds.
+Prefix dict has been built successfully.
+DEBUG:jieba:Prefix dict has been built successfully.
+INFO:__main__:✅ 向量系统初始化成功 (机器人: test_01)
+INFO:__main__:🔗 使用向量API模式: http://localhost:9002
+ERROR:__main__:❌ 启动机器人 'test_01' 失败: No module named 'starlette.middleware.proxy_headers'
+Traceback (most recent call last):
+  File "C:\Users\danny\pyRag\bot_lang\chatbot_instance.py", line 1113, in main
+    instance = ChatbotInstance(args.bot_name)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\danny\pyRag\bot_lang\chatbot_instance.py", line 108, in __init__
+    from starlette.middleware.proxy_headers import ProxyHeadersMiddleware
+ModuleNotFoundError: No module named 'starlette.middleware.proxy_headers'
+✅ 連接到現有資料庫: user_management.db
+✅ 資料庫結構驗證通過
+✅ 修正版用戶管理器初始化成功
+✅ 增強版對話數據庫初始化成功 (自動欄位修復已啟用)
+✅ httpx 可用，支持向量API模式
+✅ 使用新版 langchain-chroma
+✅ 使用新版 langchain-huggingface
+✅ OpenAI Embeddings 可用
+✅ OpenAI API Key 格式正確
+   API Key: sk-proj-***-2kA
+✅ OpenAI 環境檢查通過
+✅ EPUB 讀取功能已完整修復！
+📚 支援功能:
+   • 自動提取章節內容
+   • 智能章節標題識別
+   • 中文文本標準化
+   • 書籍元資料提取
+   • HTML 標籤清理
+   • 多章節智能分割
+✅ DOCX 支援已啟用 (docx2txt)
+✅ EPUB 支援已啟用
+✅ 向量系统可用
+🔧 初始化 OpenAI Embeddings...
+✅ OpenAI Embeddings 初始化成功
+🔤 繁簡轉換器初始化完成
+🔤 繁簡轉換器初始化完成
+✅ 文本處理組件初始化完成
+🔤 繁簡轉換器初始化完成
+🔧 優化版文本分割器初始化完成
+   📏 支持 11 種文本類型
+   🧠 智能策略選擇
+   ⚡ 性能優化
+🚀 完整優化版向量系統初始化完成
+   🤖 嵌入模型: openai
+   📁 數據目錄: data
+   🗄️ 向量庫: chroma_langchain_db
+   🧠 智能文本處理: ✅
+   🔧 自適應批次: ✅
+✅ 增強版對話數據庫初始化成功 (自動欄位修復已啟用)
+INFO:auth_middleware:✅ user_manager 載入成功
+Building prefix dict from the default dictionary ...
+DEBUG:jieba:Building prefix dict from the default dictionary ...
+Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+DEBUG:jieba:Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+Loading model cost 0.399 seconds.
+DEBUG:jieba:Loading model cost 0.399 seconds.
+Prefix dict has been built successfully.
+DEBUG:jieba:Prefix dict has been built successfully.
+INFO:__main__:✅ 向量系统初始化成功 (机器人: test_01)
+INFO:__main__:🔗 使用向量API模式: http://localhost:9002
+INFO:__main__:ℹ️ ProxyHeadersMiddleware 不可用，使用本地開發模式
+INFO:__main__:✅ 静态文件挂载成功: C:\Users\danny\pyRag\bot_lang\chatbot_templates\modern\static
+INFO:__main__:✅ 机器人实例 'test_01' 初始化完成，对话记录数据库：test_01_conversations.db
+INFO:__main__:🤖 机器人 'test_01' 正在 http://localhost:9003 上启动
+INFO:__main__:📊 对话记录数据库：test_01_conversations.db
+INFO:__main__:📚 知识库集合：collection_test_01
+INFO:__main__:🔍 搜索模式：api
+INFO:__main__:🔗 向量API地址：http://localhost:9002
+INFO:__main__:🔧 调试模式已启用，将输出详细的对话记录和推荐问题生成日志
+INFO:     Started server process [23596]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+ERROR:    [Errno 10048] error while attempting to bind on address ('0.0.0.0', 9003): 一次只能用一個通訊端位址 (通訊協定/網路位址/連接埠)。
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+✅ 連接到現有資料庫: user_management.db
+✅ 資料庫結構驗證通過
+✅ 修正版用戶管理器初始化成功
+✅ 增強版對話數據庫初始化成功 (自動欄位修復已啟用)
+✅ httpx 可用，支持向量API模式
+✅ 使用新版 langchain-chroma
+✅ 使用新版 langchain-huggingface
+✅ OpenAI Embeddings 可用
+✅ OpenAI API Key 格式正確
+   API Key: sk-proj-***-2kA
+✅ OpenAI 環境檢查通過
+✅ EPUB 讀取功能已完整修復！
+📚 支援功能:
+   • 自動提取章節內容
+   • 智能章節標題識別
+   • 中文文本標準化
+   • 書籍元資料提取
+   • HTML 標籤清理
+   • 多章節智能分割
+✅ DOCX 支援已啟用 (docx2txt)
+✅ EPUB 支援已啟用
+✅ 向量系统可用
+🔧 初始化 OpenAI Embeddings...
+✅ OpenAI Embeddings 初始化成功
+🔤 繁簡轉換器初始化完成
+🔤 繁簡轉換器初始化完成
+✅ 文本處理組件初始化完成
+🔤 繁簡轉換器初始化完成
+🔧 優化版文本分割器初始化完成
+   📏 支持 11 種文本類型
+   🧠 智能策略選擇
+   ⚡ 性能優化
+🚀 完整優化版向量系統初始化完成
+   🤖 嵌入模型: openai
+   📁 數據目錄: data
+   🗄️ 向量庫: chroma_langchain_db
+   🧠 智能文本處理: ✅
+   🔧 自適應批次: ✅
+✅ 增強版對話數據庫初始化成功 (自動欄位修復已啟用)
+INFO:auth_middleware:✅ user_manager 載入成功
+Building prefix dict from the default dictionary ...
+DEBUG:jieba:Building prefix dict from the default dictionary ...
+Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+DEBUG:jieba:Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+Loading model cost 0.390 seconds.
+DEBUG:jieba:Loading model cost 0.390 seconds.
+Prefix dict has been built successfully.
+DEBUG:jieba:Prefix dict has been built successfully.
+INFO:__main__:✅ 向量系统初始化成功 (机器人: test_01)
+INFO:__main__:🔗 使用向量API模式: http://localhost:9002
+INFO:__main__:ℹ️ ProxyHeadersMiddleware 不可用，使用本地開發模式
+INFO:__main__:✅ 静态文件挂载成功: C:\Users\danny\pyRag\bot_lang\chatbot_templates\modern\static
+INFO:__main__:✅ 机器人实例 'test_01' 初始化完成，对话记录数据库：test_01_conversations.db
+INFO:__main__:🤖 机器人 'test_01' 正在 http://localhost:9005 上启动
+INFO:__main__:📊 对话记录数据库：test_01_conversations.db
+INFO:__main__:📚 知识库集合：collection_test_01
+INFO:__main__:🔍 搜索模式：api
+INFO:__main__:🔗 向量API地址：http://localhost:9002
+INFO:__main__:🔧 调试模式已启用，将输出详细的对话记录和推荐问题生成日志
+INFO:     Started server process [27552]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:9005 (Press CTRL+C to quit)
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [27552]
+✅ 連接到現有資料庫: user_management.db
+✅ 資料庫結構驗證通過
+✅ 修正版用戶管理器初始化成功
+✅ 增強版對話數據庫初始化成功 (自動欄位修復已啟用)
+✅ httpx 可用，支持向量API模式
+✅ 使用新版 langchain-chroma
+✅ 使用新版 langchain-huggingface
+✅ OpenAI Embeddings 可用
+✅ OpenAI API Key 格式正確
+   API Key: sk-proj-***-2kA
+✅ OpenAI 環境檢查通過
+✅ EPUB 讀取功能已完整修復！
+📚 支援功能:
+   • 自動提取章節內容
+   • 智能章節標題識別
+   • 中文文本標準化
+   • 書籍元資料提取
+   • HTML 標籤清理
+   • 多章節智能分割
+✅ DOCX 支援已啟用 (docx2txt)
+✅ EPUB 支援已啟用
+✅ 向量系统可用
+🔧 初始化 OpenAI Embeddings...
+✅ OpenAI Embeddings 初始化成功
+🔤 繁簡轉換器初始化完成
+🔤 繁簡轉換器初始化完成
+✅ 文本處理組件初始化完成
+🔤 繁簡轉換器初始化完成
+🔧 優化版文本分割器初始化完成
+   📏 支持 11 種文本類型
+   🧠 智能策略選擇
+   ⚡ 性能優化
+🚀 完整優化版向量系統初始化完成
+   🤖 嵌入模型: openai
+   📁 數據目錄: data
+   🗄️ 向量庫: chroma_langchain_db
+   🧠 智能文本處理: ✅
+   🔧 自適應批次: ✅
+✅ 增強版對話數據庫初始化成功 (自動欄位修復已啟用)
+INFO:auth_middleware:✅ user_manager 載入成功
+Building prefix dict from the default dictionary ...
+DEBUG:jieba:Building prefix dict from the default dictionary ...
+Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+DEBUG:jieba:Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+Loading model cost 0.397 seconds.
+DEBUG:jieba:Loading model cost 0.397 seconds.
+Prefix dict has been built successfully.
+DEBUG:jieba:Prefix dict has been built successfully.
+INFO:__main__:✅ 向量系统初始化成功 (机器人: test_01)
+INFO:__main__:🔗 使用向量API模式: http://localhost:9002
+INFO:__main__:ℹ️ ProxyHeadersMiddleware 不可用，使用本地開發模式
+INFO:__main__:✅ 静态文件挂载成功: C:\Users\danny\pyRag\bot_lang\chatbot_templates\modern\static
+INFO:__main__:✅ 机器人实例 'test_01' 初始化完成，对话记录数据库：test_01_conversations.db
+INFO:__main__:🤖 机器人 'test_01' 正在 http://localhost:9005 上启动
+INFO:__main__:📊 对话记录数据库：test_01_conversations.db
+INFO:__main__:📚 知识库集合：collection_test_01
+INFO:__main__:🔍 搜索模式：api
+INFO:__main__:🔗 向量API地址：http://localhost:9002
+INFO:__main__:🔧 调试模式已启用，将输出详细的对话记录和推荐问题生成日志
+INFO:     Started server process [18680]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:9005 (Press CTRL+C to quit)
+✅ 連接到現有資料庫: user_management.db
+✅ 資料庫結構驗證通過
+✅ 修正版用戶管理器初始化成功
+✅ 增強版對話數據庫初始化成功 (自動欄位修復已啟用)
+✅ httpx 可用，支持向量API模式
+✅ 使用新版 langchain-chroma
+✅ 使用新版 langchain-huggingface
+✅ OpenAI Embeddings 可用
+✅ OpenAI API Key 格式正確
+   API Key: sk-proj-***-2kA
+✅ OpenAI 環境檢查通過
+✅ EPUB 讀取功能已完整修復！
+📚 支援功能:
+   • 自動提取章節內容
+   • 智能章節標題識別
+   • 中文文本標準化
+   • 書籍元資料提取
+   • HTML 標籤清理
+   • 多章節智能分割
+✅ DOCX 支援已啟用 (docx2txt)
+✅ EPUB 支援已啟用
+✅ 向量系统可用
+🔧 初始化 OpenAI Embeddings...
+✅ OpenAI Embeddings 初始化成功
+🔤 繁簡轉換器初始化完成
+🔤 繁簡轉換器初始化完成
+✅ 文本處理組件初始化完成
+🔤 繁簡轉換器初始化完成
+🔧 優化版文本分割器初始化完成
+   📏 支持 11 種文本類型
+   🧠 智能策略選擇
+   ⚡ 性能優化
+🚀 完整優化版向量系統初始化完成
+   🤖 嵌入模型: openai
+   📁 數據目錄: data
+   🗄️ 向量庫: chroma_langchain_db
+   🧠 智能文本處理: ✅
+   🔧 自適應批次: ✅
+✅ 增強版對話數據庫初始化成功 (自動欄位修復已啟用)
+INFO:     127.0.0.1:62820 - "GET / HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [18680]
+INFO:auth_middleware:✅ user_manager 載入成功
+Building prefix dict from the default dictionary ...
+DEBUG:jieba:Building prefix dict from the default dictionary ...
+Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+DEBUG:jieba:Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+Loading model cost 0.412 seconds.
+DEBUG:jieba:Loading model cost 0.412 seconds.
+Prefix dict has been built successfully.
+DEBUG:jieba:Prefix dict has been built successfully.
+INFO:__main__:✅ 向量系统初始化成功 (机器人: test_01)
+INFO:__main__:🔗 使用向量API模式: http://localhost:9002
+INFO:__main__:ℹ️ ProxyHeadersMiddleware 不可用，使用本地開發模式
+INFO:__main__:✅ 静态文件挂载成功: C:\Users\danny\pyRag\bot_lang\chatbot_templates\modern\static
+INFO:__main__:✅ 机器人实例 'test_01' 初始化完成，对话记录数据库：test_01_conversations.db
+INFO:__main__:🤖 机器人 'test_01' 正在 http://localhost:9003 上启动
+INFO:__main__:📊 对话记录数据库：test_01_conversations.db
+INFO:__main__:📚 知识库集合：collection_test_01
+INFO:__main__:🔍 搜索模式：api
+INFO:__main__:🔗 向量API地址：http://localhost:9002
+INFO:__main__:🔧 调试模式已启用，将输出详细的对话记录和推荐问题生成日志
+INFO:     Started server process [5424]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:9003 (Press CTRL+C to quit)
+✅ 連接到現有資料庫: user_management.db
+✅ 資料庫結構驗證通過
+✅ 修正版用戶管理器初始化成功
+✅ 增強版對話數據庫初始化成功 (自動欄位修復已啟用)
+✅ httpx 可用，支持向量API模式
+✅ 使用新版 langchain-chroma
+✅ 使用新版 langchain-huggingface
+✅ OpenAI Embeddings 可用
+✅ OpenAI API Key 格式正確
+   API Key: sk-proj-***-2kA
+✅ OpenAI 環境檢查通過
+✅ EPUB 讀取功能已完整修復！
+📚 支援功能:
+   • 自動提取章節內容
+   • 智能章節標題識別
+   • 中文文本標準化
+   • 書籍元資料提取
+   • HTML 標籤清理
+   • 多章節智能分割
+✅ DOCX 支援已啟用 (docx2txt)
+✅ EPUB 支援已啟用
+✅ 向量系统可用
+🔧 初始化 OpenAI Embeddings...
+✅ OpenAI Embeddings 初始化成功
+🔤 繁簡轉換器初始化完成
+🔤 繁簡轉換器初始化完成
+✅ 文本處理組件初始化完成
+🔤 繁簡轉換器初始化完成
+🔧 優化版文本分割器初始化完成
+   📏 支持 11 種文本類型
+   🧠 智能策略選擇
+   ⚡ 性能優化
+🚀 完整優化版向量系統初始化完成
+   🤖 嵌入模型: openai
+   📁 數據目錄: data
+   🗄️ 向量庫: chroma_langchain_db
+   🧠 智能文本處理: ✅
+   🔧 自適應批次: ✅
+✅ 增強版對話數據庫初始化成功 (自動欄位修復已啟用)
+INFO:     127.0.0.1:63134 - "GET / HTTP/1.1" 200 OK
+INFO:auth_middleware:✅ user_manager 載入成功
+Building prefix dict from the default dictionary ...
+DEBUG:jieba:Building prefix dict from the default dictionary ...
+Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+DEBUG:jieba:Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+Loading model cost 0.408 seconds.
+DEBUG:jieba:Loading model cost 0.408 seconds.
+Prefix dict has been built successfully.
+DEBUG:jieba:Prefix dict has been built successfully.
+INFO:__main__:✅ 向量系统初始化成功 (机器人: test_01)
+INFO:__main__:🔗 使用向量API模式: http://localhost:9002
+INFO:__main__:ℹ️ ProxyHeadersMiddleware 不可用，使用本地開發模式
+INFO:__main__:✅ 静态文件挂载成功: C:\Users\danny\pyRag\bot_lang\chatbot_templates\modern\static
+INFO:__main__:✅ 机器人实例 'test_01' 初始化完成，对话记录数据库：test_01_conversations.db
+INFO:__main__:🤖 机器人 'test_01' 正在 http://localhost:9003 上启动
+INFO:__main__:📊 对话记录数据库：test_01_conversations.db
+INFO:__main__:📚 知识库集合：collection_test_01
+INFO:__main__:🔍 搜索模式：api
+INFO:__main__:🔗 向量API地址：http://localhost:9002
+INFO:__main__:🔧 调试模式已启用，将输出详细的对话记录和推荐问题生成日志
+INFO:     Started server process [27560]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:9003 (Press CTRL+C to quit)
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [27560]
+✅ 連接到現有資料庫: user_management.db
+✅ 資料庫結構驗證通過
+✅ 修正版用戶管理器初始化成功
+✅ 增強版對話數據庫初始化成功 (自動欄位修復已啟用)
+✅ httpx 可用，支持向量API模式
+✅ 使用新版 langchain-chroma
+✅ 使用新版 langchain-huggingface
+✅ OpenAI Embeddings 可用
+✅ OpenAI API Key 格式正確
+   API Key: sk-proj-***-2kA
+✅ OpenAI 環境檢查通過
+✅ EPUB 讀取功能已完整修復！
+📚 支援功能:
+   • 自動提取章節內容
+   • 智能章節標題識別
+   • 中文文本標準化
+   • 書籍元資料提取
+   • HTML 標籤清理
+   • 多章節智能分割
+✅ DOCX 支援已啟用 (docx2txt)
+✅ EPUB 支援已啟用
+✅ 向量系统可用
+🔧 初始化 OpenAI Embeddings...
+✅ OpenAI Embeddings 初始化成功
+🔤 繁簡轉換器初始化完成
+🔤 繁簡轉換器初始化完成
+✅ 文本處理組件初始化完成
+🔤 繁簡轉換器初始化完成
+🔧 優化版文本分割器初始化完成
+   📏 支持 11 種文本類型
+   🧠 智能策略選擇
+   ⚡ 性能優化
+🚀 完整優化版向量系統初始化完成
+   🤖 嵌入模型: openai
+   📁 數據目錄: data
+   🗄️ 向量庫: chroma_langchain_db
+   🧠 智能文本處理: ✅
+   🔧 自適應批次: ✅
+✅ 增強版對話數據庫初始化成功 (自動欄位修復已啟用)
+INFO:auth_middleware:✅ user_manager 載入成功
+Building prefix dict from the default dictionary ...
+DEBUG:jieba:Building prefix dict from the default dictionary ...
+Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+DEBUG:jieba:Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+Loading model cost 0.428 seconds.
+DEBUG:jieba:Loading model cost 0.428 seconds.
+Prefix dict has been built successfully.
+DEBUG:jieba:Prefix dict has been built successfully.
+INFO:__main__:✅ 向量系统初始化成功 (机器人: test_01)
+INFO:__main__:🔗 使用向量API模式: http://localhost:9002
+INFO:__main__:ℹ️ ProxyHeadersMiddleware 不可用，使用本地開發模式
+INFO:__main__:✅ 静态文件挂载成功: C:\Users\danny\pyRag\bot_lang\chatbot_templates\modern\static
+INFO:__main__:✅ 机器人实例 'test_01' 初始化完成，对话记录数据库：test_01_conversations.db
+INFO:__main__:🤖 机器人 'test_01' 正在 http://localhost:9003 上启动
+INFO:__main__:📊 对话记录数据库：test_01_conversations.db
+INFO:__main__:📚 知识库集合：collection_test_01
+INFO:__main__:🔍 搜索模式：api
+INFO:__main__:🔗 向量API地址：http://localhost:9002
+INFO:__main__:🔧 调试模式已启用，将输出详细的对话记录和推荐问题生成日志
+INFO:     Started server process [29344]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:9003 (Press CTRL+C to quit)
+INFO:auth_middleware:✅ user_manager 載入成功
+INFO:auth_middleware:✅ user_manager 載入成功
+Building prefix dict from the default dictionary ...
+DEBUG:jieba:Building prefix dict from the default dictionary ...
+Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+DEBUG:jieba:Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+Loading model cost 0.375 seconds.
+DEBUG:jieba:Loading model cost 0.375 seconds.
+Prefix dict has been built successfully.
+DEBUG:jieba:Prefix dict has been built successfully.
+INFO:__main__:✅ 向量系统初始化成功 (机器人: test_01)
+INFO:__main__:🔗 使用向量API模式: http://localhost:9002
+INFO:__main__:ℹ️ ProxyHeadersMiddleware 不可用，使用本地開發模式
+INFO:__main__:✅ 静态文件挂载成功: C:\Users\danny\pyRag\bot_lang\chatbot_templates\modern\static
+INFO:__main__:✅ 机器人实例 'test_01' 初始化完成，对话记录数据库：test_01_conversations.db
+INFO:__main__:🤖 机器人 'test_01' 正在 http://localhost:9003 上启动
+INFO:__main__:📊 对话记录数据库：test_01_conversations.db
+INFO:__main__:📚 知识库集合：collection_test_01
+INFO:__main__:🔍 搜索模式：api
+INFO:__main__:🔗 向量API地址：http://localhost:9002
+INFO:__main__:🔧 调试模式已启用，将输出详细的对话记录和推荐问题生成日志
+INFO:     Started server process [23496]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:9003 (Press CTRL+C to quit)
+INFO:auth_middleware:✅ user_manager 載入成功
+Building prefix dict from the default dictionary ...
+DEBUG:jieba:Building prefix dict from the default dictionary ...
+Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+DEBUG:jieba:Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+Loading model cost 0.503 seconds.
+DEBUG:jieba:Loading model cost 0.503 seconds.
+Prefix dict has been built successfully.
+DEBUG:jieba:Prefix dict has been built successfully.
+INFO:__main__:✅ 向量系统初始化成功 (机器人: test_01)
+INFO:__main__:🔗 使用向量API模式: http://localhost:9002
+INFO:__main__:ℹ️ ProxyHeadersMiddleware 不可用，使用本地開發模式
+INFO:__main__:✅ 静态文件挂载成功: C:\Users\danny\pyRag\bot_lang\chatbot_templates\modern\static
+INFO:__main__:✅ 机器人实例 'test_01' 初始化完成，对话记录数据库：test_01_conversations.db
+INFO:__main__:🤖 机器人 'test_01' 正在 http://localhost:9003 上启动
+INFO:__main__:📊 对话记录数据库：test_01_conversations.db
+INFO:__main__:📚 知识库集合：collection_test_01
+INFO:__main__:🔍 搜索模式：api
+INFO:__main__:🔗 向量API地址：http://localhost:9002
+INFO:__main__:🔧 调试模式已启用，将输出详细的对话记录和推荐问题生成日志
+INFO:     Started server process [23372]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:9003 (Press CTRL+C to quit)
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [23372]
+✅ 連接到現有資料庫: user_management.db
+✅ 資料庫結構驗證通過
+✅ 修正版用戶管理器初始化成功
+✅ 增強版對話數據庫初始化成功 (自動欄位修復已啟用)
+✅ httpx 可用，支持向量API模式
+✅ 使用新版 langchain-chroma
+✅ 使用新版 langchain-huggingface
+✅ OpenAI Embeddings 可用
+✅ OpenAI API Key 格式正確
+   API Key: sk-proj-***-2kA
+✅ OpenAI 環境檢查通過
+✅ EPUB 讀取功能已完整修復！
+📚 支援功能:
+   • 自動提取章節內容
+   • 智能章節標題識別
+   • 中文文本標準化
+   • 書籍元資料提取
+   • HTML 標籤清理
+   • 多章節智能分割
+✅ DOCX 支援已啟用 (docx2txt)
+✅ EPUB 支援已啟用
+✅ 向量系统可用
+🔧 初始化 OpenAI Embeddings...
+✅ OpenAI Embeddings 初始化成功
+🔤 繁簡轉換器初始化完成
+🔤 繁簡轉換器初始化完成
+✅ 文本處理組件初始化完成
+🔤 繁簡轉換器初始化完成
+🔧 優化版文本分割器初始化完成
+   📏 支持 11 種文本類型
+   🧠 智能策略選擇
+   ⚡ 性能優化
+🚀 完整優化版向量系統初始化完成
+   🤖 嵌入模型: openai
+   📁 數據目錄: data
+   🗄️ 向量庫: chroma_langchain_db
+   🧠 智能文本處理: ✅
+   🔧 自適應批次: ✅
+✅ 增強版對話數據庫初始化成功 (自動欄位修復已啟用)
+INFO:auth_middleware:✅ user_manager 載入成功
+Building prefix dict from the default dictionary ...
+DEBUG:jieba:Building prefix dict from the default dictionary ...
+Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+DEBUG:jieba:Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+Loading model cost 0.508 seconds.
+DEBUG:jieba:Loading model cost 0.508 seconds.
+Prefix dict has been built successfully.
+DEBUG:jieba:Prefix dict has been built successfully.
+INFO:__main__:✅ 向量系统初始化成功 (机器人: test_01)
+INFO:__main__:🔗 使用向量API模式: http://localhost:9002
+INFO:__main__:ℹ️ ProxyHeadersMiddleware 不可用，使用本地開發模式
+INFO:__main__:✅ 静态文件挂载成功: C:\Users\danny\pyRag\bot_lang\chatbot_templates\modern\static
+INFO:__main__:✅ 机器人实例 'test_01' 初始化完成，对话记录数据库：test_01_conversations.db
+INFO:__main__:🤖 机器人 'test_01' 正在 http://localhost:9003 上启动
+INFO:__main__:📊 对话记录数据库：test_01_conversations.db
+INFO:__main__:📚 知识库集合：collection_test_01
+INFO:__main__:🔍 搜索模式：api
+INFO:__main__:🔗 向量API地址：http://localhost:9002
+INFO:__main__:🔧 调试模式已启用，将输出详细的对话记录和推荐问题生成日志
+INFO:     Started server process [21720]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:9003 (Press CTRL+C to quit)
+INFO:auth_middleware:✅ user_manager 載入成功
+Building prefix dict from the default dictionary ...
+DEBUG:jieba:Building prefix dict from the default dictionary ...
+Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+DEBUG:jieba:Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+Loading model cost 0.378 seconds.
+DEBUG:jieba:Loading model cost 0.378 seconds.
+Prefix dict has been built successfully.
+DEBUG:jieba:Prefix dict has been built successfully.
+INFO:__main__:✅ 向量系统初始化成功 (机器人: test_01)
+INFO:__main__:🔗 使用向量API模式: http://localhost:9002
+INFO:__main__:ℹ️ ProxyHeadersMiddleware 不可用，使用本地開發模式
+INFO:__main__:✅ 静态文件挂载成功: C:\Users\danny\pyRag\bot_lang\chatbot_templates\modern\static
+INFO:__main__:✅ 机器人实例 'test_01' 初始化完成，对话记录数据库：test_01_conversations.db
+INFO:__main__:🤖 机器人 'test_01' 正在 http://localhost:9003 上启动
+INFO:__main__:📊 对话记录数据库：test_01_conversations.db
+INFO:__main__:📚 知识库集合：collection_test_01
+INFO:__main__:🔍 搜索模式：api
+INFO:__main__:🔗 向量API地址：http://localhost:9002
+INFO:__main__:🔧 调试模式已启用，将输出详细的对话记录和推荐问题生成日志
+INFO:     Started server process [5872]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:9003 (Press CTRL+C to quit)
+✅ 連接到現有資料庫: user_management.db
+✅ 資料庫結構驗證通過
+✅ 修正版用戶管理器初始化成功
+✅ 增強版對話數據庫初始化成功 (自動欄位修復已啟用)
+✅ httpx 可用，支持向量API模式
+✅ 使用新版 langchain-chroma
+✅ 使用新版 langchain-huggingface
+✅ OpenAI Embeddings 可用
+✅ OpenAI API Key 格式正確
+   API Key: sk-proj-***-2kA
+✅ OpenAI 環境檢查通過
+✅ EPUB 讀取功能已完整修復！
+📚 支援功能:
+   • 自動提取章節內容
+   • 智能章節標題識別
+   • 中文文本標準化
+   • 書籍元資料提取
+   • HTML 標籤清理
+   • 多章節智能分割
+✅ DOCX 支援已啟用 (docx2txt)
+✅ EPUB 支援已啟用
+✅ 向量系统可用
+🔧 初始化 OpenAI Embeddings...
+✅ OpenAI Embeddings 初始化成功
+🔤 繁簡轉換器初始化完成
+🔤 繁簡轉換器初始化完成
+✅ 文本處理組件初始化完成
+🔤 繁簡轉換器初始化完成
+🔧 優化版文本分割器初始化完成
+   📏 支持 11 種文本類型
+   🧠 智能策略選擇
+   ⚡ 性能優化
+🚀 完整優化版向量系統初始化完成
+   🤖 嵌入模型: openai
+   📁 數據目錄: data
+   🗄️ 向量庫: chroma_langchain_db
+   🧠 智能文本處理: ✅
+   🔧 自適應批次: ✅
+✅ 增強版對話數據庫初始化成功 (自動欄位修復已啟用)
+INFO:     127.0.0.1:0 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /modern/static/chat.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /modern/static/chat.css HTTP/1.1" 200 OK
+INFO:__main__:📩 机器人 'test_01' 收到查询 [auth_user_2_atalantis]: 小孩上學分離焦慮怎麼辦...
+INFO:httpx:HTTP Request: POST http://localhost:9002/search "HTTP/1.1 200 OK"
+INFO:__main__:API搜索成功: 3 个结果
+INFO:__main__:🔍 机器人 'test_01' API检索结果: 3 个文档
+INFO:__main__:🔍 当前查询: 小孩上學分離焦慮怎麼辦
+INFO:__main__:📄 检索到 3 个文档
+INFO:__main__:📄 文档 1:
+INFO:__main__:  内容预览: 
+每年都在幼兒園門口迎接新生，同時也看著「骨肉分離」戲碼不斷上演的信誼基金會附設實驗幼兒園園長陳澤佩說，「分離焦慮」是孩子常見的情緒狀態，並非發展落後的表現，而是孩子心智進展上具體的調適歷程。每個孩子
+INFO:__main__:  包含连接: 
+INFO:__main__:  来源文件: 從容面對分離焦慮，快樂上學去.txt
+INFO:__main__:📄 文档 2:
+INFO:__main__:  内容预览: 從容面對分離焦慮，快樂上學去！
+https://parents.hsin-yi.org.tw/Library/Article/1074
+更新 : 2024-09-09
+每年都在幼兒園門口迎接新生，同時
+INFO:__main__:  包含连接: https://parents.hsin-yi.org.tw/Library/Article/1074
+INFO:__main__:  来源文件: 從容面對分離焦慮，快樂上學去.txt
+INFO:__main__:📄 文档 3:
+INFO:__main__:  内容预览: 4.爸媽放寬心，避免焦慮情緒感染孩子
+孩子的焦慮情緒有時來自大人，當爸媽在與孩子分離時也表現出焦慮的行為，或是在生活中較常焦慮不安時，孩子也會養成容易焦慮的個性，或在面對分離時表現出焦慮的樣子。建議爸
+INFO:__main__:  包含连接: 
+INFO:__main__:  来源文件: 從容面對分離焦慮，快樂上學去.txt
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 1
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 0
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 0
+INFO:__main__:🔍 机器人 'test_01' 检索结果: 3 个文档, chunk_refs: 3
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:__main__:🔍 机器人 'test_01' 推荐问题调试:
+INFO:__main__:  - should_recommend: True
+INFO:__main__:  - recommend_count: 0
+INFO:__main__:  - conversation_count: 1
+INFO:__main__:✅ 机器人 'test_01' 开始生成推荐问题...
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:__main__:🤖 机器人 'test_01' LLM 原始回应:
+INFO:__main__:'孩子在学校有朋友会帮助缓解分离焦虑吗？  
+如果孩子在学校哭泣，我应该如何处理？  
+有没有适合孩子的书籍或故事可以帮助他们理解分离焦虑？'
+INFO:__main__:📝 机器人 'test_01' 解析后的推荐问题: ['孩子在学校有朋友会帮助缓解分离焦虑吗？', '如果孩子在学校哭泣，我应该如何处理？', '有没有适合孩子的书籍或故事可以帮助他们理解分离焦虑？']
+INFO:__main__:从元数据中提取到 1 个连接
+INFO:__main__:✅ 新连接: 從容面對分離焦慮，快樂上學去！
+INFO:__main__:🔗 添加了 1 个参考连接
+INFO:conversation_logger_simple:✅ 記錄對話成功: ID 106, chunks: 3, 有效索引: 3
+INFO:__main__:✅ 对话记录成功：ID=conv_106, 机器人：test_01, chunks=3
+INFO:__main__:📤 机器人 'test_01' API 回应调试:
+INFO:__main__:  - response_text 长度: 692
+INFO:__main__:  - recommended_questions: ['孩子在学校有朋友会帮助缓解分离焦虑吗？', '如果孩子在学校哭泣，我应该如何处理？', '有没有适合孩子的书籍或故事可以帮助他们理解分离焦虑？']
+INFO:__main__:  - 找到文档数量: 3
+INFO:__main__:  - chunk_references: 3
+INFO:__main__:  - 处理时间: 14564ms
+INFO:     127.0.0.1:0 - "POST /api/chat HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [5872]
+INFO:auth_middleware:✅ user_manager 載入成功
+Building prefix dict from the default dictionary ...
+DEBUG:jieba:Building prefix dict from the default dictionary ...
+Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+DEBUG:jieba:Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+Loading model cost 0.428 seconds.
+DEBUG:jieba:Loading model cost 0.428 seconds.
+Prefix dict has been built successfully.
+DEBUG:jieba:Prefix dict has been built successfully.
+INFO:__main__:✅ 向量系统初始化成功 (机器人: test_01)
+INFO:__main__:🔗 使用向量API模式: http://localhost:9002
+INFO:__main__:ℹ️ ProxyHeadersMiddleware 不可用，使用本地開發模式
+INFO:__main__:✅ 静态文件挂载成功: C:\Users\danny\pyRag\bot_lang\chatbot_templates\modern\static
+INFO:__main__:✅ 机器人实例 'test_01' 初始化完成，对话记录数据库：test_01_conversations.db
+INFO:__main__:🤖 机器人 'test_01' 正在 http://localhost:9003 上启动
+INFO:__main__:📊 对话记录数据库：test_01_conversations.db
+INFO:__main__:📚 知识库集合：collection_test_01
+INFO:__main__:🔍 搜索模式：api
+INFO:__main__:🔗 向量API地址：http://localhost:9002
+INFO:__main__:🔧 调试模式已启用，将输出详细的对话记录和推荐问题生成日志
+INFO:     Started server process [26776]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:9003 (Press CTRL+C to quit)
+✅ 連接到現有資料庫: user_management.db
+✅ 資料庫結構驗證通過
+✅ 修正版用戶管理器初始化成功
+✅ 增強版對話數據庫初始化成功 (自動欄位修復已啟用)
+✅ httpx 可用，支持向量API模式
+✅ 使用新版 langchain-chroma
+✅ 使用新版 langchain-huggingface
+✅ OpenAI Embeddings 可用
+✅ OpenAI API Key 格式正確
+   API Key: sk-proj-***-2kA
+✅ OpenAI 環境檢查通過
+✅ EPUB 讀取功能已完整修復！
+📚 支援功能:
+   • 自動提取章節內容
+   • 智能章節標題識別
+   • 中文文本標準化
+   • 書籍元資料提取
+   • HTML 標籤清理
+   • 多章節智能分割
+✅ DOCX 支援已啟用 (docx2txt)
+✅ EPUB 支援已啟用
+✅ 向量系统可用
+🔧 初始化 OpenAI Embeddings...
+✅ OpenAI Embeddings 初始化成功
+🔤 繁簡轉換器初始化完成
+🔤 繁簡轉換器初始化完成
+✅ 文本處理組件初始化完成
+🔤 繁簡轉換器初始化完成
+🔧 優化版文本分割器初始化完成
+   📏 支持 11 種文本類型
+   🧠 智能策略選擇
+   ⚡ 性能優化
+🚀 完整優化版向量系統初始化完成
+   🤖 嵌入模型: openai
+   📁 數據目錄: data
+   🗄️ 向量庫: chroma_langchain_db
+   🧠 智能文本處理: ✅
+   🔧 自適應批次: ✅
+✅ 增強版對話數據庫初始化成功 (自動欄位修復已啟用)
+INFO:     127.0.0.1:0 - "GET / HTTP/1.1" 200 OK
+INFO:__main__:📩 机器人 'test_01' 收到查询 [auth_user_2_atalantis]: 魔法親親好看嗎...
+INFO:httpx:HTTP Request: POST http://localhost:9002/search "HTTP/1.1 200 OK"
+INFO:__main__:API搜索成功: 3 个结果
+INFO:__main__:🔍 机器人 'test_01' API检索结果: 3 个文档
+INFO:__main__:🔍 当前查询: 魔法親親好看嗎
+INFO:__main__:📄 检索到 3 个文档
+INFO:__main__:📄 文档 1:
+INFO:__main__:  内容预览: 書名:魔法親親（安撫孩子分離焦慮的最佳圖畫書）
+https://www.hsinyishop.com/products/h000000035755
+
+《魔法親親》是讓孩子安心上學的魔法！一個留在掌心的
+INFO:__main__:  包含连接: https://www.hsinyishop.com/products/h000000035755
+INFO:__main__:  来源文件: 書名魔法親親（安撫孩子分離焦慮的最佳圖畫書）.txt
+INFO:__main__:📄 文档 2:
+INFO:__main__:  内容预览: 
+這一系列關於正向教養的分享，不只是希望帶來阿德勒心理學的觀點，更是陪你一起練習理解自己的情緒與限制，看見孩子的困難，也看見自己需要被支持的地方。讓我們一起努力，用正向的眼光看見孩子，也學著用同樣溫柔
+INFO:__main__:  包含连接: 
+INFO:__main__:  来源文件: 理智斷線.txt
+INFO:__main__:📄 文档 3:
+INFO:__main__:  内容预览: 很順利，
+因為他們得面對無數個「轉變」。
+從「家裡」變成「學校」；
+從「一個人獨處」變成「和大家相處」；
+從「獨占」變成「分享」……
+這麼多的轉變，不要說小小孩，連大人都必須適應一陣子，
+比如上班時也
+INFO:__main__:  包含连接: 
+INFO:__main__:  来源文件: 書名魔法親親（安撫孩子分離焦慮的最佳圖畫書）.txt
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 0
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 1
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 1
+INFO:__main__:🔍 机器人 'test_01' 检索结果: 3 个文档, chunk_refs: 3
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:__main__:🔍 机器人 'test_01' 推荐问题调试:
+INFO:__main__:  - should_recommend: True
+INFO:__main__:  - recommend_count: 0
+INFO:__main__:  - conversation_count: 1
+INFO:__main__:✅ 机器人 'test_01' 开始生成推荐问题...
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:__main__:🤖 机器人 'test_01' LLM 原始回应:
+INFO:__main__:'《魔法親親》的故事背景是什麼？  
+這本書的插畫風格是怎樣的？  
+除了《魔法親親》，還有其他推薦的類似書籍嗎？'
+INFO:__main__:📝 机器人 'test_01' 解析后的推荐问题: ['《魔法親親》的故事背景是什麼？', '這本書的插畫風格是怎樣的？', '除了《魔法親親》，還有其他推薦的類似書籍嗎？']
+INFO:__main__:从元数据中提取到 1 个连接
+INFO:__main__:✅ 新连接: 書名:魔法親親（安撫孩子分離焦慮的最佳圖畫書）
+INFO:__main__:🔗 添加了 1 个参考连接
+INFO:conversation_logger_simple:✅ 記錄對話成功: ID 107, chunks: 3, 有效索引: 3
+INFO:__main__:✅ 对话记录成功：ID=conv_107, 机器人：test_01, chunks=3
+INFO:__main__:📤 机器人 'test_01' API 回应调试:
+INFO:__main__:  - response_text 长度: 570
+INFO:__main__:  - recommended_questions: ['《魔法親親》的故事背景是什麼？', '這本書的插畫風格是怎樣的？', '除了《魔法親親》，還有其他推薦的類似書籍嗎？']
+INFO:__main__:  - 找到文档数量: 3
+INFO:__main__:  - chunk_references: 3
+INFO:__main__:  - 处理时间: 17010ms
+INFO:     127.0.0.1:0 - "POST /api/chat HTTP/1.1" 200 OK
+INFO:__main__:📩 机器人 'test_01' 收到查询 [auth_user_2_atalantis]: 台北有哪些適合親子的餐廳...
+INFO:httpx:HTTP Request: POST http://localhost:9002/search "HTTP/1.1 200 OK"
+INFO:__main__:API搜索成功: 3 个结果
+INFO:__main__:🔍 机器人 'test_01' API检索结果: 3 个文档
+INFO:__main__:🔍 当前查询: 台北有哪些適合親子的餐廳
+INFO:__main__:📄 检索到 3 个文档
+INFO:__main__:📄 文档 1:
+INFO:__main__:  内容预览: 建議爸媽在進行飲食規劃時，可以每餐準備一份肉類，再輔以雞蛋料理，偶爾烹煮薑絲蚵仔湯。在正餐之外，不妨準備一小包無調味的腰果給孩子當零嘴，肚子餓時可以解解饞、又不會對身體太負擔，如此一來，孩子就能在日常
+INFO:__main__:  包含连接: 
+INFO:__main__:  来源文件: 孩子長不高怎麼辦？醫師公開3種成長必備營養素.txt
+INFO:__main__:📄 文档 2:
+INFO:__main__:  内容预览: 小孩補鈣吃什麼？5種常見高鈣食物總評
+市面上鈣質保健食品琳瑯滿目，各種鈣片的鈣含量與吸收率各有千秋，到底怎麼選擇？我想，先把保健食品忘掉吧！花點心思在食物的選擇上，有意識的在孩子的三餐或點心中，再加入
+INFO:__main__:  包含连接: 
+INFO:__main__:  来源文件: 孩子長不高怎麼辦？醫師公開3種成長必備營養素.txt
+INFO:__main__:📄 文档 3:
+INFO:__main__:  内容预览: 從第一屆的《媽媽，買綠豆》，到《子兒，吐吐》、《Guji Guji》、《好想吃榴槤》、《劍獅出巡》、《尋貓啟事》、《好忙的除夕》、《企鵝演奏會》……一本一本原創經典好書，陪伴著我們的孩子，在故事中長大
+INFO:__main__:  包含连接: 
+INFO:__main__:  来源文件: 米糕甜蜜蜜.txt
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 7
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 1
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 6
+INFO:__main__:🔍 机器人 'test_01' 检索结果: 3 个文档, chunk_refs: 3
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:__main__:🔍 机器人 'test_01' 推荐问题调试:
+INFO:__main__:  - should_recommend: True
+INFO:__main__:  - recommend_count: 0
+INFO:__main__:  - conversation_count: 2
+INFO:__main__:✅ 机器人 'test_01' 开始生成推荐问题...
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:__main__:🤖 机器人 'test_01' LLM 原始回应:
+INFO:__main__:'台北有哪些适合儿童生日派对的餐厅？  
+除了餐厅，台北还有哪些适合亲子的活动场所？  
+亲子餐厅的菜单通常有哪些特色菜品？'
+INFO:__main__:📝 机器人 'test_01' 解析后的推荐问题: ['台北有哪些适合儿童生日派对的餐厅？', '除了餐厅，台北还有哪些适合亲子的活动场所？', '亲子餐厅的菜单通常有哪些特色菜品？']
+INFO:__main__:从元数据中提取到 0 个连接
+INFO:__main__:📝 未在文档内容中找到可引用的URL
+INFO:conversation_logger_simple:✅ 記錄對話成功: ID 108, chunks: 3, 有效索引: 3
+INFO:__main__:✅ 对话记录成功：ID=conv_108, 机器人：test_01, chunks=3
+INFO:__main__:📤 机器人 'test_01' API 回应调试:
+INFO:__main__:  - response_text 长度: 624
+INFO:__main__:  - recommended_questions: ['台北有哪些适合儿童生日派对的餐厅？', '除了餐厅，台北还有哪些适合亲子的活动场所？', '亲子餐厅的菜单通常有哪些特色菜品？']
+INFO:__main__:  - 找到文档数量: 3
+INFO:__main__:  - chunk_references: 3
+INFO:__main__:  - 处理时间: 20054ms
+INFO:     127.0.0.1:0 - "POST /api/chat HTTP/1.1" 200 OK
+INFO:__main__:📩 机器人 'test_01' 收到查询 [auth_user_2_atalantis]: 台北有哪些適合親子的樂園...
+INFO:httpx:HTTP Request: POST http://localhost:9002/search "HTTP/1.1 200 OK"
+INFO:__main__:API搜索成功: 3 个结果
+INFO:__main__:🔍 机器人 'test_01' API检索结果: 3 个文档
+INFO:__main__:🔍 当前查询: 台北有哪些適合親子的樂園
+INFO:__main__:📄 检索到 3 个文档
+INFO:__main__:📄 文档 1:
+INFO:__main__:  内容预览: 書名:愛運動的孩子更聰明！
+從觀念到實踐，全面解析幼兒身體動作、設計活動並解答疑惑，幫助家長與老師一起動起來，帶領孩子養成好體力！
+https://www.hsinyishop.com/product
+INFO:__main__:  包含连接: https://www.hsinyishop.com/products/h000000036004
+INFO:__main__:  来源文件: 書名愛運動的孩子更聰明.txt
+INFO:__main__:📄 文档 2:
+INFO:__main__:  内容预览: 給孩子足夠的時間空間玩遊戲才能提升體能
+健康體適能的運動標準是「333」——每週3次、每次30分鐘、心跳130下。王宗騰教授指出，幼兒同樣可參照這個標準，事實上，嬰幼兒的最大心跳可達220下，早已超過
+INFO:__main__:  包含连接: 
+INFO:__main__:  来源文件: 丟跑旋轉是打底的功夫.txt
+INFO:__main__:📄 文档 3:
+INFO:__main__:  内容预览: 《我的小遊記！東港海味漁村》由兩位小學生一搭一唱，
+以在地人最道地、最新鮮、最私藏的導覽介紹，
+一同深度遊歷東港漁村，發現處處都是驚奇。
+他們尋找捕到「第一鮪」的漁船，
+認識漁民怎麼用「延繩釣」捕魚，
+INFO:__main__:  包含连接: 
+INFO:__main__:  来源文件: 我的小遊記東港海味漁村.txt
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 0
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 5
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 1
+INFO:__main__:🔍 机器人 'test_01' 检索结果: 3 个文档, chunk_refs: 3
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:__main__:🔍 机器人 'test_01' 推荐问题调试:
+INFO:__main__:  - should_recommend: True
+INFO:__main__:  - recommend_count: 0
+INFO:__main__:  - conversation_count: 3
+INFO:__main__:✅ 机器人 'test_01' 开始生成推荐问题...
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:__main__:🤖 机器人 'test_01' LLM 原始回应:
+INFO:__main__:'台北有哪些适合不同年龄段孩子的乐园？  
+除了乐园，台北还有哪些适合亲子活动的场所？  
+在台北的亲子乐园中，哪个地方的设施最为安全？'
+INFO:__main__:📝 机器人 'test_01' 解析后的推荐问题: ['台北有哪些适合不同年龄段孩子的乐园？', '除了乐园，台北还有哪些适合亲子活动的场所？', '在台北的亲子乐园中，哪个地方的设施最为安全？']
+INFO:__main__:从元数据中提取到 1 个连接
+INFO:__main__:✅ 新连接: 書名:愛運動的孩子更聰明！
+INFO:__main__:🔗 添加了 1 个参考连接
+INFO:conversation_logger_simple:✅ 記錄對話成功: ID 109, chunks: 3, 有效索引: 3
+INFO:__main__:✅ 对话记录成功：ID=conv_109, 机器人：test_01, chunks=3
+INFO:__main__:📤 机器人 'test_01' API 回应调试:
+INFO:__main__:  - response_text 长度: 706
+INFO:__main__:  - recommended_questions: ['台北有哪些适合不同年龄段孩子的乐园？', '除了乐园，台北还有哪些适合亲子活动的场所？', '在台北的亲子乐园中，哪个地方的设施最为安全？']
+INFO:__main__:  - 找到文档数量: 3
+INFO:__main__:  - chunk_references: 3
+INFO:__main__:  - 处理时间: 18695ms
+INFO:     127.0.0.1:0 - "POST /api/chat HTTP/1.1" 200 OK
+INFO:__main__:📩 机器人 'test_01' 收到查询 [auth_user_2_atalantis]: 愛運動的孩子真的會更聰明?...
+INFO:httpx:HTTP Request: POST http://localhost:9002/search "HTTP/1.1 200 OK"
+INFO:__main__:API搜索成功: 3 个结果
+INFO:__main__:🔍 机器人 'test_01' API检索结果: 3 个文档
+INFO:__main__:🔍 当前查询: 愛運動的孩子真的會更聰明?
+INFO:__main__:📄 检索到 3 个文档
+INFO:__main__:📄 文档 1:
+INFO:__main__:  内容预览: 書名:愛運動的孩子更聰明！
+從觀念到實踐，全面解析幼兒身體動作、設計活動並解答疑惑，幫助家長與老師一起動起來，帶領孩子養成好體力！
+https://www.hsinyishop.com/product
+INFO:__main__:  包含连接: https://www.hsinyishop.com/products/h000000036004
+INFO:__main__:  来源文件: 書名愛運動的孩子更聰明.txt
+INFO:__main__:📄 文档 2:
+INFO:__main__:  内容预览: 運動很重要，但不知道怎麼陪孩子玩？孩子走沒幾步就覺得喘、不想動？孩子不敢爬高，好不容易爬上去卻又下不來？為臺灣孩子設計的第一本體能促進寶典，家長、老師必備！「在未來高壓的生活環境中，幫助孩子從小培養足
+INFO:__main__:  包含连接: 
+INFO:__main__:  来源文件: 書名愛運動的孩子更聰明.txt
+INFO:__main__:📄 文档 3:
+INFO:__main__:  内容预览: 孩子需要自己學會解決問題
+
+2025年01月 (更新 : 2025-01-16)
+
+本篇文章來源網址https://parents.hsin-yi.org.tw/Library/Article/288
+INFO:__main__:  包含连接: https://parents.hsin-yi.org.tw/Library/Article/28819
+INFO:__main__:  来源文件: 孩子需要自己解決問題.docx
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 0
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 1
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 0
+INFO:__main__:🔍 机器人 'test_01' 检索结果: 3 个文档, chunk_refs: 3
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:__main__:🔍 机器人 'test_01' 推荐问题调试:
+INFO:__main__:  - should_recommend: True
+INFO:__main__:  - recommend_count: 0
+INFO:__main__:  - conversation_count: 4
+INFO:__main__:✅ 机器人 'test_01' 开始生成推荐问题...
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:__main__:🤖 机器人 'test_01' LLM 原始回应:
+INFO:__main__:'運動對孩子的社交能力有什麼影響嗎？  
+如何選擇適合孩子年齡的運動項目？  
+運動習慣的建立對孩子的長期發展有什麼好處？'
+INFO:__main__:📝 机器人 'test_01' 解析后的推荐问题: ['運動對孩子的社交能力有什麼影響嗎？', '如何選擇適合孩子年齡的運動項目？', '運動習慣的建立對孩子的長期發展有什麼好處？']
+INFO:__main__:从元数据中提取到 2 个连接
+INFO:__main__:🔄 跳过重复连接: 書名:愛運動的孩子更聰明！
+INFO:__main__:✅ 新连接: 年01月 (更新 : 2025-01-16)
+INFO:__main__:🔗 添加了 1 个参考连接
+INFO:conversation_logger_simple:✅ 記錄對話成功: ID 110, chunks: 3, 有效索引: 3
+INFO:__main__:✅ 对话记录成功：ID=conv_110, 机器人：test_01, chunks=3
+INFO:__main__:📤 机器人 'test_01' API 回应调试:
+INFO:__main__:  - response_text 长度: 682
+INFO:__main__:  - recommended_questions: ['運動對孩子的社交能力有什麼影響嗎？', '如何選擇適合孩子年齡的運動項目？', '運動習慣的建立對孩子的長期發展有什麼好處？']
+INFO:__main__:  - 找到文档数量: 3
+INFO:__main__:  - chunk_references: 3
+INFO:__main__:  - 处理时间: 15018ms
+INFO:     127.0.0.1:0 - "POST /api/chat HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [26776]
+INFO:auth_middleware:✅ user_manager 載入成功
+Building prefix dict from the default dictionary ...
+DEBUG:jieba:Building prefix dict from the default dictionary ...
+Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+DEBUG:jieba:Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+Loading model cost 0.432 seconds.
+DEBUG:jieba:Loading model cost 0.432 seconds.
+Prefix dict has been built successfully.
+DEBUG:jieba:Prefix dict has been built successfully.
+INFO:__main__:✅ 向量系统初始化成功 (机器人: test_01)
+INFO:__main__:🔗 使用向量API模式: http://localhost:9002
+INFO:__main__:ℹ️ ProxyHeadersMiddleware 不可用，使用本地開發模式
+INFO:__main__:✅ 静态文件挂载成功: C:\Users\danny\pyRag\bot_lang\chatbot_templates\modern\static
+INFO:__main__:✅ 机器人实例 'test_01' 初始化完成，对话记录数据库：test_01_conversations.db
+INFO:__main__:🤖 机器人 'test_01' 正在 http://localhost:9003 上启动
+INFO:__main__:📊 对话记录数据库：test_01_conversations.db
+INFO:__main__:📚 知识库集合：collection_test_01
+INFO:__main__:🔍 搜索模式：api
+INFO:__main__:🔗 向量API地址：http://localhost:9002
+INFO:__main__:🔧 调试模式已启用，将输出详细的对话记录和推荐问题生成日志
+INFO:     Started server process [2748]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:9003 (Press CTRL+C to quit)
+✅ 連接到現有資料庫: user_management.db
+✅ 資料庫結構驗證通過
+✅ 修正版用戶管理器初始化成功
+✅ 增強版對話數據庫初始化成功 (自動欄位修復已啟用)
+✅ httpx 可用，支持向量API模式
+✅ 使用新版 langchain-chroma
+✅ 使用新版 langchain-huggingface
+✅ OpenAI Embeddings 可用
+✅ OpenAI API Key 格式正確
+   API Key: sk-proj-***-2kA
+✅ OpenAI 環境檢查通過
+✅ EPUB 讀取功能已完整修復！
+📚 支援功能:
+   • 自動提取章節內容
+   • 智能章節標題識別
+   • 中文文本標準化
+   • 書籍元資料提取
+   • HTML 標籤清理
+   • 多章節智能分割
+✅ DOCX 支援已啟用 (docx2txt)
+✅ EPUB 支援已啟用
+✅ 向量系统可用
+🔧 初始化 OpenAI Embeddings...
+✅ OpenAI Embeddings 初始化成功
+🔤 繁簡轉換器初始化完成
+🔤 繁簡轉換器初始化完成
+✅ 文本處理組件初始化完成
+🔤 繁簡轉換器初始化完成
+🔧 優化版文本分割器初始化完成
+   📏 支持 11 種文本類型
+   🧠 智能策略選擇
+   ⚡ 性能優化
+🚀 完整優化版向量系統初始化完成
+   🤖 嵌入模型: openai
+   📁 數據目錄: data
+   🗄️ 向量庫: chroma_langchain_db
+   🧠 智能文本處理: ✅
+   🔧 自適應批次: ✅
+✅ 增強版對話數據庫初始化成功 (自動欄位修復已啟用)
+INFO:     127.0.0.1:0 - "GET / HTTP/1.1" 200 OK
+INFO:__main__:📩 机器人 'test_01' 收到查询 [auth_user_2_atalantis]: 東港海味漁港的故事再說甚麼...
+INFO:httpx:HTTP Request: POST http://localhost:9002/search "HTTP/1.1 200 OK"
+INFO:__main__:API搜索成功: 3 个结果
+INFO:__main__:🔍 机器人 'test_01' API检索结果: 3 个文档
+INFO:__main__:🔍 当前查询: 東港海味漁港的故事再說甚麼
+INFO:__main__:📄 检索到 3 个文档
+INFO:__main__:📄 文档 1:
+INFO:__main__:  内容预览: 作者的話
+後記 文／岑澎維
+居住在屏東，每當寫作告一段落時，藉地利之便，到鄰近的「東港」走走，來一趟小旅行，成了犒賞自己的方式。
+要怎麼形容東港呢？
+鹹鹹的海風、淳樸的人情、迷人的飲食、虔誠的信仰、吆
+INFO:__main__:  包含连接: 
+INFO:__main__:  来源文件: 我的小遊記東港海味漁村.txt
+INFO:__main__:📄 文档 2:
+INFO:__main__:  内容预览: 寫作這本遊記時，在這個歷史悠久的老漁村裡四處探索的時光，是充滿喜悅，充滿收穫的。
+莊嚴的廟宇，訴說討海人恆久不變的祈求，期待平安、期待滿載歸來；累了，坐在港邊看漁船，欣賞漁村風光；餓了，到市場逛一逛，
+INFO:__main__:  包含连接: 
+INFO:__main__:  来源文件: 我的小遊記東港海味漁村.txt
+INFO:__main__:📄 文档 3:
+INFO:__main__:  内容预览: 書名:我的小遊記！東港海味漁村
+產品網址 https://www.hsinyishop.com/products/h000000039139
+
+
+跟著海風吹來的同學，出發！在地遊記體故事，看小學生尤盛
+INFO:__main__:  包含连接: https://www.hsinyishop.com/products/h000000039139
+INFO:__main__:  来源文件: 我的小遊記東港海味漁村.txt
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 4
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 5
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 0
+INFO:__main__:🔍 机器人 'test_01' 检索结果: 3 个文档, chunk_refs: 3
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:__main__:🔍 机器人 'test_01' 推荐问题调试:
+INFO:__main__:  - should_recommend: True
+INFO:__main__:  - recommend_count: 0
+INFO:__main__:  - conversation_count: 1
+INFO:__main__:✅ 机器人 'test_01' 开始生成推荐问题...
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:__main__:🤖 机器人 'test_01' LLM 原始回应:
+INFO:__main__:'《我的小遊記！東港海味漁村》中的美食小三寶有哪些？  
+尤盛和蔡尚廷在旅程中遇到了哪些有趣的人或事？  
+書中提到的莊嚴廟宇對當地漁民有什麼樣的意義？'
+INFO:__main__:📝 机器人 'test_01' 解析后的推荐问题: ['《我的小遊記！東港海味漁村》中的美食小三寶有哪些？', '尤盛和蔡尚廷在旅程中遇到了哪些有趣的人或事？', '書中提到的莊嚴廟宇對當地漁民有什麼樣的意義？']
+INFO:__main__:从元数据中提取到 1 个连接
+INFO:__main__:✅ 新连接: 書名:我的小遊記！東港海味漁村
+INFO:__main__:🔗 添加了 1 个参考连接
+INFO:conversation_logger_simple:✅ 記錄對話成功: ID 111, chunks: 3, 有效索引: 3
+INFO:__main__:✅ 对话记录成功：ID=conv_111, 机器人：test_01, chunks=3
+INFO:__main__:📤 机器人 'test_01' API 回应调试:
+INFO:__main__:  - response_text 长度: 670
+INFO:__main__:  - recommended_questions: ['《我的小遊記！東港海味漁村》中的美食小三寶有哪些？', '尤盛和蔡尚廷在旅程中遇到了哪些有趣的人或事？', '書中提到的莊嚴廟宇對當地漁民有什麼樣的意義？']
+INFO:__main__:  - 找到文档数量: 3
+INFO:__main__:  - chunk_references: 3
+INFO:__main__:  - 处理时间: 17548ms
+INFO:     127.0.0.1:0 - "POST /api/chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "POST /api/link_click HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:0 - "GET / HTTP/1.1" 200 OK
+INFO:__main__:📩 机器人 'test_01' 收到查询 [auth_user_2_atalantis]: 魔法親親的主角是誰...
+INFO:httpx:HTTP Request: POST http://localhost:9002/search "HTTP/1.1 200 OK"
+INFO:__main__:API搜索成功: 3 个结果
+INFO:__main__:🔍 机器人 'test_01' API检索结果: 3 个文档
+INFO:__main__:🔍 当前查询: 魔法親親的主角是誰
+INFO:__main__:📄 检索到 3 个文档
+INFO:__main__:📄 文档 1:
+INFO:__main__:  内容预览: 書名:魔法親親（安撫孩子分離焦慮的最佳圖畫書）
+https://www.hsinyishop.com/products/h000000035755
+
+《魔法親親》是讓孩子安心上學的魔法！一個留在掌心的
+INFO:__main__:  包含连接: https://www.hsinyishop.com/products/h000000035755
+INFO:__main__:  来源文件: 書名魔法親親（安撫孩子分離焦慮的最佳圖畫書）.txt
+INFO:__main__:📄 文档 2:
+INFO:__main__:  内容预览: 很順利，
+因為他們得面對無數個「轉變」。
+從「家裡」變成「學校」；
+從「一個人獨處」變成「和大家相處」；
+從「獨占」變成「分享」……
+這麼多的轉變，不要說小小孩，連大人都必須適應一陣子，
+比如上班時也
+INFO:__main__:  包含连接: 
+INFO:__main__:  来源文件: 書名魔法親親（安撫孩子分離焦慮的最佳圖畫書）.txt
+INFO:__main__:📄 文档 3:
+INFO:__main__:  内容预览: 《壽司去旅行》專家導讀：帥氣壽司又來了！
+
+更新 : 2025-01-23
+
+超人氣微型藝術家－田中達也繼暢銷繪本《壽司買衣服》後再度推出《壽司去旅行》！跟著壽司搭乘火車，去萵苣山看夕陽、海邊晒日光浴
+INFO:__main__:  包含连接: 
+INFO:__main__:  来源文件: 壽司去旅行.docx
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 0
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 1
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 0
+INFO:__main__:🔍 机器人 'test_01' 检索结果: 3 个文档, chunk_refs: 3
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:__main__:🔍 机器人 'test_01' 推荐问题调试:
+INFO:__main__:  - should_recommend: True
+INFO:__main__:  - recommend_count: 0
+INFO:__main__:  - conversation_count: 2
+INFO:__main__:✅ 机器人 'test_01' 开始生成推荐问题...
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:__main__:🤖 机器人 'test_01' LLM 原始回应:
+INFO:__main__:'《魔法親親》這本書的作者是誰？  
+故事中還有哪些角色對小浣熊奇奇的成長有影響？  
+這本書適合多大的孩子閱讀？'
+INFO:__main__:📝 机器人 'test_01' 解析后的推荐问题: ['《魔法親親》這本書的作者是誰？', '故事中還有哪些角色對小浣熊奇奇的成長有影響？', '這本書適合多大的孩子閱讀？']
+INFO:__main__:从元数据中提取到 1 个连接
+INFO:__main__:✅ 新连接: 書名:魔法親親（安撫孩子分離焦慮的最佳圖畫書）
+INFO:__main__:🔗 添加了 1 个参考连接
+INFO:conversation_logger_simple:✅ 記錄對話成功: ID 112, chunks: 3, 有效索引: 3
+INFO:__main__:✅ 对话记录成功：ID=conv_112, 机器人：test_01, chunks=3
+INFO:__main__:📤 机器人 'test_01' API 回应调试:
+INFO:__main__:  - response_text 长度: 345
+INFO:__main__:  - recommended_questions: ['《魔法親親》這本書的作者是誰？', '故事中還有哪些角色對小浣熊奇奇的成長有影響？', '這本書適合多大的孩子閱讀？']
+INFO:__main__:  - 找到文档数量: 3
+INFO:__main__:  - chunk_references: 3
+INFO:__main__:  - 处理时间: 9257ms
+INFO:     127.0.0.1:0 - "POST /api/chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /modern/static/chat.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /modern/static/chat.css HTTP/1.1" 200 OK
+INFO:__main__:📩 机器人 'test_01' 收到查询 [auth_user_2_atalantis]: 愛運動的小孩真的會比較聰明?...
+INFO:httpx:HTTP Request: POST http://localhost:9002/search "HTTP/1.1 200 OK"
+INFO:__main__:API搜索成功: 3 个结果
+INFO:__main__:🔍 机器人 'test_01' API检索结果: 3 个文档
+INFO:__main__:🔍 当前查询: 愛運動的小孩真的會比較聰明?
+INFO:__main__:📄 检索到 3 个文档
+INFO:__main__:📄 文档 1:
+INFO:__main__:  内容预览: 書名:愛運動的孩子更聰明！
+從觀念到實踐，全面解析幼兒身體動作、設計活動並解答疑惑，幫助家長與老師一起動起來，帶領孩子養成好體力！
+https://www.hsinyishop.com/product
+INFO:__main__:  包含连接: https://www.hsinyishop.com/products/h000000036004
+INFO:__main__:  来源文件: 書名愛運動的孩子更聰明.txt
+INFO:__main__:📄 文档 2:
+INFO:__main__:  内容预览: 運動很重要，但不知道怎麼陪孩子玩？孩子走沒幾步就覺得喘、不想動？孩子不敢爬高，好不容易爬上去卻又下不來？為臺灣孩子設計的第一本體能促進寶典，家長、老師必備！「在未來高壓的生活環境中，幫助孩子從小培養足
+INFO:__main__:  包含连接: 
+INFO:__main__:  来源文件: 書名愛運動的孩子更聰明.txt
+INFO:__main__:📄 文档 3:
+INFO:__main__:  内容预览: 孩子需要自己學會解決問題
+
+2025年01月 (更新 : 2025-01-16)
+
+本篇文章來源網址https://parents.hsin-yi.org.tw/Library/Article/288
+INFO:__main__:  包含连接: https://parents.hsin-yi.org.tw/Library/Article/28819
+INFO:__main__:  来源文件: 孩子需要自己解決問題.docx
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 0
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 1
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 0
+INFO:__main__:🔍 机器人 'test_01' 检索结果: 3 个文档, chunk_refs: 3
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:__main__:🔍 机器人 'test_01' 推荐问题调试:
+INFO:__main__:  - should_recommend: True
+INFO:__main__:  - recommend_count: 0
+INFO:__main__:  - conversation_count: 3
+INFO:__main__:✅ 机器人 'test_01' 开始生成推荐问题...
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:__main__:🤖 机器人 'test_01' LLM 原始回应:
+INFO:__main__:'運動對孩子的情緒管理有什麼具體的影響？  
+除了運動，還有哪些活動可以促進孩子的智力發展？  
+家長如何有效地鼓勵孩子參加運動而不感到壓力？'
+INFO:__main__:📝 机器人 'test_01' 解析后的推荐问题: ['運動對孩子的情緒管理有什麼具體的影響？', '除了運動，還有哪些活動可以促進孩子的智力發展？', '家長如何有效地鼓勵孩子參加運動而不感到壓力？']
+INFO:__main__:从元数据中提取到 2 个连接
+INFO:__main__:✅ 新连接: 書名:愛運動的孩子更聰明！
+INFO:__main__:✅ 新连接: 年01月 (更新 : 2025-01-16)
+INFO:__main__:🔗 添加了 2 个参考连接
+INFO:conversation_logger_simple:✅ 記錄對話成功: ID 113, chunks: 3, 有效索引: 3
+INFO:__main__:✅ 对话记录成功：ID=conv_113, 机器人：test_01, chunks=3
+INFO:__main__:📤 机器人 'test_01' API 回应调试:
+INFO:__main__:  - response_text 长度: 758
+INFO:__main__:  - recommended_questions: ['運動對孩子的情緒管理有什麼具體的影響？', '除了運動，還有哪些活動可以促進孩子的智力發展？', '家長如何有效地鼓勵孩子參加運動而不感到壓力？']
+INFO:__main__:  - 找到文档数量: 3
+INFO:__main__:  - chunk_references: 3
+INFO:__main__:  - 处理时间: 16912ms
+INFO:     127.0.0.1:0 - "POST /api/chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /modern/static/chat.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /modern/static/chat.js HTTP/1.1" 200 OK
+INFO:__main__:📩 机器人 'test_01' 收到查询 [auth_user_2_atalantis]: 抖音腦真的存在?...
+INFO:httpx:HTTP Request: POST http://localhost:9002/search "HTTP/1.1 200 OK"
+INFO:__main__:API搜索成功: 3 个结果
+INFO:__main__:🔍 机器人 'test_01' API检索结果: 3 个文档
+INFO:__main__:🔍 当前查询: 抖音腦真的存在?
+INFO:__main__:📄 检索到 3 个文档
+INFO:__main__:📄 文档 1:
+INFO:__main__:  内容预览: 《【教養新視野】認識抖音腦：短影音如何影響我們的下一代？》
+【教養新視野】認識抖音腦：短影音如何影響我們的下一代？
+2025年02月 (更新 : 2025-02-26)
+短影音已成為兒童與青少年的日常
+INFO:__main__:  包含连接: 
+INFO:__main__:  来源文件: 【教養新視野】認識抖音腦：短影音如何影響我們的下一代？_msjh.pdf
+INFO:__main__:📄 文档 2:
+INFO:__main__:  内容预览: 1.心理健康問題：短影音讓孩子更容易沉迷
+短影音的設計讓人一滑再滑，停不下來，這可能會影響孩子的大腦運作方式。
+神經科學研究指出，抖音、Instagram
+Reels等短影音平台以15至60秒的有趣內
+INFO:__main__:  包含连接: 
+INFO:__main__:  来源文件: 【教養新視野】認識抖音腦：短影音如何影響我們的下一代？_msjh.pdf
+INFO:__main__:📄 文档 3:
+INFO:__main__:  内容预览: 2.誘發危險行為：短影音挑戰可能影響孩子判斷力
+觀看短影音不只是娛樂，還可能讓孩子受到錯誤資訊的影響，甚至模仿危險行為。
+某些短影音挑戰會鼓勵孩子模仿不安全的行為，例如停電挑戰（Blackout
+Ch
+INFO:__main__:  包含连接: 
+INFO:__main__:  来源文件: 【教養新視野】認識抖音腦：短影音如何影響我們的下一代？_msjh.pdf
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 0
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 0
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 0
+INFO:__main__:🔍 机器人 'test_01' 检索结果: 3 个文档, chunk_refs: 3
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:__main__:🔍 机器人 'test_01' 推荐问题调试:
+INFO:__main__:  - should_recommend: True
+INFO:__main__:  - recommend_count: 0
+INFO:__main__:  - conversation_count: 4
+INFO:__main__:✅ 机器人 'test_01' 开始生成推荐问题...
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:__main__:🤖 机器人 'test_01' LLM 原始回应:
+INFO:__main__:'抖音对青少年心理健康的具体影响有哪些？  
+如何帮助孩子建立健康的数字媒体使用习惯？  
+家长应该如何监控和引导孩子使用短视频平台？'
+INFO:__main__:📝 机器人 'test_01' 解析后的推荐问题: ['抖音对青少年心理健康的具体影响有哪些？', '如何帮助孩子建立健康的数字媒体使用习惯？', '家长应该如何监控和引导孩子使用短视频平台？']
+INFO:__main__:从元数据中提取到 0 个连接
+INFO:__main__:📝 未在文档内容中找到可引用的URL
+INFO:conversation_logger_simple:✅ 記錄對話成功: ID 114, chunks: 3, 有效索引: 3
+INFO:__main__:✅ 对话记录成功：ID=conv_114, 机器人：test_01, chunks=3
+INFO:__main__:📤 机器人 'test_01' API 回应调试:
+INFO:__main__:  - response_text 长度: 608
+INFO:__main__:  - recommended_questions: ['抖音对青少年心理健康的具体影响有哪些？', '如何帮助孩子建立健康的数字媒体使用习惯？', '家长应该如何监控和引导孩子使用短视频平台？']
+INFO:__main__:  - 找到文档数量: 3
+INFO:__main__:  - chunk_references: 3
+INFO:__main__:  - 处理时间: 14446ms
+INFO:     127.0.0.1:0 - "POST /api/chat HTTP/1.1" 200 OK
+INFO:__main__:📩 机器人 'test_01' 收到查询 [auth_user_2_atalantis]: 東港海味小漁村作者是誰...
+INFO:httpx:HTTP Request: POST http://localhost:9002/search "HTTP/1.1 200 OK"
+INFO:__main__:API搜索成功: 3 个结果
+INFO:__main__:🔍 机器人 'test_01' API检索结果: 3 个文档
+INFO:__main__:🔍 当前查询: 東港海味小漁村作者是誰
+INFO:__main__:📄 检索到 3 个文档
+INFO:__main__:📄 文档 1:
+INFO:__main__:  内容预览: 作者的話
+後記 文／岑澎維
+居住在屏東，每當寫作告一段落時，藉地利之便，到鄰近的「東港」走走，來一趟小旅行，成了犒賞自己的方式。
+要怎麼形容東港呢？
+鹹鹹的海風、淳樸的人情、迷人的飲食、虔誠的信仰、吆
+INFO:__main__:  包含连接: 
+INFO:__main__:  来源文件: 我的小遊記東港海味漁村.txt
+INFO:__main__:📄 文档 2:
+INFO:__main__:  内容预览: 書名:我的小遊記！東港海味漁村
+產品網址 https://www.hsinyishop.com/products/h000000039139
+
+
+跟著海風吹來的同學，出發！在地遊記體故事，看小學生尤盛
+INFO:__main__:  包含连接: https://www.hsinyishop.com/products/h000000039139
+INFO:__main__:  来源文件: 我的小遊記東港海味漁村.txt
+INFO:__main__:📄 文档 3:
+INFO:__main__:  内容预览: 寫作這本遊記時，在這個歷史悠久的老漁村裡四處探索的時光，是充滿喜悅，充滿收穫的。
+莊嚴的廟宇，訴說討海人恆久不變的祈求，期待平安、期待滿載歸來；累了，坐在港邊看漁船，欣賞漁村風光；餓了，到市場逛一逛，
+INFO:__main__:  包含连接: 
+INFO:__main__:  来源文件: 我的小遊記東港海味漁村.txt
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 4
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 0
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 5
+INFO:__main__:🔍 机器人 'test_01' 检索结果: 3 个文档, chunk_refs: 3
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:__main__:🔍 机器人 'test_01' 推荐问题调试:
+INFO:__main__:  - should_recommend: True
+INFO:__main__:  - recommend_count: 0
+INFO:__main__:  - conversation_count: 5
+INFO:__main__:✅ 机器人 'test_01' 开始生成推荐问题...
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:__main__:🤖 机器人 'test_01' LLM 原始回应:
+INFO:__main__:'東港海味小漁村的故事背景是什麼？  
+這本書的主要角色有哪些？  
+作者還有其他哪些作品？'
+INFO:__main__:📝 机器人 'test_01' 解析后的推荐问题: ['東港海味小漁村的故事背景是什麼？', '這本書的主要角色有哪些？', '作者還有其他哪些作品？']
+INFO:__main__:从元数据中提取到 1 个连接
+INFO:__main__:🔄 跳过重复连接: 書名:我的小遊記！東港海味漁村
+INFO:__main__:🔄 所有连接都是重复的，跳过显示
+INFO:conversation_logger_simple:✅ 記錄對話成功: ID 115, chunks: 3, 有效索引: 3
+INFO:__main__:✅ 对话记录成功：ID=conv_115, 机器人：test_01, chunks=3
+INFO:__main__:📤 机器人 'test_01' API 回应调试:
+INFO:__main__:  - response_text 长度: 10
+INFO:__main__:  - recommended_questions: ['東港海味小漁村的故事背景是什麼？', '這本書的主要角色有哪些？', '作者還有其他哪些作品？']
+INFO:__main__:  - 找到文档数量: 3
+INFO:__main__:  - chunk_references: 3
+INFO:__main__:  - 处理时间: 5754ms
+INFO:     127.0.0.1:0 - "POST /api/chat HTTP/1.1" 200 OK
+INFO:__main__:📩 机器人 'test_01' 收到查询 [auth_user_2_atalantis]: 東港海味漁村有怎樣的故事...
+INFO:httpx:HTTP Request: POST http://localhost:9002/search "HTTP/1.1 200 OK"
+INFO:__main__:API搜索成功: 3 个结果
+INFO:__main__:🔍 机器人 'test_01' API检索结果: 3 个文档
+INFO:__main__:🔍 当前查询: 東港海味漁村有怎樣的故事
+INFO:__main__:📄 检索到 3 个文档
+INFO:__main__:📄 文档 1:
+INFO:__main__:  内容预览: 作者的話
+後記 文／岑澎維
+居住在屏東，每當寫作告一段落時，藉地利之便，到鄰近的「東港」走走，來一趟小旅行，成了犒賞自己的方式。
+要怎麼形容東港呢？
+鹹鹹的海風、淳樸的人情、迷人的飲食、虔誠的信仰、吆
+INFO:__main__:  包含连接: 
+INFO:__main__:  来源文件: 我的小遊記東港海味漁村.txt
+INFO:__main__:📄 文档 2:
+INFO:__main__:  内容预览: 寫作這本遊記時，在這個歷史悠久的老漁村裡四處探索的時光，是充滿喜悅，充滿收穫的。
+莊嚴的廟宇，訴說討海人恆久不變的祈求，期待平安、期待滿載歸來；累了，坐在港邊看漁船，欣賞漁村風光；餓了，到市場逛一逛，
+INFO:__main__:  包含连接: 
+INFO:__main__:  来源文件: 我的小遊記東港海味漁村.txt
+INFO:__main__:📄 文档 3:
+INFO:__main__:  内容预览: 書名:我的小遊記！東港海味漁村
+產品網址 https://www.hsinyishop.com/products/h000000039139
+
+
+跟著海風吹來的同學，出發！在地遊記體故事，看小學生尤盛
+INFO:__main__:  包含连接: https://www.hsinyishop.com/products/h000000039139
+INFO:__main__:  来源文件: 我的小遊記東港海味漁村.txt
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 4
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 5
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 0
+INFO:__main__:🔍 机器人 'test_01' 检索结果: 3 个文档, chunk_refs: 3
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:__main__:🔍 机器人 'test_01' 推荐问题调试:
+INFO:__main__:  - should_recommend: True
+INFO:__main__:  - recommend_count: 0
+INFO:__main__:  - conversation_count: 6
+INFO:__main__:✅ 机器人 'test_01' 开始生成推荐问题...
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:__main__:🤖 机器人 'test_01' LLM 原始回应:
+INFO:__main__:'東港海味漁村的歷史背景是什麼？  
+在東港，漁民的生活方式有哪些特別之處？  
+除了書中提到的美食，東港還有哪些值得一試的地方？'
+INFO:__main__:📝 机器人 'test_01' 解析后的推荐问题: ['東港海味漁村的歷史背景是什麼？', '在東港，漁民的生活方式有哪些特別之處？', '除了書中提到的美食，東港還有哪些值得一試的地方？']
+INFO:__main__:从元数据中提取到 1 个连接
+INFO:__main__:🔄 跳过重复连接: 書名:我的小遊記！東港海味漁村
+INFO:__main__:🔄 所有连接都是重复的，跳过显示
+INFO:conversation_logger_simple:✅ 記錄對話成功: ID 116, chunks: 3, 有效索引: 3
+INFO:__main__:✅ 对话记录成功：ID=conv_116, 机器人：test_01, chunks=3
+INFO:__main__:📤 机器人 'test_01' API 回应调试:
+INFO:__main__:  - response_text 长度: 646
+INFO:__main__:  - recommended_questions: ['東港海味漁村的歷史背景是什麼？', '在東港，漁民的生活方式有哪些特別之處？', '除了書中提到的美食，東港還有哪些值得一試的地方？']
+INFO:__main__:  - 找到文档数量: 3
+INFO:__main__:  - chunk_references: 3
+INFO:__main__:  - 处理时间: 17159ms
+INFO:     127.0.0.1:0 - "POST /api/chat HTTP/1.1" 200 OK
+INFO:__main__:📩 机器人 'test_01' 收到查询 [auth_user_2_atalantis]: 愛運動的孩子真個更聰明嗎...
+INFO:httpx:HTTP Request: POST http://localhost:9002/search "HTTP/1.1 200 OK"
+INFO:__main__:API搜索成功: 3 个结果
+INFO:__main__:🔍 机器人 'test_01' API检索结果: 3 个文档
+INFO:__main__:🔍 当前查询: 愛運動的孩子真個更聰明嗎
+INFO:__main__:📄 检索到 3 个文档
+INFO:__main__:📄 文档 1:
+INFO:__main__:  内容预览: 書名:愛運動的孩子更聰明！
+從觀念到實踐，全面解析幼兒身體動作、設計活動並解答疑惑，幫助家長與老師一起動起來，帶領孩子養成好體力！
+https://www.hsinyishop.com/product
+INFO:__main__:  包含连接: https://www.hsinyishop.com/products/h000000036004
+INFO:__main__:  来源文件: 書名愛運動的孩子更聰明.txt
+INFO:__main__:📄 文档 2:
+INFO:__main__:  内容预览: 運動很重要，但不知道怎麼陪孩子玩？孩子走沒幾步就覺得喘、不想動？孩子不敢爬高，好不容易爬上去卻又下不來？為臺灣孩子設計的第一本體能促進寶典，家長、老師必備！「在未來高壓的生活環境中，幫助孩子從小培養足
+INFO:__main__:  包含连接: 
+INFO:__main__:  来源文件: 書名愛運動的孩子更聰明.txt
+INFO:__main__:📄 文档 3:
+INFO:__main__:  内容预览: 以跳遠來說，孩子跳得不夠遠只是一個結果，爸媽或老師看到這個結果，應回頭檢視是否在過程中出了問題，孩子的動作夠不夠正確？還是其他原因？然後提供孩子改善的處方，例如指導孩子正確的動作要領，而不只是一再地要
+INFO:__main__:  包含连接: 
+INFO:__main__:  来源文件: 丟跑旋轉是打底的功夫.txt
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 0
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 1
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 6
+INFO:__main__:🔍 机器人 'test_01' 检索结果: 3 个文档, chunk_refs: 3
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:__main__:🔍 机器人 'test_01' 推荐问题调试:
+INFO:__main__:  - should_recommend: True
+INFO:__main__:  - recommend_count: 0
+INFO:__main__:  - conversation_count: 7
+INFO:__main__:✅ 机器人 'test_01' 开始生成推荐问题...
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:__main__:🤖 机器人 'test_01' LLM 原始回应:
+INFO:__main__:'運動對孩子的情緒管理有什麼具體的影響？  
+除了運動，還有哪些活動可以促進孩子的智力發展？  
+家長如何有效地鼓勵孩子參加運動？'
+INFO:__main__:📝 机器人 'test_01' 解析后的推荐问题: ['運動對孩子的情緒管理有什麼具體的影響？', '除了運動，還有哪些活動可以促進孩子的智力發展？', '家長如何有效地鼓勵孩子參加運動？']
+INFO:__main__:从元数据中提取到 1 个连接
+INFO:__main__:🔄 跳过重复连接: 書名:愛運動的孩子更聰明！
+INFO:__main__:🔄 所有连接都是重复的，跳过显示
+INFO:conversation_logger_simple:✅ 記錄對話成功: ID 117, chunks: 3, 有效索引: 3
+INFO:__main__:✅ 对话记录成功：ID=conv_117, 机器人：test_01, chunks=3
+INFO:__main__:📤 机器人 'test_01' API 回应调试:
+INFO:__main__:  - response_text 长度: 644
+INFO:__main__:  - recommended_questions: ['運動對孩子的情緒管理有什麼具體的影響？', '除了運動，還有哪些活動可以促進孩子的智力發展？', '家長如何有效地鼓勵孩子參加運動？']
+INFO:__main__:  - 找到文档数量: 3
+INFO:__main__:  - chunk_references: 3
+INFO:__main__:  - 处理时间: 15400ms
+INFO:     127.0.0.1:0 - "POST /api/chat HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [2748]
+INFO:auth_middleware:✅ user_manager 載入成功
+Building prefix dict from the default dictionary ...
+DEBUG:jieba:Building prefix dict from the default dictionary ...
+Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+DEBUG:jieba:Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+Loading model cost 0.413 seconds.
+DEBUG:jieba:Loading model cost 0.413 seconds.
+Prefix dict has been built successfully.
+DEBUG:jieba:Prefix dict has been built successfully.
+INFO:__main__:✅ 向量系统初始化成功 (机器人: test_01)
+INFO:__main__:🔗 使用向量API模式: http://localhost:9002
+INFO:__main__:ℹ️ ProxyHeadersMiddleware 不可用，使用本地開發模式
+INFO:__main__:✅ 静态文件挂载成功: C:\Users\danny\pyRag\bot_lang\chatbot_templates\modern\static
+INFO:__main__:✅ 机器人实例 'test_01' 初始化完成，对话记录数据库：test_01_conversations.db
+INFO:__main__:🤖 机器人 'test_01' 正在 http://localhost:9003 上启动
+INFO:__main__:📊 对话记录数据库：test_01_conversations.db
+INFO:__main__:📚 知识库集合：collection_test_01
+INFO:__main__:🔍 搜索模式：api
+INFO:__main__:🔗 向量API地址：http://localhost:9002
+INFO:__main__:🔧 调试模式已启用，将输出详细的对话记录和推荐问题生成日志
+INFO:     Started server process [14156]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:9003 (Press CTRL+C to quit)
+✅ 連接到現有資料庫: user_management.db
+✅ 資料庫結構驗證通過
+✅ 修正版用戶管理器初始化成功
+✅ 增強版對話數據庫初始化成功 (自動欄位修復已啟用)
+✅ httpx 可用，支持向量API模式
+✅ 使用新版 langchain-chroma
+✅ 使用新版 langchain-huggingface
+✅ OpenAI Embeddings 可用
+✅ OpenAI API Key 格式正確
+   API Key: sk-proj-***-2kA
+✅ OpenAI 環境檢查通過
+✅ EPUB 讀取功能已完整修復！
+📚 支援功能:
+   • 自動提取章節內容
+   • 智能章節標題識別
+   • 中文文本標準化
+   • 書籍元資料提取
+   • HTML 標籤清理
+   • 多章節智能分割
+✅ DOCX 支援已啟用 (docx2txt)
+✅ EPUB 支援已啟用
+✅ 向量系统可用
+🔧 初始化 OpenAI Embeddings...
+✅ OpenAI Embeddings 初始化成功
+🔤 繁簡轉換器初始化完成
+🔤 繁簡轉換器初始化完成
+✅ 文本處理組件初始化完成
+🔤 繁簡轉換器初始化完成
+🔧 優化版文本分割器初始化完成
+   📏 支持 11 種文本類型
+   🧠 智能策略選擇
+   ⚡ 性能優化
+🚀 完整優化版向量系統初始化完成
+   🤖 嵌入模型: openai
+   📁 數據目錄: data
+   🗄️ 向量庫: chroma_langchain_db
+   🧠 智能文本處理: ✅
+   🔧 自適應批次: ✅
+✅ 增強版對話數據庫初始化成功 (自動欄位修復已啟用)
+INFO:     127.0.0.1:0 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /modern/static/chat.css HTTP/1.1" 304 Not Modified
+INFO:     127.0.0.1:0 - "GET /modern/static/chat.js HTTP/1.1" 304 Not Modified
+INFO:__main__:📩 机器人 'test_01' 收到查询 [auth_user_2_atalantis]: 東港海味漁村的作者是誰...
+INFO:httpx:HTTP Request: POST http://localhost:9002/search "HTTP/1.1 200 OK"
+INFO:__main__:API搜索成功: 3 个结果
+INFO:__main__:🔍 机器人 'test_01' API检索结果: 3 个文档
+INFO:__main__:🔍 当前查询: 東港海味漁村的作者是誰
+INFO:__main__:📄 检索到 3 个文档
+INFO:__main__:📄 文档 1:
+INFO:__main__:  内容预览: 作者的話
+後記 文／岑澎維
+居住在屏東，每當寫作告一段落時，藉地利之便，到鄰近的「東港」走走，來一趟小旅行，成了犒賞自己的方式。
+要怎麼形容東港呢？
+鹹鹹的海風、淳樸的人情、迷人的飲食、虔誠的信仰、吆
+INFO:__main__:  包含连接: 
+INFO:__main__:  来源文件: 我的小遊記東港海味漁村.txt
+INFO:__main__:📄 文档 2:
+INFO:__main__:  内容预览: 書名:我的小遊記！東港海味漁村
+產品網址 https://www.hsinyishop.com/products/h000000039139
+
+
+跟著海風吹來的同學，出發！在地遊記體故事，看小學生尤盛
+INFO:__main__:  包含连接: https://www.hsinyishop.com/products/h000000039139
+INFO:__main__:  来源文件: 我的小遊記東港海味漁村.txt
+INFO:__main__:📄 文档 3:
+INFO:__main__:  内容预览: 寫作這本遊記時，在這個歷史悠久的老漁村裡四處探索的時光，是充滿喜悅，充滿收穫的。
+莊嚴的廟宇，訴說討海人恆久不變的祈求，期待平安、期待滿載歸來；累了，坐在港邊看漁船，欣賞漁村風光；餓了，到市場逛一逛，
+INFO:__main__:  包含连接: 
+INFO:__main__:  来源文件: 我的小遊記東港海味漁村.txt
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 4
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 0
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 5
+INFO:__main__:🔍 机器人 'test_01' 检索结果: 3 个文档, chunk_refs: 3
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:__main__:🔍 机器人 'test_01' 推荐问题调试:
+INFO:__main__:  - should_recommend: True
+INFO:__main__:  - recommend_count: 0
+INFO:__main__:  - conversation_count: 1
+INFO:__main__:✅ 机器人 'test_01' 开始生成推荐问题...
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:__main__:🤖 机器人 'test_01' LLM 原始回应:
+INFO:__main__:'東港海味漁村的故事背景是什麼？  
+這本書的主要角色有哪些？  
+作者還有其他哪些作品？'
+INFO:__main__:📝 机器人 'test_01' 解析后的推荐问题: ['東港海味漁村的故事背景是什麼？', '這本書的主要角色有哪些？', '作者還有其他哪些作品？']
+INFO:__main__:从元数据中提取到 1 个连接
+INFO:__main__:✅ 新连接: 書名:我的小遊記！東港海味漁村
+INFO:__main__:🔗 添加了 1 个参考连接
+INFO:conversation_logger_simple:✅ 記錄對話成功: ID 118, chunks: 3, 有效索引: 3
+INFO:__main__:✅ 对话记录成功：ID=conv_118, 机器人：test_01, chunks=3
+INFO:__main__:📤 机器人 'test_01' API 回应调试:
+INFO:__main__:  - response_text 长度: 82
+INFO:__main__:  - recommended_questions: ['東港海味漁村的故事背景是什麼？', '這本書的主要角色有哪些？', '作者還有其他哪些作品？']
+INFO:__main__:  - 找到文档数量: 3
+INFO:__main__:  - chunk_references: 3
+INFO:__main__:  - 处理时间: 6177ms
+INFO:     127.0.0.1:0 - "POST /api/chat HTTP/1.1" 200 OK
+INFO:__main__:📩 机器人 'test_01' 收到查询 [auth_user_2_atalantis]: 愛運動的孩子會更聰明嗎...
+INFO:httpx:HTTP Request: POST http://localhost:9002/search "HTTP/1.1 200 OK"
+INFO:__main__:API搜索成功: 3 个结果
+INFO:__main__:🔍 机器人 'test_01' API检索结果: 3 个文档
+INFO:__main__:🔍 当前查询: 愛運動的孩子會更聰明嗎
+INFO:__main__:📄 检索到 3 个文档
+INFO:__main__:📄 文档 1:
+INFO:__main__:  内容预览: 書名:愛運動的孩子更聰明！
+從觀念到實踐，全面解析幼兒身體動作、設計活動並解答疑惑，幫助家長與老師一起動起來，帶領孩子養成好體力！
+https://www.hsinyishop.com/product
+INFO:__main__:  包含连接: https://www.hsinyishop.com/products/h000000036004
+INFO:__main__:  来源文件: 書名愛運動的孩子更聰明.txt
+INFO:__main__:📄 文档 2:
+INFO:__main__:  内容预览: 運動很重要，但不知道怎麼陪孩子玩？孩子走沒幾步就覺得喘、不想動？孩子不敢爬高，好不容易爬上去卻又下不來？為臺灣孩子設計的第一本體能促進寶典，家長、老師必備！「在未來高壓的生活環境中，幫助孩子從小培養足
+INFO:__main__:  包含连接: 
+INFO:__main__:  来源文件: 書名愛運動的孩子更聰明.txt
+INFO:__main__:📄 文档 3:
+INFO:__main__:  内容预览: 孩子需要自己學會解決問題
+
+2025年01月 (更新 : 2025-01-16)
+
+本篇文章來源網址https://parents.hsin-yi.org.tw/Library/Article/288
+INFO:__main__:  包含连接: https://parents.hsin-yi.org.tw/Library/Article/28819
+INFO:__main__:  来源文件: 孩子需要自己解決問題.docx
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 0
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 1
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 0
+INFO:__main__:🔍 机器人 'test_01' 检索结果: 3 个文档, chunk_refs: 3
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:__main__:🔍 机器人 'test_01' 推荐问题调试:
+INFO:__main__:  - should_recommend: True
+INFO:__main__:  - recommend_count: 0
+INFO:__main__:  - conversation_count: 2
+INFO:__main__:✅ 机器人 'test_01' 开始生成推荐问题...
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:__main__:🤖 机器人 'test_01' LLM 原始回应:
+INFO:__main__:'運動對孩子的社交能力有什麼影響嗎？  
+如何選擇適合孩子的運動項目？  
+運動頻率和持續時間對智力發展有何影響？'
+INFO:__main__:📝 机器人 'test_01' 解析后的推荐问题: ['運動對孩子的社交能力有什麼影響嗎？', '如何選擇適合孩子的運動項目？', '運動頻率和持續時間對智力發展有何影響？']
+INFO:__main__:从元数据中提取到 2 个连接
+INFO:__main__:✅ 新连接: 書名:愛運動的孩子更聰明！
+INFO:__main__:✅ 新连接: 年01月 (更新 : 2025-01-16)
+INFO:__main__:🔗 添加了 2 个参考连接
+INFO:conversation_logger_simple:✅ 記錄對話成功: ID 119, chunks: 3, 有效索引: 3
+INFO:__main__:✅ 对话记录成功：ID=conv_119, 机器人：test_01, chunks=3
+INFO:__main__:📤 机器人 'test_01' API 回应调试:
+INFO:__main__:  - response_text 长度: 750
+INFO:__main__:  - recommended_questions: ['運動對孩子的社交能力有什麼影響嗎？', '如何選擇適合孩子的運動項目？', '運動頻率和持續時間對智力發展有何影響？']
+INFO:__main__:  - 找到文档数量: 3
+INFO:__main__:  - chunk_references: 3
+INFO:__main__:  - 处理时间: 18293ms
+INFO:     127.0.0.1:0 - "POST /api/chat HTTP/1.1" 200 OK
+INFO:__main__:📩 机器人 'test_01' 收到查询 [auth_user_2_atalantis]: 運動對孩子的社交能力有什麼影響嗎？...
+INFO:httpx:HTTP Request: POST http://localhost:9002/search "HTTP/1.1 200 OK"
+INFO:__main__:API搜索成功: 3 个结果
+INFO:__main__:🔍 机器人 'test_01' API检索结果: 3 个文档
+INFO:__main__:🔍 当前查询: 運動對孩子的社交能力有什麼影響嗎？
+INFO:__main__:📄 检索到 3 个文档
+INFO:__main__:📄 文档 1:
+INFO:__main__:  内容预览: 運動很重要，但不知道怎麼陪孩子玩？孩子走沒幾步就覺得喘、不想動？孩子不敢爬高，好不容易爬上去卻又下不來？為臺灣孩子設計的第一本體能促進寶典，家長、老師必備！「在未來高壓的生活環境中，幫助孩子從小培養足
+INFO:__main__:  包含连接: 
+INFO:__main__:  来源文件: 書名愛運動的孩子更聰明.txt
+INFO:__main__:📄 文档 2:
+INFO:__main__:  内容预览: 身體活動所帶來的益處眾所周知，對於幼兒而言，同樣值得照顧者關注的是他們「基本動作技能」的發展。在信誼2023年度針對2～6歲幼兒身體動作能力大調查中，有逾8成的父母認同運動對身體、認知和情感的正面效益
+INFO:__main__:  包含连接: 
+INFO:__main__:  来源文件: 書名愛運動的孩子更聰明.txt
+INFO:__main__:📄 文档 3:
+INFO:__main__:  内容预览: 如同作者提到的身體教育「3要素、2原則」，在孩子學習動作技能時，給予溫暖的情感支持與「鼓勵」，父母在旁陪伴輔以動作上的「引導」，並提供孩子多元的「練習」機會，即所謂「3要素」。孩子在運動時難免會遇到難
+INFO:__main__:  包含连接: 
+INFO:__main__:  来源文件: 書名愛運動的孩子更聰明.txt
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 1
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 5
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 6
+INFO:__main__:🔍 机器人 'test_01' 检索结果: 3 个文档, chunk_refs: 3
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:__main__:🔍 机器人 'test_01' 推荐问题调试:
+INFO:__main__:  - should_recommend: True
+INFO:__main__:  - recommend_count: 0
+INFO:__main__:  - conversation_count: 3
+INFO:__main__:✅ 机器人 'test_01' 开始生成推荐问题...
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:__main__:🤖 机器人 'test_01' LLM 原始回应:
+INFO:__main__:'運動對孩子的心理健康有什麼影響嗎？  
+除了運動，還有哪些活動能促進孩子的社交能力？  
+如何選擇適合孩子的運動項目以增強社交技能？'
+INFO:__main__:📝 机器人 'test_01' 解析后的推荐问题: ['運動對孩子的心理健康有什麼影響嗎？', '除了運動，還有哪些活動能促進孩子的社交能力？', '如何選擇適合孩子的運動項目以增強社交技能？']
+INFO:__main__:从元数据中提取到 0 个连接
+INFO:__main__:📝 未在文档内容中找到可引用的URL
+INFO:conversation_logger_simple:✅ 記錄對話成功: ID 120, chunks: 3, 有效索引: 3
+INFO:__main__:✅ 对话记录成功：ID=conv_120, 机器人：test_01, chunks=3
+INFO:__main__:📤 机器人 'test_01' API 回应调试:
+INFO:__main__:  - response_text 长度: 732
+INFO:__main__:  - recommended_questions: ['運動對孩子的心理健康有什麼影響嗎？', '除了運動，還有哪些活動能促進孩子的社交能力？', '如何選擇適合孩子的運動項目以增強社交技能？']
+INFO:__main__:  - 找到文档数量: 3
+INFO:__main__:  - chunk_references: 3
+INFO:__main__:  - 处理时间: 17697ms
+INFO:     127.0.0.1:0 - "POST /api/chat HTTP/1.1" 200 OK
+INFO:__main__:📩 机器人 'test_01' 收到查询 [auth_user_2_atalantis]: 米糕甜蜜蜜的作者是誰...
+INFO:httpx:HTTP Request: POST http://localhost:9002/search "HTTP/1.1 200 OK"
+INFO:__main__:API搜索成功: 3 个结果
+INFO:__main__:🔍 机器人 'test_01' API检索结果: 3 个文档
+INFO:__main__:🔍 当前查询: 米糕甜蜜蜜的作者是誰
+INFO:__main__:📄 检索到 3 个文档
+INFO:__main__:📄 文档 1:
+INFO:__main__:  内容预览: 甜米糕，每一道步驟都是愛的祝福
+新娘家人製作甜米糕，參與的人手越多，寄予的愛和祝福也越多，質樸深厚的情意，相當有意思。
+─「花生」油拌炒糯米：增添香氣，祝福新人「早生貴子」。
+─拌入紅糖、砂糖：增色添
+INFO:__main__:  包含连接: 
+INFO:__main__:  来源文件: 米糕甜蜜蜜.txt
+INFO:__main__:📄 文档 2:
+INFO:__main__:  内容预览: 米糕甜蜜蜜（客庄文化）
+https://www.hsinyishop.com/products/h000000039009
+
+
+小桃妹的姑姑要出嫁，全家人動手做「甜米糕」，幫忙的人手越多，愛與祝福也越
+INFO:__main__:  包含连接: https://www.hsinyishop.com/products/h000000039009
+INFO:__main__:  来源文件: 米糕甜蜜蜜.txt
+INFO:__main__:📄 文档 3:
+INFO:__main__:  内容预览: 溫馨甜蜜的客家嫁娶文化
+文／吳幸玲（文化大學社會福利系及臺北市立大學幼教系兼任副教授）
+故事的緣起，來自於小女兒的童言童語：「以後我要跟爸爸結婚，這樣我們就可以永遠住在一起了！」女兒的小小心願，爸爸聽
+INFO:__main__:  包含连接: 
+INFO:__main__:  来源文件: 米糕甜蜜蜜.txt
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 2
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 0
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 4
+INFO:__main__:🔍 机器人 'test_01' 检索结果: 3 个文档, chunk_refs: 3
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:__main__:🔍 机器人 'test_01' 推荐问题调试:
+INFO:__main__:  - should_recommend: True
+INFO:__main__:  - recommend_count: 0
+INFO:__main__:  - conversation_count: 4
+INFO:__main__:✅ 机器人 'test_01' 开始生成推荐问题...
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:__main__:🤖 机器人 'test_01' LLM 原始回应:
+INFO:__main__:'《米糕甜蜜蜜》这本书的主要主题是什么？  
+江明恭在创作过程中受到了哪些文化影响？  
+除了《米糕甜蜜蜜》，江明恭还有哪些著名的作品？'
+INFO:__main__:📝 机器人 'test_01' 解析后的推荐问题: ['《米糕甜蜜蜜》这本书的主要主题是什么？', '江明恭在创作过程中受到了哪些文化影响？', '除了《米糕甜蜜蜜》，江明恭还有哪些著名的作品？']
+INFO:__main__:从元数据中提取到 1 个连接
+INFO:__main__:✅ 新连接: 米糕甜蜜蜜（客庄文化）
+INFO:__main__:🔗 添加了 1 个参考连接
+INFO:conversation_logger_simple:✅ 記錄對話成功: ID 121, chunks: 3, 有效索引: 3
+INFO:__main__:✅ 对话记录成功：ID=conv_121, 机器人：test_01, chunks=3
+INFO:__main__:📤 机器人 'test_01' API 回应调试:
+INFO:__main__:  - response_text 长度: 294
+INFO:__main__:  - recommended_questions: ['《米糕甜蜜蜜》这本书的主要主题是什么？', '江明恭在创作过程中受到了哪些文化影响？', '除了《米糕甜蜜蜜》，江明恭还有哪些著名的作品？']
+INFO:__main__:  - 找到文档数量: 3
+INFO:__main__:  - chunk_references: 3
+INFO:__main__:  - 处理时间: 9373ms
+INFO:     127.0.0.1:0 - "POST /api/chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /modern/static/chat.css HTTP/1.1" 304 Not Modified
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [14156]
+INFO:auth_middleware:✅ user_manager 載入成功
+Building prefix dict from the default dictionary ...
+DEBUG:jieba:Building prefix dict from the default dictionary ...
+Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+DEBUG:jieba:Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+Loading model cost 0.354 seconds.
+DEBUG:jieba:Loading model cost 0.354 seconds.
+Prefix dict has been built successfully.
+DEBUG:jieba:Prefix dict has been built successfully.
+INFO:__main__:✅ 向量系统初始化成功 (机器人: test_01)
+INFO:__main__:🔗 使用向量API模式: http://localhost:9002
+INFO:__main__:ℹ️ ProxyHeadersMiddleware 不可用，使用本地開發模式
+INFO:__main__:✅ 静态文件挂载成功: C:\Users\danny\pyRag\bot_lang\chatbot_templates\modern\static
+INFO:__main__:✅ 机器人实例 'test_01' 初始化完成，对话记录数据库：test_01_conversations.db
+INFO:__main__:🤖 机器人 'test_01' 正在 http://localhost:9003 上启动
+INFO:__main__:📊 对话记录数据库：test_01_conversations.db
+INFO:__main__:📚 知识库集合：collection_test_01
+INFO:__main__:🔍 搜索模式：api
+INFO:__main__:🔗 向量API地址：http://localhost:9002
+INFO:__main__:🔧 调试模式已启用，将输出详细的对话记录和推荐问题生成日志
+INFO:     Started server process [25520]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:9003 (Press CTRL+C to quit)
+✅ 連接到現有資料庫: user_management.db
+✅ 資料庫結構驗證通過
+✅ 修正版用戶管理器初始化成功
+✅ 增強版對話數據庫初始化成功 (自動欄位修復已啟用)
+✅ httpx 可用，支持向量API模式
+✅ 使用新版 langchain-chroma
+✅ 使用新版 langchain-huggingface
+✅ OpenAI Embeddings 可用
+✅ OpenAI API Key 格式正確
+   API Key: sk-proj-***-2kA
+✅ OpenAI 環境檢查通過
+✅ EPUB 讀取功能已完整修復！
+📚 支援功能:
+   • 自動提取章節內容
+   • 智能章節標題識別
+   • 中文文本標準化
+   • 書籍元資料提取
+   • HTML 標籤清理
+   • 多章節智能分割
+✅ DOCX 支援已啟用 (docx2txt)
+✅ EPUB 支援已啟用
+✅ 向量系统可用
+🔧 初始化 OpenAI Embeddings...
+✅ OpenAI Embeddings 初始化成功
+🔤 繁簡轉換器初始化完成
+🔤 繁簡轉換器初始化完成
+✅ 文本處理組件初始化完成
+🔤 繁簡轉換器初始化完成
+🔧 優化版文本分割器初始化完成
+   📏 支持 11 種文本類型
+   🧠 智能策略選擇
+   ⚡ 性能優化
+🚀 完整優化版向量系統初始化完成
+   🤖 嵌入模型: openai
+   📁 數據目錄: data
+   🗄️ 向量庫: chroma_langchain_db
+   🧠 智能文本處理: ✅
+   🔧 自適應批次: ✅
+✅ 增強版對話數據庫初始化成功 (自動欄位修復已啟用)
+INFO:     127.0.0.1:0 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /modern/static/chat.js HTTP/1.1" 304 Not Modified
+INFO:__main__:📩 机器人 'test_01' 收到查询 [auth_user_2_atalantis]: 魔法親親的作者是誰...
+INFO:httpx:HTTP Request: POST http://localhost:9002/search "HTTP/1.1 200 OK"
+INFO:__main__:API搜索成功: 3 个结果
+INFO:__main__:🔍 机器人 'test_01' API检索结果: 3 个文档
+INFO:__main__:🔍 当前查询: 魔法親親的作者是誰
+INFO:__main__:📄 检索到 3 个文档
+INFO:__main__:📄 文档 1:
+INFO:__main__:  内容预览: 書名:魔法親親（安撫孩子分離焦慮的最佳圖畫書）
+https://www.hsinyishop.com/products/h000000035755
+
+《魔法親親》是讓孩子安心上學的魔法！一個留在掌心的
+INFO:__main__:  包含连接: https://www.hsinyishop.com/products/h000000035755
+INFO:__main__:  来源文件: 書名魔法親親（安撫孩子分離焦慮的最佳圖畫書）.txt
+INFO:__main__:📄 文档 2:
+INFO:__main__:  内容预览: 很順利，
+因為他們得面對無數個「轉變」。
+從「家裡」變成「學校」；
+從「一個人獨處」變成「和大家相處」；
+從「獨占」變成「分享」……
+這麼多的轉變，不要說小小孩，連大人都必須適應一陣子，
+比如上班時也
+INFO:__main__:  包含连接: 
+INFO:__main__:  来源文件: 書名魔法親親（安撫孩子分離焦慮的最佳圖畫書）.txt
+INFO:__main__:📄 文档 3:
+INFO:__main__:  内容预览: 作者的話
+全家人齊心寄予的祝福
+文／江明恭
+小桃妹的家冒出炊煙，難道是《小桃妹》繪本裡的阿婆重整旗鼓想再次開業嗎？不是的，阿婆歲數已大不適合過度操勞，而這次再展露手藝全是因為「嫁妹」（嫁女兒）。嫁女兒
+INFO:__main__:  包含连接: 
+INFO:__main__:  来源文件: 米糕甜蜜蜜.txt
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 0
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 1
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 3
+INFO:__main__:🔍 机器人 'test_01' 检索结果: 3 个文档, chunk_refs: 3
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:__main__:🔍 机器人 'test_01' 推荐问题调试:
+INFO:__main__:  - should_recommend: True
+INFO:__main__:  - recommend_count: 0
+INFO:__main__:  - conversation_count: 1
+INFO:__main__:✅ 机器人 'test_01' 开始生成推荐问题...
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:__main__:🤖 机器人 'test_01' LLM 原始回应:
+INFO:__main__:'《魔法親親》這本書主要講述了什麼樣的故事？  
+奧黛莉．潘恩還有哪些其他著名的童書作品？  
+如何幫助孩子克服分離焦慮？'
+INFO:__main__:📝 机器人 'test_01' 解析后的推荐问题: ['《魔法親親》這本書主要講述了什麼樣的故事？', '奧黛莉．潘恩還有哪些其他著名的童書作品？', '如何幫助孩子克服分離焦慮？']
+INFO:__main__:从元数据中提取到 1 个连接
+INFO:__main__:✅ 新连接: 書名:魔法親親（安撫孩子分離焦慮的最佳圖畫書）
+INFO:__main__:🔗 添加了 1 个参考连接
+INFO:conversation_logger_simple:✅ 記錄對話成功: ID 122, chunks: 3, 有效索引: 3
+INFO:__main__:✅ 对话记录成功：ID=conv_122, 机器人：test_01, chunks=3
+INFO:__main__:📤 机器人 'test_01' API 回应调试:
+INFO:__main__:  - response_text 长度: 405
+INFO:__main__:  - recommended_questions: ['《魔法親親》這本書主要講述了什麼樣的故事？', '奧黛莉．潘恩還有哪些其他著名的童書作品？', '如何幫助孩子克服分離焦慮？']
+INFO:__main__:  - 找到文档数量: 3
+INFO:__main__:  - chunk_references: 3
+INFO:__main__:  - 处理时间: 10710ms
+INFO:     127.0.0.1:0 - "POST /api/chat HTTP/1.1" 200 OK
+INFO:__main__:📩 机器人 'test_01' 收到查询 [auth_user_2_atalantis]: 東港海味漁村的作者是誰...
+INFO:httpx:HTTP Request: POST http://localhost:9002/search "HTTP/1.1 200 OK"
+INFO:__main__:API搜索成功: 3 个结果
+INFO:__main__:🔍 机器人 'test_01' API检索结果: 3 个文档
+INFO:__main__:🔍 当前查询: 東港海味漁村的作者是誰
+INFO:__main__:📄 检索到 3 个文档
+INFO:__main__:📄 文档 1:
+INFO:__main__:  内容预览: 作者的話
+後記 文／岑澎維
+居住在屏東，每當寫作告一段落時，藉地利之便，到鄰近的「東港」走走，來一趟小旅行，成了犒賞自己的方式。
+要怎麼形容東港呢？
+鹹鹹的海風、淳樸的人情、迷人的飲食、虔誠的信仰、吆
+INFO:__main__:  包含连接: 
+INFO:__main__:  来源文件: 我的小遊記東港海味漁村.txt
+INFO:__main__:📄 文档 2:
+INFO:__main__:  内容预览: 書名:我的小遊記！東港海味漁村
+產品網址 https://www.hsinyishop.com/products/h000000039139
+
+
+跟著海風吹來的同學，出發！在地遊記體故事，看小學生尤盛
+INFO:__main__:  包含连接: https://www.hsinyishop.com/products/h000000039139
+INFO:__main__:  来源文件: 我的小遊記東港海味漁村.txt
+INFO:__main__:📄 文档 3:
+INFO:__main__:  内容预览: 寫作這本遊記時，在這個歷史悠久的老漁村裡四處探索的時光，是充滿喜悅，充滿收穫的。
+莊嚴的廟宇，訴說討海人恆久不變的祈求，期待平安、期待滿載歸來；累了，坐在港邊看漁船，欣賞漁村風光；餓了，到市場逛一逛，
+INFO:__main__:  包含连接: 
+INFO:__main__:  来源文件: 我的小遊記東港海味漁村.txt
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 4
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 0
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 5
+INFO:__main__:🔍 机器人 'test_01' 检索结果: 3 个文档, chunk_refs: 3
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:__main__:🔍 机器人 'test_01' 推荐问题调试:
+INFO:__main__:  - should_recommend: True
+INFO:__main__:  - recommend_count: 0
+INFO:__main__:  - conversation_count: 2
+INFO:__main__:✅ 机器人 'test_01' 开始生成推荐问题...
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:__main__:🤖 机器人 'test_01' LLM 原始回应:
+INFO:__main__:'東港海味漁村的故事背景是什麼？  
+這本書的主要角色有哪些？  
+作者還有其他哪些作品？'
+INFO:__main__:📝 机器人 'test_01' 解析后的推荐问题: ['東港海味漁村的故事背景是什麼？', '這本書的主要角色有哪些？', '作者還有其他哪些作品？']
+INFO:__main__:从元数据中提取到 1 个连接
+INFO:__main__:✅ 新连接: 書名:我的小遊記！東港海味漁村
+INFO:__main__:🔗 添加了 1 个参考连接
+INFO:conversation_logger_simple:✅ 記錄對話成功: ID 123, chunks: 3, 有效索引: 3
+INFO:__main__:✅ 对话记录成功：ID=conv_123, 机器人：test_01, chunks=3
+INFO:__main__:📤 机器人 'test_01' API 回应调试:
+INFO:__main__:  - response_text 长度: 92
+INFO:__main__:  - recommended_questions: ['東港海味漁村的故事背景是什麼？', '這本書的主要角色有哪些？', '作者還有其他哪些作品？']
+INFO:__main__:  - 找到文档数量: 3
+INFO:__main__:  - chunk_references: 3
+INFO:__main__:  - 处理时间: 5757ms
+INFO:     127.0.0.1:0 - "POST /api/chat HTTP/1.1" 200 OK
+INFO:__main__:📩 机器人 'test_01' 收到查询 [auth_user_2_atalantis]: 東港海味漁村 故事是甚麼?...
+INFO:httpx:HTTP Request: POST http://localhost:9002/search "HTTP/1.1 200 OK"
+INFO:__main__:API搜索成功: 3 个结果
+INFO:__main__:🔍 机器人 'test_01' API检索结果: 3 个文档
+INFO:__main__:🔍 当前查询: 東港海味漁村 故事是甚麼?
+INFO:__main__:📄 检索到 3 个文档
+INFO:__main__:📄 文档 1:
+INFO:__main__:  内容预览: 作者的話
+後記 文／岑澎維
+居住在屏東，每當寫作告一段落時，藉地利之便，到鄰近的「東港」走走，來一趟小旅行，成了犒賞自己的方式。
+要怎麼形容東港呢？
+鹹鹹的海風、淳樸的人情、迷人的飲食、虔誠的信仰、吆
+INFO:__main__:  包含连接: 
+INFO:__main__:  来源文件: 我的小遊記東港海味漁村.txt
+INFO:__main__:📄 文档 2:
+INFO:__main__:  内容预览: 寫作這本遊記時，在這個歷史悠久的老漁村裡四處探索的時光，是充滿喜悅，充滿收穫的。
+莊嚴的廟宇，訴說討海人恆久不變的祈求，期待平安、期待滿載歸來；累了，坐在港邊看漁船，欣賞漁村風光；餓了，到市場逛一逛，
+INFO:__main__:  包含连接: 
+INFO:__main__:  来源文件: 我的小遊記東港海味漁村.txt
+INFO:__main__:📄 文档 3:
+INFO:__main__:  内容预览: 書名:我的小遊記！東港海味漁村
+產品網址 https://www.hsinyishop.com/products/h000000039139
+
+
+跟著海風吹來的同學，出發！在地遊記體故事，看小學生尤盛
+INFO:__main__:  包含连接: https://www.hsinyishop.com/products/h000000039139
+INFO:__main__:  来源文件: 我的小遊記東港海味漁村.txt
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 4
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 5
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 0
+INFO:__main__:🔍 机器人 'test_01' 检索结果: 3 个文档, chunk_refs: 3
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:__main__:🔍 机器人 'test_01' 推荐问题调试:
+INFO:__main__:  - should_recommend: True
+INFO:__main__:  - recommend_count: 0
+INFO:__main__:  - conversation_count: 3
+INFO:__main__:✅ 机器人 'test_01' 开始生成推荐问题...
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:__main__:🤖 机器人 'test_01' LLM 原始回应:
+INFO:__main__:'尤盛和蔡尚廷在旅途中遇到了哪些有趣的人或事？  
+書中提到的「東港美食小三寶」具體是什麼？  
+這本書如何幫助孩子們理解和欣賞家鄉文化？'
+INFO:__main__:📝 机器人 'test_01' 解析后的推荐问题: ['尤盛和蔡尚廷在旅途中遇到了哪些有趣的人或事？', '書中提到的「東港美食小三寶」具體是什麼？', '這本書如何幫助孩子們理解和欣賞家鄉文化？']
+INFO:__main__:从元数据中提取到 1 个连接
+INFO:__main__:🔄 跳过重复连接: 書名:我的小遊記！東港海味漁村
+INFO:__main__:🔄 所有连接都是重复的，跳过显示
+INFO:conversation_logger_simple:✅ 記錄對話成功: ID 124, chunks: 3, 有效索引: 3
+INFO:__main__:✅ 对话记录成功：ID=conv_124, 机器人：test_01, chunks=3
+INFO:__main__:📤 机器人 'test_01' API 回应调试:
+INFO:__main__:  - response_text 长度: 437
+INFO:__main__:  - recommended_questions: ['尤盛和蔡尚廷在旅途中遇到了哪些有趣的人或事？', '書中提到的「東港美食小三寶」具體是什麼？', '這本書如何幫助孩子們理解和欣賞家鄉文化？']
+INFO:__main__:  - 找到文档数量: 3
+INFO:__main__:  - chunk_references: 3
+INFO:__main__:  - 处理时间: 10938ms
+INFO:     127.0.0.1:0 - "POST /api/chat HTTP/1.1" 200 OK
+INFO:__main__:📩 机器人 'test_01' 收到查询 [auth_user_2_atalantis]: 真的有抖音腦嗎?...
+INFO:httpx:HTTP Request: POST http://localhost:9002/search "HTTP/1.1 200 OK"
+INFO:__main__:API搜索成功: 3 个结果
+INFO:__main__:🔍 机器人 'test_01' API检索结果: 3 个文档
+INFO:__main__:🔍 当前查询: 真的有抖音腦嗎?
+INFO:__main__:📄 检索到 3 个文档
+INFO:__main__:📄 文档 1:
+INFO:__main__:  内容预览: 《【教養新視野】認識抖音腦：短影音如何影響我們的下一代？》
+【教養新視野】認識抖音腦：短影音如何影響我們的下一代？
+2025年02月 (更新 : 2025-02-26)
+短影音已成為兒童與青少年的日常
+INFO:__main__:  包含连接: 
+INFO:__main__:  来源文件: 【教養新視野】認識抖音腦：短影音如何影響我們的下一代？_msjh.pdf
+INFO:__main__:📄 文档 2:
+INFO:__main__:  内容预览: 1.心理健康問題：短影音讓孩子更容易沉迷
+短影音的設計讓人一滑再滑，停不下來，這可能會影響孩子的大腦運作方式。
+神經科學研究指出，抖音、Instagram
+Reels等短影音平台以15至60秒的有趣內
+INFO:__main__:  包含连接: 
+INFO:__main__:  来源文件: 【教養新視野】認識抖音腦：短影音如何影響我們的下一代？_msjh.pdf
+INFO:__main__:📄 文档 3:
+INFO:__main__:  内容预览: 2.誘發危險行為：短影音挑戰可能影響孩子判斷力
+觀看短影音不只是娛樂，還可能讓孩子受到錯誤資訊的影響，甚至模仿危險行為。
+某些短影音挑戰會鼓勵孩子模仿不安全的行為，例如停電挑戰（Blackout
+Ch
+INFO:__main__:  包含连接: 
+INFO:__main__:  来源文件: 【教養新視野】認識抖音腦：短影音如何影響我們的下一代？_msjh.pdf
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 0
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 0
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 0
+INFO:__main__:🔍 机器人 'test_01' 检索结果: 3 个文档, chunk_refs: 3
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:__main__:🔍 机器人 'test_01' 推荐问题调试:
+INFO:__main__:  - should_recommend: True
+INFO:__main__:  - recommend_count: 0
+INFO:__main__:  - conversation_count: 4
+INFO:__main__:✅ 机器人 'test_01' 开始生成推荐问题...
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:__main__:🤖 机器人 'test_01' LLM 原始回应:
+INFO:__main__:'抖音腦對青少年的學習成效有什麼具體影響？  
+如何辨別孩子是否已經對短影音平台產生依賴？  
+有哪些有效的方法可以幫助孩子提高專注力？'
+INFO:__main__:📝 机器人 'test_01' 解析后的推荐问题: ['抖音腦對青少年的學習成效有什麼具體影響？', '如何辨別孩子是否已經對短影音平台產生依賴？', '有哪些有效的方法可以幫助孩子提高專注力？']
+INFO:__main__:从元数据中提取到 0 个连接
+INFO:__main__:📝 未在文档内容中找到可引用的URL
+INFO:conversation_logger_simple:✅ 記錄對話成功: ID 125, chunks: 3, 有效索引: 3
+INFO:__main__:✅ 对话记录成功：ID=conv_125, 机器人：test_01, chunks=3
+INFO:__main__:📤 机器人 'test_01' API 回应调试:
+INFO:__main__:  - response_text 长度: 726
+INFO:__main__:  - recommended_questions: ['抖音腦對青少年的學習成效有什麼具體影響？', '如何辨別孩子是否已經對短影音平台產生依賴？', '有哪些有效的方法可以幫助孩子提高專注力？']
+INFO:__main__:  - 找到文档数量: 3
+INFO:__main__:  - chunk_references: 3
+INFO:__main__:  - 处理时间: 17260ms
+INFO:     127.0.0.1:0 - "POST /api/chat HTTP/1.1" 200 OK
+INFO:__main__:📩 机器人 'test_01' 收到查询 [auth_user_2_atalantis]: 壽司去旅行的作者是誰...
+INFO:httpx:HTTP Request: POST http://localhost:9002/search "HTTP/1.1 200 OK"
+INFO:__main__:API搜索成功: 3 个结果
+INFO:__main__:🔍 机器人 'test_01' API检索结果: 3 个文档
+INFO:__main__:🔍 当前查询: 壽司去旅行的作者是誰
+INFO:__main__:📄 检索到 3 个文档
+INFO:__main__:📄 文档 1:
+INFO:__main__:  内容预览: 《壽司去旅行》專家導讀：帥氣壽司又來了！
+
+更新 : 2025-01-23
+
+超人氣微型藝術家－田中達也繼暢銷繪本《壽司買衣服》後再度推出《壽司去旅行》！跟著壽司搭乘火車，去萵苣山看夕陽、海邊晒日光浴
+INFO:__main__:  包含连接: 
+INFO:__main__:  来源文件: 壽司去旅行.docx
+INFO:__main__:📄 文档 2:
+INFO:__main__:  内容预览: 作者的話
+後記 文／岑澎維
+居住在屏東，每當寫作告一段落時，藉地利之便，到鄰近的「東港」走走，來一趟小旅行，成了犒賞自己的方式。
+要怎麼形容東港呢？
+鹹鹹的海風、淳樸的人情、迷人的飲食、虔誠的信仰、吆
+INFO:__main__:  包含连接: 
+INFO:__main__:  来源文件: 我的小遊記東港海味漁村.txt
+INFO:__main__:📄 文档 3:
+INFO:__main__:  内容预览: 書名:我的小遊記！東港海味漁村
+產品網址 https://www.hsinyishop.com/products/h000000039139
+
+
+跟著海風吹來的同學，出發！在地遊記體故事，看小學生尤盛
+INFO:__main__:  包含连接: https://www.hsinyishop.com/products/h000000039139
+INFO:__main__:  来源文件: 我的小遊記東港海味漁村.txt
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 0
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 4
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 0
+INFO:__main__:🔍 机器人 'test_01' 检索结果: 3 个文档, chunk_refs: 3
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:__main__:🔍 机器人 'test_01' 推荐问题调试:
+INFO:__main__:  - should_recommend: True
+INFO:__main__:  - recommend_count: 0
+INFO:__main__:  - conversation_count: 5
+INFO:__main__:✅ 机器人 'test_01' 开始生成推荐问题...
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:__main__:🤖 机器人 'test_01' LLM 原始回应:
+INFO:__main__:'田中達也還有哪些其他著作值得推薦？  
+這本書適合什麼年齡段的孩子閱讀？  
+故事中有哪些特別的地理知識或文化背景可以學習？'
+INFO:__main__:📝 机器人 'test_01' 解析后的推荐问题: ['田中達也還有哪些其他著作值得推薦？', '這本書適合什麼年齡段的孩子閱讀？', '故事中有哪些特別的地理知識或文化背景可以學習？']
+INFO:__main__:从元数据中提取到 1 个连接
+INFO:__main__:🔄 跳过重复连接: 書名:我的小遊記！東港海味漁村
+INFO:__main__:🔄 所有连接都是重复的，跳过显示
+INFO:conversation_logger_simple:✅ 記錄對話成功: ID 126, chunks: 3, 有效索引: 3
+INFO:__main__:✅ 对话记录成功：ID=conv_126, 机器人：test_01, chunks=3
+INFO:__main__:📤 机器人 'test_01' API 回应调试:
+INFO:__main__:  - response_text 长度: 315
+INFO:__main__:  - recommended_questions: ['田中達也還有哪些其他著作值得推薦？', '這本書適合什麼年齡段的孩子閱讀？', '故事中有哪些特別的地理知識或文化背景可以學習？']
+INFO:__main__:  - 找到文档数量: 3
+INFO:__main__:  - chunk_references: 3
+INFO:__main__:  - 处理时间: 9563ms
+INFO:     127.0.0.1:0 - "POST /api/chat HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [25520]
+INFO:auth_middleware:✅ user_manager 載入成功
+Building prefix dict from the default dictionary ...
+DEBUG:jieba:Building prefix dict from the default dictionary ...
+Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+DEBUG:jieba:Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+Loading model cost 0.377 seconds.
+DEBUG:jieba:Loading model cost 0.377 seconds.
+Prefix dict has been built successfully.
+DEBUG:jieba:Prefix dict has been built successfully.
+INFO:__main__:✅ 向量系统初始化成功 (机器人: test_01)
+INFO:__main__:🔗 使用向量API模式: http://localhost:9002
+INFO:__main__:ℹ️ ProxyHeadersMiddleware 不可用，使用本地開發模式
+INFO:__main__:✅ 静态文件挂载成功: C:\Users\danny\pyRag\bot_lang\chatbot_templates\modern\static
+INFO:__main__:✅ 机器人实例 'test_01' 初始化完成，对话记录数据库：test_01_conversations.db
+INFO:__main__:🤖 机器人 'test_01' 正在 http://localhost:9003 上启动
+INFO:__main__:📊 对话记录数据库：test_01_conversations.db
+INFO:__main__:📚 知识库集合：collection_test_01
+INFO:__main__:🔍 搜索模式：api
+INFO:__main__:🔗 向量API地址：http://localhost:9002
+INFO:__main__:🔧 调试模式已启用，将输出详细的对话记录和推荐问题生成日志
+INFO:     Started server process [22324]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:9003 (Press CTRL+C to quit)
+✅ 連接到現有資料庫: user_management.db
+✅ 資料庫結構驗證通過
+✅ 修正版用戶管理器初始化成功
+✅ 增強版對話數據庫初始化成功 (自動欄位修復已啟用)
+✅ httpx 可用，支持向量API模式
+✅ 使用新版 langchain-chroma
+✅ 使用新版 langchain-huggingface
+✅ OpenAI Embeddings 可用
+✅ OpenAI API Key 格式正確
+   API Key: sk-proj-***-2kA
+✅ OpenAI 環境檢查通過
+✅ EPUB 讀取功能已完整修復！
+📚 支援功能:
+   • 自動提取章節內容
+   • 智能章節標題識別
+   • 中文文本標準化
+   • 書籍元資料提取
+   • HTML 標籤清理
+   • 多章節智能分割
+✅ DOCX 支援已啟用 (docx2txt)
+✅ EPUB 支援已啟用
+✅ 向量系统可用
+🔧 初始化 OpenAI Embeddings...
+✅ OpenAI Embeddings 初始化成功
+🔤 繁簡轉換器初始化完成
+🔤 繁簡轉換器初始化完成
+✅ 文本處理組件初始化完成
+🔤 繁簡轉換器初始化完成
+🔧 優化版文本分割器初始化完成
+   📏 支持 11 種文本類型
+   🧠 智能策略選擇
+   ⚡ 性能優化
+🚀 完整優化版向量系統初始化完成
+   🤖 嵌入模型: openai
+   📁 數據目錄: data
+   🗄️ 向量庫: chroma_langchain_db
+   🧠 智能文本處理: ✅
+   🔧 自適應批次: ✅
+✅ 增強版對話數據庫初始化成功 (自動欄位修復已啟用)
+INFO:     127.0.0.1:0 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /modern/static/chat.css HTTP/1.1" 304 Not Modified
+INFO:__main__:📩 机器人 'test_01' 收到查询 [auth_user_2_atalantis]: 魔法親親的作者是誰...
+INFO:httpx:HTTP Request: POST http://localhost:9002/search "HTTP/1.1 200 OK"
+INFO:__main__:API搜索成功: 3 个结果
+INFO:__main__:🔍 机器人 'test_01' API检索结果: 3 个文档
+INFO:__main__:🔍 当前查询: 魔法親親的作者是誰
+INFO:__main__:📄 检索到 3 个文档
+INFO:__main__:📄 文档 1:
+INFO:__main__:  内容预览: 書名:魔法親親（安撫孩子分離焦慮的最佳圖畫書）
+https://www.hsinyishop.com/products/h000000035755
+
+《魔法親親》是讓孩子安心上學的魔法！一個留在掌心的
+INFO:__main__:  包含连接: https://www.hsinyishop.com/products/h000000035755
+INFO:__main__:  来源文件: 書名魔法親親（安撫孩子分離焦慮的最佳圖畫書）.txt
+INFO:__main__:📄 文档 2:
+INFO:__main__:  内容预览: 很順利，
+因為他們得面對無數個「轉變」。
+從「家裡」變成「學校」；
+從「一個人獨處」變成「和大家相處」；
+從「獨占」變成「分享」……
+這麼多的轉變，不要說小小孩，連大人都必須適應一陣子，
+比如上班時也
+INFO:__main__:  包含连接: 
+INFO:__main__:  来源文件: 書名魔法親親（安撫孩子分離焦慮的最佳圖畫書）.txt
+INFO:__main__:📄 文档 3:
+INFO:__main__:  内容预览: 作者的話
+全家人齊心寄予的祝福
+文／江明恭
+小桃妹的家冒出炊煙，難道是《小桃妹》繪本裡的阿婆重整旗鼓想再次開業嗎？不是的，阿婆歲數已大不適合過度操勞，而這次再展露手藝全是因為「嫁妹」（嫁女兒）。嫁女兒
+INFO:__main__:  包含连接: 
+INFO:__main__:  来源文件: 米糕甜蜜蜜.txt
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 0
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 1
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 3
+INFO:__main__:🔍 机器人 'test_01' 检索结果: 3 个文档, chunk_refs: 3
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:__main__:🔍 机器人 'test_01' 推荐问题调试:
+INFO:__main__:  - should_recommend: False
+INFO:__main__:  - recommend_count: 0
+INFO:__main__:  - conversation_count: 1
+INFO:__main__:❌ 机器人 'test_01' 推荐问题未启用或超出限制
+INFO:__main__:从元数据中提取到 1 个连接
+INFO:__main__:✅ 新连接: 書名:魔法親親（安撫孩子分離焦慮的最佳圖畫書）
+INFO:__main__:🔗 添加了 1 个参考连接
+INFO:conversation_logger_simple:✅ 記錄對話成功: ID 127, chunks: 3, 有效索引: 3
+INFO:__main__:✅ 对话记录成功：ID=conv_127, 机器人：test_01, chunks=3
+INFO:__main__:📤 机器人 'test_01' API 回应调试:
+INFO:__main__:  - response_text 长度: 473
+INFO:__main__:  - recommended_questions: []
+INFO:__main__:  - 找到文档数量: 3
+INFO:__main__:  - chunk_references: 3
+INFO:__main__:  - 处理时间: 11542ms
+INFO:     127.0.0.1:0 - "POST /api/chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /modern/static/chat.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /modern/static/chat.js HTTP/1.1" 200 OK
+INFO:__main__:📩 机器人 'test_01' 收到查询 [auth_user_2_atalantis]: 抖音會影響小孩的大腦嗎...
+INFO:httpx:HTTP Request: POST http://localhost:9002/search "HTTP/1.1 200 OK"
+INFO:__main__:API搜索成功: 3 个结果
+INFO:__main__:🔍 机器人 'test_01' API检索结果: 3 个文档
+INFO:__main__:🔍 当前查询: 抖音會影響小孩的大腦嗎
+INFO:__main__:📄 检索到 3 个文档
+INFO:__main__:📄 文档 1:
+INFO:__main__:  内容预览: 《【教養新視野】認識抖音腦：短影音如何影響我們的下一代？》
+【教養新視野】認識抖音腦：短影音如何影響我們的下一代？
+2025年02月 (更新 : 2025-02-26)
+短影音已成為兒童與青少年的日常
+INFO:__main__:  包含连接: 
+INFO:__main__:  来源文件: 【教養新視野】認識抖音腦：短影音如何影響我們的下一代？_msjh.pdf
+INFO:__main__:📄 文档 2:
+INFO:__main__:  内容预览: 2.誘發危險行為：短影音挑戰可能影響孩子判斷力
+觀看短影音不只是娛樂，還可能讓孩子受到錯誤資訊的影響，甚至模仿危險行為。
+某些短影音挑戰會鼓勵孩子模仿不安全的行為，例如停電挑戰（Blackout
+Ch
+INFO:__main__:  包含连接: 
+INFO:__main__:  来源文件: 【教養新視野】認識抖音腦：短影音如何影響我們的下一代？_msjh.pdf
+INFO:__main__:📄 文档 3:
+INFO:__main__:  内容预览: 1.心理健康問題：短影音讓孩子更容易沉迷
+短影音的設計讓人一滑再滑，停不下來，這可能會影響孩子的大腦運作方式。
+神經科學研究指出，抖音、Instagram
+Reels等短影音平台以15至60秒的有趣內
+INFO:__main__:  包含连接: 
+INFO:__main__:  来源文件: 【教養新視野】認識抖音腦：短影音如何影響我們的下一代？_msjh.pdf
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 0
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 0
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 0
+INFO:__main__:🔍 机器人 'test_01' 检索结果: 3 个文档, chunk_refs: 3
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:__main__:🔍 机器人 'test_01' 推荐问题调试:
+INFO:__main__:  - should_recommend: False
+INFO:__main__:  - recommend_count: 0
+INFO:__main__:  - conversation_count: 2
+INFO:__main__:❌ 机器人 'test_01' 推荐问题未启用或超出限制
+INFO:__main__:从元数据中提取到 0 个连接
+INFO:__main__:📝 未在文档内容中找到可引用的URL
+INFO:conversation_logger_simple:✅ 記錄對話成功: ID 128, chunks: 3, 有效索引: 3
+INFO:__main__:✅ 对话记录成功：ID=conv_128, 机器人：test_01, chunks=3
+INFO:__main__:📤 机器人 'test_01' API 回应调试:
+INFO:__main__:  - response_text 长度: 635
+INFO:__main__:  - recommended_questions: []
+INFO:__main__:  - 找到文档数量: 3
+INFO:__main__:  - chunk_references: 3
+INFO:__main__:  - 处理时间: 13234ms
+INFO:     127.0.0.1:0 - "POST /api/chat HTTP/1.1" 200 OK
+INFO:__main__:📩 机器人 'test_01' 收到查询 [auth_user_2_atalantis]: 米糕甜蜜蜜的作者是誰...
+INFO:httpx:HTTP Request: POST http://localhost:9002/search "HTTP/1.1 200 OK"
+INFO:__main__:API搜索成功: 3 个结果
+INFO:__main__:🔍 机器人 'test_01' API检索结果: 3 个文档
+INFO:__main__:🔍 当前查询: 米糕甜蜜蜜的作者是誰
+INFO:__main__:📄 检索到 3 个文档
+INFO:__main__:📄 文档 1:
+INFO:__main__:  内容预览: 甜米糕，每一道步驟都是愛的祝福
+新娘家人製作甜米糕，參與的人手越多，寄予的愛和祝福也越多，質樸深厚的情意，相當有意思。
+─「花生」油拌炒糯米：增添香氣，祝福新人「早生貴子」。
+─拌入紅糖、砂糖：增色添
+INFO:__main__:  包含连接: 
+INFO:__main__:  来源文件: 米糕甜蜜蜜.txt
+INFO:__main__:📄 文档 2:
+INFO:__main__:  内容预览: 米糕甜蜜蜜（客庄文化）
+https://www.hsinyishop.com/products/h000000039009
+
+
+小桃妹的姑姑要出嫁，全家人動手做「甜米糕」，幫忙的人手越多，愛與祝福也越
+INFO:__main__:  包含连接: https://www.hsinyishop.com/products/h000000039009
+INFO:__main__:  来源文件: 米糕甜蜜蜜.txt
+INFO:__main__:📄 文档 3:
+INFO:__main__:  内容预览: 溫馨甜蜜的客家嫁娶文化
+文／吳幸玲（文化大學社會福利系及臺北市立大學幼教系兼任副教授）
+故事的緣起，來自於小女兒的童言童語：「以後我要跟爸爸結婚，這樣我們就可以永遠住在一起了！」女兒的小小心願，爸爸聽
+INFO:__main__:  包含连接: 
+INFO:__main__:  来源文件: 米糕甜蜜蜜.txt
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 2
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 0
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 4
+INFO:__main__:🔍 机器人 'test_01' 检索结果: 3 个文档, chunk_refs: 3
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:__main__:🔍 机器人 'test_01' 推荐问题调试:
+INFO:__main__:  - should_recommend: False
+INFO:__main__:  - recommend_count: 0
+INFO:__main__:  - conversation_count: 3
+INFO:__main__:❌ 机器人 'test_01' 推荐问题未启用或超出限制
+INFO:__main__:从元数据中提取到 1 个连接
+INFO:__main__:✅ 新连接: 米糕甜蜜蜜（客庄文化）
+INFO:__main__:🔗 添加了 1 个参考连接
+INFO:conversation_logger_simple:✅ 記錄對話成功: ID 129, chunks: 3, 有效索引: 3
+INFO:__main__:✅ 对话记录成功：ID=conv_129, 机器人：test_01, chunks=3
+INFO:__main__:📤 机器人 'test_01' API 回应调试:
+INFO:__main__:  - response_text 长度: 297
+INFO:__main__:  - recommended_questions: []
+INFO:__main__:  - 找到文档数量: 3
+INFO:__main__:  - chunk_references: 3
+INFO:__main__:  - 处理时间: 7413ms
+INFO:     127.0.0.1:0 - "POST /api/chat HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [22324]
+INFO:auth_middleware:✅ user_manager 載入成功
+Building prefix dict from the default dictionary ...
+DEBUG:jieba:Building prefix dict from the default dictionary ...
+Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+DEBUG:jieba:Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+Loading model cost 0.342 seconds.
+DEBUG:jieba:Loading model cost 0.342 seconds.
+Prefix dict has been built successfully.
+DEBUG:jieba:Prefix dict has been built successfully.
+INFO:__main__:✅ 向量系统初始化成功 (机器人: test_01)
+INFO:__main__:🔗 使用向量API模式: http://localhost:9002
+INFO:__main__:ℹ️ ProxyHeadersMiddleware 不可用，使用本地開發模式
+INFO:__main__:✅ 静态文件挂载成功: C:\Users\danny\pyRag\bot_lang\chatbot_templates\modern\static
+INFO:__main__:✅ 机器人实例 'test_01' 初始化完成，对话记录数据库：test_01_conversations.db
+INFO:__main__:🤖 机器人 'test_01' 正在 http://localhost:9003 上启动
+INFO:__main__:📊 对话记录数据库：test_01_conversations.db
+INFO:__main__:📚 知识库集合：collection_test_01
+INFO:__main__:🔍 搜索模式：api
+INFO:__main__:🔗 向量API地址：http://localhost:9002
+INFO:__main__:🔧 调试模式已启用，将输出详细的对话记录和推荐问题生成日志
+INFO:     Started server process [20460]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:9003 (Press CTRL+C to quit)
+✅ 連接到現有資料庫: user_management.db
+✅ 資料庫結構驗證通過
+✅ 修正版用戶管理器初始化成功
+✅ 增強版對話數據庫初始化成功 (自動欄位修復已啟用)
+✅ httpx 可用，支持向量API模式
+✅ 使用新版 langchain-chroma
+✅ 使用新版 langchain-huggingface
+✅ OpenAI Embeddings 可用
+✅ OpenAI API Key 格式正確
+   API Key: sk-proj-***-2kA
+✅ OpenAI 環境檢查通過
+✅ EPUB 讀取功能已完整修復！
+📚 支援功能:
+   • 自動提取章節內容
+   • 智能章節標題識別
+   • 中文文本標準化
+   • 書籍元資料提取
+   • HTML 標籤清理
+   • 多章節智能分割
+✅ DOCX 支援已啟用 (docx2txt)
+✅ EPUB 支援已啟用
+✅ 向量系统可用
+🔧 初始化 OpenAI Embeddings...
+✅ OpenAI Embeddings 初始化成功
+🔤 繁簡轉換器初始化完成
+🔤 繁簡轉換器初始化完成
+✅ 文本處理組件初始化完成
+🔤 繁簡轉換器初始化完成
+🔧 優化版文本分割器初始化完成
+   📏 支持 11 種文本類型
+   🧠 智能策略選擇
+   ⚡ 性能優化
+🚀 完整優化版向量系統初始化完成
+   🤖 嵌入模型: openai
+   📁 數據目錄: data
+   🗄️ 向量庫: chroma_langchain_db
+   🧠 智能文本處理: ✅
+   🔧 自適應批次: ✅
+✅ 增強版對話數據庫初始化成功 (自動欄位修復已啟用)
+INFO:     127.0.0.1:0 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /modern/static/chat.js HTTP/1.1" 304 Not Modified
+INFO:__main__:📩 机器人 'test_01' 收到查询 [auth_user_2_atalantis]: 米糕甜甜在講甚麼...
+INFO:httpx:HTTP Request: POST http://localhost:9002/search "HTTP/1.1 200 OK"
+INFO:__main__:API搜索成功: 3 个结果
+INFO:__main__:🔍 机器人 'test_01' API检索结果: 3 个文档
+INFO:__main__:🔍 当前查询: 米糕甜甜在講甚麼
+INFO:__main__:📄 检索到 3 个文档
+INFO:__main__:📄 文档 1:
+INFO:__main__:  内容预览: 米糕甜蜜蜜（客庄文化）
+https://www.hsinyishop.com/products/h000000039009
+
+
+小桃妹的姑姑要出嫁，全家人動手做「甜米糕」，幫忙的人手越多，愛與祝福也越
+INFO:__main__:  包含连接: https://www.hsinyishop.com/products/h000000039009
+INFO:__main__:  来源文件: 米糕甜蜜蜜.txt
+INFO:__main__:📄 文档 2:
+INFO:__main__:  内容预览: 溫馨甜蜜的客家嫁娶文化
+文／吳幸玲（文化大學社會福利系及臺北市立大學幼教系兼任副教授）
+故事的緣起，來自於小女兒的童言童語：「以後我要跟爸爸結婚，這樣我們就可以永遠住在一起了！」女兒的小小心願，爸爸聽
+INFO:__main__:  包含连接: 
+INFO:__main__:  来源文件: 米糕甜蜜蜜.txt
+INFO:__main__:📄 文档 3:
+INFO:__main__:  内容预览: 甜米糕，每一道步驟都是愛的祝福
+新娘家人製作甜米糕，參與的人手越多，寄予的愛和祝福也越多，質樸深厚的情意，相當有意思。
+─「花生」油拌炒糯米：增添香氣，祝福新人「早生貴子」。
+─拌入紅糖、砂糖：增色添
+INFO:__main__:  包含连接: 
+INFO:__main__:  来源文件: 米糕甜蜜蜜.txt
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 0
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 4
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 2
+INFO:__main__:🔍 机器人 'test_01' 检索结果: 3 个文档, chunk_refs: 3
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:__main__:🔍 机器人 'test_01' 推荐问题调试:
+INFO:__main__:  - should_recommend: False
+INFO:__main__:  - recommend_count: 0
+INFO:__main__:  - conversation_count: 1
+INFO:__main__:❌ 机器人 'test_01' 推荐问题未启用或超出限制
+INFO:__main__:从元数据中提取到 1 个连接
+INFO:__main__:✅ 新连接: 米糕甜蜜蜜（客庄文化）
+INFO:__main__:🔗 添加了 1 个参考连接
+INFO:conversation_logger_simple:✅ 記錄對話成功: ID 130, chunks: 3, 有效索引: 3
+INFO:__main__:✅ 对话记录成功：ID=conv_130, 机器人：test_01, chunks=3
+INFO:__main__:📤 机器人 'test_01' API 回应调试:
+INFO:__main__:  - response_text 长度: 469
+INFO:__main__:  - recommended_questions: []
+INFO:__main__:  - 找到文档数量: 3
+INFO:__main__:  - chunk_references: 3
+INFO:__main__:  - 处理时间: 9824ms
+INFO:     127.0.0.1:0 - "POST /api/chat HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [20460]
+INFO:auth_middleware:✅ user_manager 載入成功
+Building prefix dict from the default dictionary ...
+DEBUG:jieba:Building prefix dict from the default dictionary ...
+Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+DEBUG:jieba:Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+Loading model cost 0.362 seconds.
+DEBUG:jieba:Loading model cost 0.362 seconds.
+Prefix dict has been built successfully.
+DEBUG:jieba:Prefix dict has been built successfully.
+INFO:__main__:✅ 向量系统初始化成功 (机器人: test_01)
+INFO:__main__:🔗 使用向量API模式: http://localhost:9002
+INFO:__main__:ℹ️ ProxyHeadersMiddleware 不可用，使用本地開發模式
+INFO:__main__:✅ 静态文件挂载成功: C:\Users\danny\pyRag\bot_lang\chatbot_templates\modern\static
+INFO:__main__:✅ 机器人实例 'test_01' 初始化完成，对话记录数据库：test_01_conversations.db
+INFO:__main__:🤖 机器人 'test_01' 正在 http://localhost:9003 上启动
+INFO:__main__:📊 对话记录数据库：test_01_conversations.db
+INFO:__main__:📚 知识库集合：collection_test_01
+INFO:__main__:🔍 搜索模式：api
+INFO:__main__:🔗 向量API地址：http://localhost:9002
+INFO:__main__:🔧 调试模式已启用，将输出详细的对话记录和推荐问题生成日志
+INFO:     Started server process [27892]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:9003 (Press CTRL+C to quit)
+✅ 連接到現有資料庫: user_management.db
+✅ 資料庫結構驗證通過
+✅ 修正版用戶管理器初始化成功
+✅ 增強版對話數據庫初始化成功 (自動欄位修復已啟用)
+✅ httpx 可用，支持向量API模式
+✅ 使用新版 langchain-chroma
+✅ 使用新版 langchain-huggingface
+✅ OpenAI Embeddings 可用
+✅ OpenAI API Key 格式正確
+   API Key: sk-proj-***-2kA
+✅ OpenAI 環境檢查通過
+✅ EPUB 讀取功能已完整修復！
+📚 支援功能:
+   • 自動提取章節內容
+   • 智能章節標題識別
+   • 中文文本標準化
+   • 書籍元資料提取
+   • HTML 標籤清理
+   • 多章節智能分割
+✅ DOCX 支援已啟用 (docx2txt)
+✅ EPUB 支援已啟用
+✅ 向量系统可用
+🔧 初始化 OpenAI Embeddings...
+✅ OpenAI Embeddings 初始化成功
+🔤 繁簡轉換器初始化完成
+🔤 繁簡轉換器初始化完成
+✅ 文本處理組件初始化完成
+🔤 繁簡轉換器初始化完成
+🔧 優化版文本分割器初始化完成
+   📏 支持 11 種文本類型
+   🧠 智能策略選擇
+   ⚡ 性能優化
+🚀 完整優化版向量系統初始化完成
+   🤖 嵌入模型: openai
+   📁 數據目錄: data
+   🗄️ 向量庫: chroma_langchain_db
+   🧠 智能文本處理: ✅
+   🔧 自適應批次: ✅
+✅ 增強版對話數據庫初始化成功 (自動欄位修復已啟用)
+INFO:     127.0.0.1:0 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /modern/static/chat.js HTTP/1.1" 304 Not Modified
+INFO:__main__:📩 机器人 'test_01' 收到查询 [auth_user_2_atalantis]: 米糕甜蜜蜜的作者 寫過哪些書...
+INFO:httpx:HTTP Request: POST http://localhost:9002/search "HTTP/1.1 200 OK"
+INFO:__main__:API搜索成功: 3 个结果
+INFO:__main__:🔍 机器人 'test_01' API检索结果: 3 个文档
+INFO:__main__:🔍 当前查询: 米糕甜蜜蜜的作者 寫過哪些書
+INFO:__main__:📄 检索到 3 个文档
+INFO:__main__:📄 文档 1:
+INFO:__main__:  内容预览: 甜米糕，每一道步驟都是愛的祝福
+新娘家人製作甜米糕，參與的人手越多，寄予的愛和祝福也越多，質樸深厚的情意，相當有意思。
+─「花生」油拌炒糯米：增添香氣，祝福新人「早生貴子」。
+─拌入紅糖、砂糖：增色添
+INFO:__main__:  包含连接: 
+INFO:__main__:  来源文件: 米糕甜蜜蜜.txt
+INFO:__main__:📄 文档 2:
+INFO:__main__:  内容预览: 米糕甜蜜蜜（客庄文化）
+https://www.hsinyishop.com/products/h000000039009
+
+
+小桃妹的姑姑要出嫁，全家人動手做「甜米糕」，幫忙的人手越多，愛與祝福也越
+INFO:__main__:  包含连接: https://www.hsinyishop.com/products/h000000039009
+INFO:__main__:  来源文件: 米糕甜蜜蜜.txt
+INFO:__main__:📄 文档 3:
+INFO:__main__:  内容预览: 作者的話
+全家人齊心寄予的祝福
+文／江明恭
+小桃妹的家冒出炊煙，難道是《小桃妹》繪本裡的阿婆重整旗鼓想再次開業嗎？不是的，阿婆歲數已大不適合過度操勞，而這次再展露手藝全是因為「嫁妹」（嫁女兒）。嫁女兒
+INFO:__main__:  包含连接: 
+INFO:__main__:  来源文件: 米糕甜蜜蜜.txt
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 2
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 0
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 3
+INFO:__main__:🔍 机器人 'test_01' 检索结果: 3 个文档, chunk_refs: 3
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:__main__:🔍 机器人 'test_01' 推荐问题调试:
+INFO:__main__:  - should_recommend: False
+INFO:__main__:  - recommend_count: 0
+INFO:__main__:  - conversation_count: 1
+INFO:__main__:❌ 机器人 'test_01' 推荐问题未启用或超出限制
+INFO:__main__:从元数据中提取到 1 个连接
+INFO:__main__:✅ 新连接: 米糕甜蜜蜜（客庄文化）
+INFO:__main__:🔗 添加了 1 个参考连接
+INFO:conversation_logger_simple:✅ 記錄對話成功: ID 131, chunks: 3, 有效索引: 3
+INFO:__main__:✅ 对话记录成功：ID=conv_131, 机器人：test_01, chunks=3
+INFO:__main__:📤 机器人 'test_01' API 回应调试:
+INFO:__main__:  - response_text 长度: 434
+INFO:__main__:  - recommended_questions: []
+INFO:__main__:  - 找到文档数量: 3
+INFO:__main__:  - chunk_references: 3
+INFO:__main__:  - 处理时间: 10048ms
+INFO:     127.0.0.1:0 - "POST /api/chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "POST /api/link_click HTTP/1.1" 404 Not Found
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [27892]
+INFO:auth_middleware:✅ user_manager 載入成功
+Building prefix dict from the default dictionary ...
+DEBUG:jieba:Building prefix dict from the default dictionary ...
+Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+DEBUG:jieba:Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+Loading model cost 0.366 seconds.
+DEBUG:jieba:Loading model cost 0.366 seconds.
+Prefix dict has been built successfully.
+DEBUG:jieba:Prefix dict has been built successfully.
+INFO:__main__:✅ 向量系统初始化成功 (机器人: test_01)
+INFO:__main__:🔗 使用向量API模式: http://localhost:9002
+INFO:__main__:ℹ️ ProxyHeadersMiddleware 不可用，使用本地開發模式
+INFO:__main__:✅ 静态文件挂载成功: C:\Users\danny\pyRag\bot_lang\chatbot_templates\modern\static
+INFO:__main__:✅ 机器人实例 'test_01' 初始化完成，对话记录数据库：test_01_conversations.db
+INFO:__main__:🤖 机器人 'test_01' 正在 http://localhost:9003 上启动
+INFO:__main__:📊 对话记录数据库：test_01_conversations.db
+INFO:__main__:📚 知识库集合：collection_test_01
+INFO:__main__:🔍 搜索模式：api
+INFO:__main__:🔗 向量API地址：http://localhost:9002
+INFO:__main__:🔧 调试模式已启用，将输出详细的对话记录和推荐问题生成日志
+INFO:     Started server process [26472]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:9003 (Press CTRL+C to quit)
+✅ 連接到現有資料庫: user_management.db
+✅ 資料庫結構驗證通過
+✅ 修正版用戶管理器初始化成功
+✅ 增強版對話數據庫初始化成功 (自動欄位修復已啟用)
+✅ httpx 可用，支持向量API模式
+✅ 使用新版 langchain-chroma
+✅ 使用新版 langchain-huggingface
+✅ OpenAI Embeddings 可用
+✅ OpenAI API Key 格式正確
+   API Key: sk-proj-***-2kA
+✅ OpenAI 環境檢查通過
+✅ EPUB 讀取功能已完整修復！
+📚 支援功能:
+   • 自動提取章節內容
+   • 智能章節標題識別
+   • 中文文本標準化
+   • 書籍元資料提取
+   • HTML 標籤清理
+   • 多章節智能分割
+✅ DOCX 支援已啟用 (docx2txt)
+✅ EPUB 支援已啟用
+✅ 向量系统可用
+🔧 初始化 OpenAI Embeddings...
+✅ OpenAI Embeddings 初始化成功
+🔤 繁簡轉換器初始化完成
+🔤 繁簡轉換器初始化完成
+✅ 文本處理組件初始化完成
+🔤 繁簡轉換器初始化完成
+🔧 優化版文本分割器初始化完成
+   📏 支持 11 種文本類型
+   🧠 智能策略選擇
+   ⚡ 性能優化
+🚀 完整優化版向量系統初始化完成
+   🤖 嵌入模型: openai
+   📁 數據目錄: data
+   🗄️ 向量庫: chroma_langchain_db
+   🧠 智能文本處理: ✅
+   🔧 自適應批次: ✅
+✅ 增強版對話數據庫初始化成功 (自動欄位修復已啟用)
+INFO:     127.0.0.1:0 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /modern/static/chat.js HTTP/1.1" 304 Not Modified
+INFO:__main__:📩 机器人 'test_01' 收到查询 [auth_user_2_atalantis]: 魔法親親的作者是誰...
+INFO:httpx:HTTP Request: POST http://localhost:9002/search "HTTP/1.1 200 OK"
+INFO:__main__:API搜索成功: 3 个结果
+INFO:__main__:🔍 机器人 'test_01' API检索结果: 3 个文档
+INFO:__main__:🔍 当前查询: 魔法親親的作者是誰
+INFO:__main__:📄 检索到 3 个文档
+INFO:__main__:📄 文档 1:
+INFO:__main__:  内容预览: 書名:魔法親親（安撫孩子分離焦慮的最佳圖畫書）
+https://www.hsinyishop.com/products/h000000035755
+
+《魔法親親》是讓孩子安心上學的魔法！一個留在掌心的
+INFO:__main__:  包含连接: https://www.hsinyishop.com/products/h000000035755
+INFO:__main__:  来源文件: 書名魔法親親（安撫孩子分離焦慮的最佳圖畫書）.txt
+INFO:__main__:📄 文档 2:
+INFO:__main__:  内容预览: 很順利，
+因為他們得面對無數個「轉變」。
+從「家裡」變成「學校」；
+從「一個人獨處」變成「和大家相處」；
+從「獨占」變成「分享」……
+這麼多的轉變，不要說小小孩，連大人都必須適應一陣子，
+比如上班時也
+INFO:__main__:  包含连接: 
+INFO:__main__:  来源文件: 書名魔法親親（安撫孩子分離焦慮的最佳圖畫書）.txt
+INFO:__main__:📄 文档 3:
+INFO:__main__:  内容预览: 作者的話
+全家人齊心寄予的祝福
+文／江明恭
+小桃妹的家冒出炊煙，難道是《小桃妹》繪本裡的阿婆重整旗鼓想再次開業嗎？不是的，阿婆歲數已大不適合過度操勞，而這次再展露手藝全是因為「嫁妹」（嫁女兒）。嫁女兒
+INFO:__main__:  包含连接: 
+INFO:__main__:  来源文件: 米糕甜蜜蜜.txt
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 0
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 1
+INFO:__main__:✅ 從 metadata.chunk_index 獲取索引: 3
+INFO:__main__:🔍 机器人 'test_01' 检索结果: 3 个文档, chunk_refs: 3
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:__main__:🔍 机器人 'test_01' 推荐问题调试:
+INFO:__main__:  - should_recommend: False
+INFO:__main__:  - recommend_count: 0
+INFO:__main__:  - conversation_count: 1
+INFO:__main__:❌ 机器人 'test_01' 推荐问题未启用或超出限制
+INFO:__main__:从元数据中提取到 1 个连接
+INFO:__main__:✅ 新连接: 書名:魔法親親（安撫孩子分離焦慮的最佳圖畫書）
+INFO:__main__:🔗 添加了 1 个参考连接
+INFO:conversation_logger_simple:✅ 記錄對話成功: ID 132, chunks: 3, 有效索引: 3
+INFO:__main__:✅ 对话记录成功：ID=conv_132, 机器人：test_01, chunks=3
+INFO:__main__:📤 机器人 'test_01' API 回应调试:
+INFO:__main__:  - response_text 长度: 443
+INFO:__main__:  - recommended_questions: []
+INFO:__main__:  - 找到文档数量: 3
+INFO:__main__:  - chunk_references: 3
+INFO:__main__:  - 处理时间: 8932ms
+INFO:     127.0.0.1:0 - "POST /api/chat HTTP/1.1" 200 OK
+INFO:auth_middleware:✅ user_manager 載入成功
+Building prefix dict from the default dictionary ...
+DEBUG:jieba:Building prefix dict from the default dictionary ...
+Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+DEBUG:jieba:Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+Loading model cost 0.386 seconds.
+DEBUG:jieba:Loading model cost 0.386 seconds.
+Prefix dict has been built successfully.
+DEBUG:jieba:Prefix dict has been built successfully.
+INFO:__main__:✅ 向量系统初始化成功 (机器人: test_01)
+INFO:__main__:🔗 使用向量API模式: http://localhost:9002
+INFO:__main__:ℹ️ ProxyHeadersMiddleware 不可用，使用本地開發模式
+INFO:__main__:✅ 静态文件挂载成功: C:\Users\danny\pyRag\bot_lang\cloud\chatbot_templates\modern\static
+INFO:__main__:✅ 机器人实例 'test_01' 初始化完成，对话记录数据库：test_01_conversations.db
+INFO:__main__:🤖 机器人 'test_01' 正在 http://localhost:9003 上启动
+INFO:__main__:📊 对话记录数据库：test_01_conversations.db
+INFO:__main__:📚 知识库集合：collection_test_01
+INFO:__main__:🔍 搜索模式：api
+INFO:__main__:🔗 向量API地址：http://localhost:9002
+INFO:__main__:🔧 调试模式已启用，将输出详细的对话记录和推荐问题生成日志
+INFO:     Started server process [24444]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:9003 (Press CTRL+C to quit)
+✅ 數據庫抽象層可用
+🔄 使用數據庫抽象層模式初始化...
+❌ 抽象層初始化失敗，回退到傳統模式: 需要安裝 psycopg2: pip install psycopg2-binary
+📦 使用傳統 SQLite 模式初始化...
+✅ 連接到現有資料庫: user_management.db
+✅ 資料庫結構驗證通過
+✅ 用戶管理器初始化成功（傳統模式）
+✅ 增強版用戶管理器初始化成功
+⚠️ 檢測到缺失的資料庫欄位，正在自動新增: collection_used
+⚠️ 檢測到缺失的資料庫欄位，正在自動新增: retrieved_docs
+⚠️ 檢測到缺失的資料庫欄位，正在自動新增: doc_similarities
+⚠️ 檢測到缺失的資料庫欄位，正在自動新增: chunk_references
+⚠️ 檢測到缺失的資料庫欄位，正在自動新增: processing_time_ms
+⚠️ 檢測到缺失的資料庫欄位，正在自動新增: is_image_generation
+⚠️ 檢測到缺失的資料庫欄位，正在自動新增: image_url
+⚠️ 檢測到缺失的資料庫欄位，正在自動新增: error_occurred
+⚠️ 檢測到缺失的資料庫欄位，正在自動新增: error_message
+⚠️ 檢測到缺失的資料庫欄位，正在自動新增: authenticated_user_id
+⚠️ 檢測到缺失的資料庫欄位，正在自動新增: user_role
+⚠️ 檢測到缺失的資料庫欄位，正在自動新增: created_at
+✅ 增強版對話數據庫初始化成功 (自動欄位修復已啟用)
+✅ httpx 可用，支持向量API模式
+✅ 使用新版 langchain-chroma
+✅ 使用新版 langchain-huggingface
+✅ OpenAI Embeddings 可用
+✅ OpenAI API Key 格式正確
+   API Key: sk-proj-***-2kA
+✅ OpenAI 環境檢查通過
+✅ EPUB 讀取功能已完整修復！
+📚 支援功能:
+   • 自動提取章節內容
+   • 智能章節標題識別
+   • 中文文本標準化
+   • 書籍元資料提取
+   • HTML 標籤清理
+   • 多章節智能分割
+✅ DOCX 支援已啟用 (docx2txt)
+✅ EPUB 支援已啟用
+✅ 向量系统可用
+🔧 初始化 OpenAI Embeddings...
+✅ OpenAI Embeddings 初始化成功
+🔤 繁簡轉換器初始化完成
+🔤 繁簡轉換器初始化完成
+✅ 文本處理組件初始化完成
+🔤 繁簡轉換器初始化完成
+🔧 優化版文本分割器初始化完成
+   📏 支持 11 種文本類型
+   🧠 智能策略選擇
+   ⚡ 性能優化
+🚀 完整優化版向量系統初始化完成
+   🤖 嵌入模型: openai
+   📁 數據目錄: data
+   🗄️ 向量庫: chroma_langchain_db
+   🧠 智能文本處理: ✅
+   🔧 自適應批次: ✅
+✅ 增強版對話數據庫初始化成功 (自動欄位修復已啟用)
+INFO:     127.0.0.1:0 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /modern/static/chat.css HTTP/1.1" 304 Not Modified
+INFO:     127.0.0.1:0 - "GET /modern/static/chat.js HTTP/1.1" 304 Not Modified
+INFO:__main__:📩 机器人 'test_01' 收到查询 [auth_user_2_atalantis]: 魔法親親好看嗎?...
+INFO:httpx:HTTP Request: POST http://localhost:9002/search "HTTP/1.1 200 OK"
+INFO:__main__:API搜索成功: 0 个结果
+WARNING:__main__:API模式无结果，尝试直接模式...
+INFO:chromadb.telemetry.product.posthog:Anonymized telemetry enabled. See                     https://docs.trychroma.com/telemetry for more information.
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+WARNING:__main__:🔍 机器人 'test_01' 未找到相关文档
+INFO:__main__:🔍 当前查询: 魔法親親好看嗎?
+INFO:__main__:📄 检索到 0 个文档
+INFO:__main__:🔍 机器人 'test_01' 检索结果: 0 个文档, chunk_refs: 0
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:__main__:🔍 机器人 'test_01' 推荐问题调试:
+INFO:__main__:  - should_recommend: False
+INFO:__main__:  - recommend_count: 0
+INFO:__main__:  - conversation_count: 1
+INFO:__main__:❌ 机器人 'test_01' 推荐问题未启用或超出限制
+INFO:conversation_logger_simple:✅ 記錄對話成功: ID 133, chunks: 0, 有效索引: 0
+INFO:__main__:✅ 对话记录成功：ID=conv_133, 机器人：test_01, chunks=0
+INFO:__main__:📤 机器人 'test_01' API 回应调试:
+INFO:__main__:  - response_text 长度: 359
+INFO:__main__:  - recommended_questions: []
+INFO:__main__:  - 找到文档数量: 0
+INFO:__main__:  - chunk_references: 0
+INFO:__main__:  - 处理时间: 14373ms
+✅ 向量存儲就緒: collection_test_01
+INFO:     127.0.0.1:0 - "POST /api/chat HTTP/1.1" 200 OK
+INFO:auth_middleware:✅ user_manager 載入成功
+✅ 數據庫抽象層可用
+📦 使用傳統 SQLite 模式初始化...
+✅ 連接到現有資料庫: user_management.db
+✅ 資料庫結構驗證通過
+✅ 用戶管理器初始化成功（傳統模式）
+✅ 增強版用戶管理器初始化成功
+Traceback (most recent call last):
+  File "C:\Users\danny\pyRag\bot_lang\cloud\chatbot_instance.py", line 31, in <module>
+    from conversation_logger_simple import EnhancedConversationLogger as ConversationLogger
+ImportError: cannot import name 'EnhancedConversationLogger' from 'conversation_logger_simple' (C:\Users\danny\pyRag\bot_lang\cloud\conversation_logger_simple.py)

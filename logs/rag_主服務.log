@@ -1,0 +1,80 @@
+Building prefix dict from the default dictionary ...
+Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+Loading model cost 0.409 seconds.
+Prefix dict has been built successfully.
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+INFO:image_generator:[成功] 圖片生成器初始化成功 - API Key: sk-proj-***
+INFO:__main__:================================================================================
+INFO:__main__:🤖 LangChain + OpenAI + 認證整合 RAG 智能助手系統
+INFO:__main__:================================================================================
+INFO:__main__:🌐 服務端口: 8000
+INFO:__main__:📱 健康檢查: http://localhost:8000/
+INFO:__main__:🔗 系統狀態: 已就緒
+INFO:__main__:
+INFO:__main__:📋 系統功能:
+INFO:__main__:🔐 JWT Token 認證: ✅ 可用
+INFO:__main__:🤖 RAG 智能問答: ❌ 不可用
+INFO:__main__:🎨 圖片生成功能: ✅ 可用
+INFO:__main__:💬 對話記憶管理: ✅ 可用
+INFO:__main__:📊 日誌記錄功能: ✅ 可用
+INFO:__main__:
+INFO:__main__:🔧 調試信息:
+INFO:__main__:• 調試模式: 關閉
+INFO:__main__:• LINE Bot 支援: 開啟
+INFO:__main__:• OpenAI API: 已配置
+INFO:__main__:================================================================================
+INFO:     Will watch for changes in these directories: ['C:\\Users\\danny\\pyRag\\bot_lang']
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [23852] using WatchFiles
+Building prefix dict from the default dictionary ...
+Loading model from cache C:\Users\danny\AppData\Local\Temp\jieba.cache
+Loading model cost 0.409 seconds.
+Prefix dict has been built successfully.
+INFO:     Started server process [22048]
+INFO:     Waiting for application startup.
+INFO:main_langchain_openai_with_auth:🚀 正在啟動系統...
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+INFO:image_generator:[成功] 圖片生成器初始化成功 - API Key: sk-proj-***
+INFO:main_langchain_openai_with_auth:✅ RAG 管理器初始化成功
+INFO:     Application startup complete.
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [22048]
+✅ 認證模組載入成功
+✅ 對話管理模組載入成功
+✅ 圖片生成模組載入成功
+✅ 提示詞模組載入成功
+[成功] .env 文件已載入
+[啟動] 檢測到GPU: NVIDIA GeForce RTX 4060 Laptop GPU (8.0GB)
+[統計] GPU數量: 1
+[成功] GPU記憶體充足，啟用GPU加速
+✅ 配置模組載入成功
+✅ 使用新版 langchain-chroma
+✅ 使用新版 langchain-huggingface
+✅ OpenAI Embeddings 可用
+✅ OpenAI API Key 格式正確
+   API Key: sk-proj-***-2kA
+✅ OpenAI 環境檢查通過
+✅ EPUB 讀取功能已完整修復！
+📚 支援功能:
+   • 自動提取章節內容
+   • 智能章節標題識別
+   • 中文文本標準化
+   • 書籍元資料提取
+   • HTML 標籤清理
+   • 多章節智能分割
+✅ DOCX 支援已啟用 (python-docx)
+✅ EPUB 支援已啟用
+⚠️ 向量系統模組載入失敗: cannot import name 'LangChainVectorSystem' from 'vector_builder_langchain' (C:\Users\danny\pyRag\bot_lang\vector_builder_langchain.py)
+✅ 增強版對話數據庫初始化成功
+✅ 日誌模組載入成功
+✅ 認證模組載入成功
+✅ 對話管理模組載入成功
+✅ 圖片生成模組載入成功
+✅ 提示詞模組載入成功
+✅ 配置模組載入成功
+⚠️ 向量系統模組載入失敗: cannot import name 'LangChainVectorSystem' from 'vector_builder_langchain' (C:\Users\danny\pyRag\bot_lang\vector_builder_langchain.py)
+✅ 日誌模組載入成功
+✅ OpenAI Embeddings 初始化成功: 1536 維度
+✅ 修復版 LangChain RAG 管理器初始化成功
