@@ -296,12 +296,15 @@ def detect_railway_environment():
     return is_railway
 
 def get_postgres_config():
-    """獲取 PostgreSQL 配置，優先使用 Railway 的 DATABASE_URL"""
+    """獲取PostgreSQL配置，優先使用Railway的DATABASE_URL"""
     
-    # 🔧 優先嘗試 Railway 的 DATABASE_URL
+    # 🔧 優先嘗試Railway的DATABASE_URL
     database_url = os.getenv("DATABASE_URL")
     if database_url:
-        print("✅ 使用 Railway DATABASE_URL")
+        # 🔧 確保包含SSL配置（Railway需要）
+        if "sslmode=" not in database_url:
+            database_url += "?sslmode=require"
+        print("✅ 使用Railway DATABASE_URL")
         return database_url
     
     # 🔧 備用：從環境變量構建連接字符串
@@ -311,7 +314,7 @@ def get_postgres_config():
     user = os.getenv("POSTGRES_USER", "postgres")
     password = os.getenv("POSTGRES_PASSWORD", "")
     
-    # 🛠️ 重要：對密碼進行 URL 編碼，處理特殊字符
+    # 🛠️ 重要：對密碼進行URL編碼，處理特殊字符
     if password:
         encoded_password = quote_plus(password)
         print(f"🔒 密碼已編碼: {password[:4]}*** -> {encoded_password[:4]}***")
@@ -320,13 +323,12 @@ def get_postgres_config():
     
     # 構建連接字符串
     if encoded_password:
-        connection_string = f"postgresql://{user}:{encoded_password}@{host}:{port}/{database}"
+        connection_string = f"postgresql://{user}:{encoded_password}@{host}:{port}/{database}?sslmode=require"
     else:
-        connection_string = f"postgresql://{user}@{host}:{port}/{database}"
+        connection_string = f"postgresql://{user}@{host}:{port}/{database}?sslmode=require"
     
     print(f"🔗 構建的連接字符串: postgresql://{user}:***@{host}:{port}/{database}")
     return connection_string
-
 
 # 添加 PostgreSQL 連接檢查：
 def check_postgresql_connection():
