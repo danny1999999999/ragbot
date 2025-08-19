@@ -30,6 +30,31 @@ from dotenv import load_dotenv
 load_dotenv('.env', override=True)
 logger = logging.getLogger(__name__)
 
+import urllib.parse
+from urllib.parse import quote_plus
+
+
+# 🆕 1. 添加 Railway 環境檢測函數（放在文件頂部，導入語句之後）
+def detect_railway_environment():
+    """檢測是否在 Railway 環境中運行"""
+    railway_indicators = [
+        os.getenv("RAILWAY_PROJECT_ID"),
+        os.getenv("RAILWAY_SERVICE_ID"), 
+        os.getenv("DATABASE_URL"),
+        "railway.internal" in os.getenv("POSTGRES_HOST", "")
+    ]
+    
+    is_railway = any(railway_indicators)
+    if is_railway:
+        print("🚂 檢測到 Railway 部署環境")
+        # 顯示 Railway 特定信息
+        project_id = os.getenv("RAILWAY_PROJECT_ID", "unknown")
+        service_id = os.getenv("RAILWAY_SERVICE_ID", "unknown")  
+        print(f"   項目ID: {project_id[:8]}***")
+        print(f"   服務ID: {service_id[:8]}***")
+    
+    return is_railway
+
 
 # 🔧 優化版系統配置
 SYSTEM_CONFIG = {
@@ -213,7 +238,7 @@ except ImportError:
     PSYCOPG2_AVAILABLE = False
     print("⚠️ 警告: psycopg2 未安裝，請執行: pip install psycopg2-binary")
 
-
+"""
 # 🐘 PostgreSQL 配置
 POSTGRES_CONFIG = {
     "host": os.getenv("POSTGRES_HOST", "localhost"),
@@ -222,25 +247,130 @@ POSTGRES_CONFIG = {
     "user": os.getenv("POSTGRES_USER", "chatbot_user"),
     "password": os.getenv("POSTGRES_PASSWORD", "chatbot123"),
     "schema": os.getenv("POSTGRES_SCHEMA", "public"),
+}"""
+
+# 📝 逐步修改您的 vector_builder_langchain.py 文件
+
+# ====================
+# 步驟 1: 在文件頂部添加導入語句
+# ====================
+# 在您的文件頂部，找到其他導入語句的地方，添加這兩行：
+
+import urllib.parse  # ✅ Python 內建，不需要安裝
+from urllib.parse import quote_plus  # ✅ Python 內建，不需要安裝
+
+# ====================
+# 步驟 2: 找到現有的 PostgreSQL 配置部分並註釋掉
+# ====================
+# 在您的文件中找到這個部分（大約在第 xxx 行）：
+
+"""
+# 🔧 註釋掉這個舊的配置
+POSTGRES_CONFIG = {
+    "host": os.getenv("POSTGRES_HOST", "localhost"),
+    "port": int(os.getenv("POSTGRES_PORT", "5432")),
+    "database": os.getenv("POSTGRES_DATABASE", "chatbot_system"),
+    "user": os.getenv("POSTGRES_USER", "chatbot_user"),
+    "password": os.getenv("POSTGRES_PASSWORD", "chatbot123"),
+    "schema": os.getenv("POSTGRES_SCHEMA", "public"),
 }
+"""
+
+# ====================
+# 步驟 3: 添加新的函數（在註釋掉的配置後面）
+# ====================
+
+def detect_railway_environment():
+    """檢測是否在 Railway 環境中運行"""
+    railway_indicators = [
+        os.getenv("RAILWAY_PROJECT_ID"),
+        os.getenv("RAILWAY_SERVICE_ID"), 
+        os.getenv("DATABASE_URL"),
+        "railway.internal" in os.getenv("POSTGRES_HOST", "")
+    ]
+    
+    is_railway = any(railway_indicators)
+    if is_railway:
+        print("🚂 檢測到 Railway 部署環境")
+    
+    return is_railway
+
+def get_postgres_config():
+    """獲取 PostgreSQL 配置，優先使用 Railway 的 DATABASE_URL"""
+    
+    # 🔧 優先嘗試 Railway 的 DATABASE_URL
+    database_url = os.getenv("DATABASE_URL")
+    if database_url:
+        print("✅ 使用 Railway DATABASE_URL")
+        return database_url
+    
+    # 🔧 備用：從環境變量構建連接字符串
+    host = os.getenv("POSTGRES_HOST", "localhost")
+    port = os.getenv("POSTGRES_PORT", "5432")
+    database = os.getenv("POSTGRES_DATABASE", "chatbot_system")
+    user = os.getenv("POSTGRES_USER", "postgres")
+    password = os.getenv("POSTGRES_PASSWORD", "")
+    
+    # 🛠️ 重要：對密碼進行 URL 編碼，處理特殊字符
+    if password:
+        encoded_password = quote_plus(password)
+        print(f"🔒 密碼已編碼: {password[:4]}*** -> {encoded_password[:4]}***")
+    else:
+        encoded_password = ""
+    
+    # 構建連接字符串
+    if encoded_password:
+        connection_string = f"postgresql://{user}:{encoded_password}@{host}:{port}/{database}"
+    else:
+        connection_string = f"postgresql://{user}@{host}:{port}/{database}"
+    
+    print(f"🔗 構建的連接字符串: postgresql://{user}:***@{host}:{port}/{database}")
+    return connection_string
+
 
 # 添加 PostgreSQL 連接檢查：
 def check_postgresql_connection():
     """檢查 PostgreSQL 連接"""
     try:
         import psycopg2
-        conn = psycopg2.connect(
-            host=POSTGRES_CONFIG["host"],
-            port=POSTGRES_CONFIG["port"],
-            database=POSTGRES_CONFIG["database"],
-            user=POSTGRES_CONFIG["user"],
-            password=POSTGRES_CONFIG["password"]
-        )
+        
+        connection_string = get_postgres_config()  # ✅ 使用新函數
+        print(f"🔌 嘗試連接 PostgreSQL...")
+        
+        conn = psycopg2.connect(connection_string)
+        
+        # 檢查 pgvector 擴展
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT 1 FROM pg_extension WHERE extname = 'vector';")
+            vector_available = cursor.fetchone() is not None
+            
+            if vector_available:
+                print("✅ pgvector 擴展已安裝")
+            else:
+                print("⚠️ pgvector 擴展未安裝，嘗試安裝...")
+                try:
+                    cursor.execute("CREATE EXTENSION IF NOT EXISTS vector;")
+                    conn.commit()
+                    print("✅ pgvector 擴展安裝成功")
+                except Exception as e:
+                    print(f"❌ pgvector 擴展安裝失敗: {e}")
+        
         conn.close()
         print("✅ PostgreSQL 連接正常")
         return True
+        
     except Exception as e:
         print(f"❌ PostgreSQL 連接失敗: {e}")
+        
+        # 詳細錯誤診斷
+        error_msg = str(e).lower()
+        if "authentication failed" in error_msg:
+            print("🔍 診斷：密碼認證失敗，檢查 POSTGRES_PASSWORD 環境變量")
+        elif "could not connect" in error_msg:
+            print("🔍 診斷：無法連接到服務器，檢查 POSTGRES_HOST 和 POSTGRES_PORT")
+        elif "database" in error_msg and "does not exist" in error_msg:
+            print("🔍 診斷：數據庫不存在，檢查 POSTGRES_DATABASE 環境變量")
+        
         return False
 
 
@@ -1641,7 +1771,7 @@ class OptimizedVectorSystem:
         self.data_dir.mkdir(exist_ok=True)
         
         # 🐘 PostgreSQL 連接配置
-        self.connection_string = self._build_connection_string()
+        self.connection_string = get_postgres_config()
 
         # 🔧 檢查 PostgreSQL 連接
         if not check_postgresql_connection():
@@ -1673,10 +1803,6 @@ class OptimizedVectorSystem:
         print(f"   🗄️ 向量庫: {self.persist_dir}")
         print(f"   🧠 智能文本處理: ✅")
         print(f"   🔧 自適應批次: ✅")
-    
-    def _build_connection_string(self) -> str:
-        """構建 PostgreSQL 連接字符串"""
-        return f"postgresql://{POSTGRES_CONFIG['user']}:{POSTGRES_CONFIG['password']}@{POSTGRES_CONFIG['host']}:{POSTGRES_CONFIG['port']}/{POSTGRES_CONFIG['database']}"
 
 
     def _setup_embedding_model(self):
@@ -3540,6 +3666,9 @@ def main():
         print(f"❌ 系統初始化失敗: {e}")
         logger.error(f"系統初始化失敗: {e}")
         return None
+    
+
+
 
 if __name__ == "__main__":
     system = main()
