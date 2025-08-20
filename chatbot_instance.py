@@ -185,10 +185,9 @@ class ChatbotInstance:
 
     def _get_db_config(self) -> dict:
         """Gets the database configuration, forcing PostgreSQL on Railway."""
-        is_railway = bool(os.getenv('RAILWAY_PROJECT_ID'))
         database_url = os.getenv("DATABASE_URL")
 
-        if is_railway and database_url:
+        if database_url:
             logger.info(f"✅ Bot '{self.bot_name}' is using PostgreSQL via DATABASE_URL.")
             return {
                 "type": "postgresql",
@@ -1215,7 +1214,7 @@ def main():
             raise ValueError(f"设定文件 '{args.bot_name}.json' 中未指定端口")
         
         logger.info(f"🤖 机器人 '{instance.bot_name}' 正在 http://localhost:{port} 上启动")
-        logger.info(f"📊 对话记录数据库：{instance.conversation_db_path}")
+        logger.info(f"📊 对话记录数据库已在实例中配置。")
         logger.info(f"📚 知识库集合：{instance.collection_name}")
         logger.info(f"🔍 搜索模式：{instance.search_mode}")
         if instance.search_mode == "api":
