@@ -285,29 +285,30 @@ from fastapi.templating import Jinja2Templates
 from auth_middleware import AdminAuth, User, auth_response, JWTManager # 匯入認證
 from user_manager import user_manager # 匯入使用者管理
 from bot_service_manager import bot_manager # 匯入我們改造後的機器人總管
+# 匯入其他需要的模組
+from fastapi import UploadFile, File
+import asyncio
 
 templates = Jinja2Templates(directory=str(ROOT_DIR))
 
+# --- 登入與頁面路由 ---
 @app.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request):
     return templates.TemplateResponse("manager_login.html", {"request": request})
 
 @app.get("/manager", response_class=HTMLResponse)
 async def manager_page(request: Request, current_user: User = Depends(AdminAuth)):
-    """管理器主頁面 - 需要管理員權限"""
     return templates.TemplateResponse("manager_ui.html", {"request": request, "user": current_user})
 
+# --- 統一的 API 處理 ---
 @app.post("/api/login")
 async def handle_login(request: Request):
-    """處理登入 - 邏輯從 bot_service_manager 搬移至此"""
     try:
         data = await request.json()
         username = data.get("username", "").strip()
         password = data.get("password", "")
-
         if not username or not password:
             return JSONResponse({"success": False, "message": "請填寫用戶名和密碼"}, status_code=400)
-
         if not user_manager:
             raise HTTPException(status_code=503, detail="用戶系統未初始化")
 
@@ -335,6 +336,7 @@ async def handle_login(request: Request):
 async def handle_logout():
     return auth_response.create_logout_response()
 
+# --- 機器人管理 API ---
 @app.get("/api/bots")
 async def get_all_bots(current_user: User = Depends(AdminAuth)):
     bots = bot_manager.get_all_bots()
@@ -349,6 +351,34 @@ async def start_bot(bot_name: str, current_user: User = Depends(AdminAuth)):
 async def stop_bot(bot_name: str, current_user: User = Depends(AdminAuth)):
     result = bot_manager.stop_bot(bot_name, current_user)
     return JSONResponse(result)
+
+@app.get("/api/bots/{bot_name}/config")
+async def get_bot_config(bot_name: str, current_user: User = Depends(AdminAuth)):
+    config = bot_manager.get_bot_config(bot_name)
+    if config:
+        return JSONResponse({"success": True, "config": config})
+    return JSONResponse({"success": False, "message": "Config not found"}, status_code=404)
+
+@app.post("/api/bots/{bot_name}/config")
+async def save_bot_config(bot_name: str, request: Request, current_user: User = Depends(AdminAuth)):
+    data = await request.json()
+    success = bot_manager.save_bot_config(bot_name, data, current_user)
+    if success:
+        return JSONResponse({"success": True, "message": "Config saved"})
+    return JSONResponse({"success": False, "message": "Failed to save config"}, status_code=500)
+
+@app.delete("/api/bots/{bot_name}")
+async def delete_bot(bot_name: str, current_user: User = Depends(AdminAuth)):
+    result = bot_manager.delete_bot(bot_name, current_user)
+    return JSONResponse(result)
+
+# --- 知識庫與對話 API (未來可以從 vector_api_service 整合進來) ---
+# 佔位符 - 讓前端請求不會直接失敗
+@app.get("/api/bots/{bot_name}/knowledge/files")
+async def get_knowledge_files_placeholder(bot_name: str, current_user: User = Depends(AdminAuth)):
+    # 在此處可以呼叫 vector_service 的邏輯
+    logger.warning(f"Placeholder for get_knowledge_files for {bot_name}")
+    return JSONResponse({"success": True, "documents": [], "total": 0, "message": "API endpoint not fully implemented yet."})
 
 
 # -------------------------
