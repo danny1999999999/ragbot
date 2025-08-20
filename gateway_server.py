@@ -19,7 +19,9 @@ from typing import Dict, Optional, Tuple
 import httpx
 import uvicorn
 from fastapi import FastAPI, Request, Response, Header
-from fastapi.responses import JSONResponse, Response, PlainTextResponse
+from fastapi.responses import JSONResponse, StreamingResponse, PlainTextResponse
+from starlette.background import BackgroundTask
+
 
 import sys
 from pathlib import Path
@@ -35,7 +37,7 @@ logger = logging.getLogger("gateway")
 
 ROOT_DIR = Path(__file__).resolve().parent
 BOT_CONFIGS_DIR = Path(os.getenv("BOT_CONFIGS_DIR", str(ROOT_DIR / "bot_configs")))
-GATEWAY_PORT = int(os.getenv("GATEWAY_PORT", "8000"))
+GATEWAY_PORT = int(os.getenv("PORT", "8000"))
 
 # hop-by-hop headers 不應被代理轉發
 HOP_BY_HOP_HEADERS = {
@@ -58,12 +60,60 @@ REGISTRY: Dict[str, int] = {}
 # 檔案查詢快取：bot -> (port, mtime)
 _FILE_CACHE: Dict[str, Tuple[int, float]] = {}
 
-app = FastAPI(title="Internal API Gateway", version="1.1")
+app = FastAPI(title="Internal API Gateway", version="1.2")
 
 
-# -------------------------
+# --------------------------------------------------
+# --- 新增：反向代理到管理介面 ---
+# --------------------------------------------------
+MANAGER_SERVICE_URL = "http://127.0.0.1:9001"
+proxy_client = httpx.AsyncClient(base_url=MANAGER_SERVICE_URL, follow_redirects=True)
+
+@app.api_route("/manager/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"])
+async def reverse_proxy_manager(request: Request, path: str):
+    """
+    捕獲所有 /manager/ 的請求，並轉發到 9001 port 的管理服務。
+    """
+    # 修正路徑，確保它以 / 開頭
+    if not path.startswith("/"):
+        path = "/" + path
+
+    url = httpx.URL(path=path, query=request.url.query.encode("utf-8"))
+    
+    rp_request = proxy_client.build_request(
+        method=request.method,
+        url=url,
+        headers=request.headers.raw,
+        content=await request.body()
+    )
+    
+    try:
+        rp_response = await proxy_client.send(rp_request, stream=True)
+        
+        excluded_headers = ["content-encoding", "content-length", "transfer-encoding", "connection"]
+        headers = [(name, value) for (name, value) in rp_response.headers.items() if name.lower() not in excluded_headers]
+        
+        # 處理重定向路徑
+        for i, (name, value) in enumerate(headers):
+            if name.lower() == 'location':
+                # 如果重定向到根，則加上 /manager 前綴
+                if value.startswith('/'):
+                    headers[i] = (name, f"/manager{value}")
+                logger.info(f"Redirecting to: {headers[i][1]}")
+
+        return StreamingResponse(
+            rp_response.aiter_raw(),
+            status_code=rp_response.status_code,
+            headers=headers,
+            background=BackgroundTask(rp_response.aclose)
+        )
+    except httpx.ConnectError:
+        return JSONResponse(status_code=503, content={"detail": "Manager service is unavailable."})
+
+
+# ------------------------
 # 工具函式
-# -------------------------
+# ------------------------
 def get_bot_port(bot_name: str) -> Optional[int]:
     """先查註冊表，再查檔案（含快取）。"""
     # 1) 註冊表命中
@@ -123,12 +173,12 @@ def _auth_ok(x_admin_token: Optional[str]) -> bool:
     return x_admin_token == GATEWAY_ADMIN_TOKEN
 
 
-# -------------------------
+# ------------------------
 # 健康檢查 & 根頁
-# -------------------------
+# ------------------------
 @app.get("/")
 async def root():
-    return PlainTextResponse("API Gateway is running. Try: /<bot>/health")
+    return PlainTextResponse("API Gateway is running. Try: /<bot>/health or /manager/ to access the UI.")
 
 @app.get("/health")
 async def health():
@@ -141,9 +191,9 @@ async def health():
     }
 
 
-# -------------------------
+# ------------------------
 # 管理端點：動態註冊/取消註冊
-# -------------------------
+# ------------------------
 @app.post("/_gateway/register")
 async def gw_register(payload: dict, x_admin_token: Optional[str] = Header(default=None)):
     if not _auth_ok(x_admin_token):
@@ -170,14 +220,14 @@ async def gw_unregister(payload: dict, x_admin_token: Optional[str] = Header(def
     return {"success": True, "bot": bot}
 
 
-# -------------------------
+# ------------------------
 # 核心代理函式
-# -------------------------
+# ------------------------
 async def proxy_to_bot(bot_name: str, request: Request, stripped_path: str = "") -> Response:
     """將 /{bot_name}/<stripped_path> 轉到 127.0.0.1:{port}/<stripped_path>"""
     
     # 特殊處理：如果 bot_name 是常見的 API 端點，嘗試智能路由
-    if bot_name in ['chat', 'api', 'stream', 'upload', 'download']:
+    if bot_name in ['chat', 'api', 'stream', 'upload', 'download', 'login']:
         referer = request.headers.get("referer", "")
         logger.info(f"[gateway] Detecting relative path request: /{bot_name}, referer: '{referer}'")
         
@@ -185,101 +235,44 @@ async def proxy_to_bot(bot_name: str, request: Request, stripped_path: str = "")
         
         # 方法1: 從 referer 提取（如果有的話）
         if referer:
-            match = re.search(r'/([^/]+)/?(?:\?|$)', referer)
+            match = re.search(r'/(test_\d+)/', referer) # 尋找 /test_01/ 這樣的格式
             if match:
-                candidate = match.group(1)
-                logger.debug(f"[gateway] Extracted from referer: '{candidate}'")
-                if candidate not in ['chat', 'api', 'stream', 'upload', 'download']:
-                    real_bot_name = candidate
-        
-        # 方法2: 如果 referer 失敗，使用智能默認選擇
+                real_bot_name = match.group(1)
+                logger.info(f"[gateway] Extracted bot '{real_bot_name}' from referer: '{referer}'")
+
         if not real_bot_name:
-            # 獲取可用 bot 列表
-            available_bots = []
-            if REGISTRY:
-                available_bots.extend(REGISTRY.keys())
-            
-            # 也檢查配置文件
-            try:
-                for cfg_file in BOT_CONFIGS_DIR.glob("*.json"):
-                    bot_name_from_file = cfg_file.stem
-                    if bot_name_from_file not in available_bots:
-                        available_bots.append(bot_name_from_file)
-            except Exception:
-                pass
-            
-            # 過濾掉非真實 bot
-            real_bots = [b for b in available_bots if b not in ['chat', 'api', 'stream', 'upload', 'download']]
-            logger.info(f"[gateway] Real bots available: {real_bots}")
-            
-            # 智能選擇策略
-            if len(real_bots) == 1:
-                # 只有一個 bot，直接使用
-                real_bot_name = real_bots[0]
-                logger.info(f"[gateway] Only one bot available, using: {real_bot_name}")
-            elif len(real_bots) > 1:
-                # 多個 bot，使用優先級選擇
-                priority_bots = ['test_01', 'test_02', 'test_03']  # 優先級順序
-                for priority_bot in priority_bots:
-                    if priority_bot in real_bots:
-                        real_bot_name = priority_bot
-                        logger.info(f"[gateway] Multiple bots available, using priority bot: {real_bot_name}")
-                        break
-                
-                # 如果沒有優先級匹配，使用第一個
-                if not real_bot_name:
-                    real_bot_name = real_bots[0]
-                    logger.info(f"[gateway] No priority match, using first available: {real_bot_name}")
+            # 如果 referer 中沒有，則使用預設或第一個可用的 bot
+            available_bots = [b for b in (list(REGISTRY.keys()) + [f.stem for f in BOT_CONFIGS_DIR.glob("*.json")]) if b.startswith('test_')]
+            if 'test_01' in available_bots:
+                real_bot_name = 'test_01'
+            elif available_bots:
+                real_bot_name = available_bots[0]
         
-        # 如果找到了真實的 bot，進行重定向
         if real_bot_name:
             logger.info(f"[gateway] Redirecting relative path: /{bot_name} -> /{real_bot_name}/{bot_name}")
-            # 重新構造完整路徑
-            if stripped_path:
-                new_path = f"{bot_name}/{stripped_path}"
-            else:
-                new_path = bot_name
+            new_path = f"{bot_name}/{stripped_path}" if stripped_path else bot_name
             return await proxy_to_bot(real_bot_name, request, stripped_path=new_path)
         
-        # 如果都失敗了，返回詳細錯誤
-        return JSONResponse({
-            "success": False, 
-            "message": f"無法確定目標 bot，請使用完整路徑：/bot_name/{bot_name}",
-            "available_bots": available_bots,
-            "referer": referer,
-            "hint": "嘗試直接訪問：http://localhost:8000/test_02/ 而不是通過其他方式"
-        }, status_code=400)
+        return JSONResponse({"success": False, "message": f"無法確定目標 bot，請使用完整路徑：/bot_name/{bot_name}"}, status_code=400)
     
     port = get_bot_port(bot_name)
     if port is None:
         logger.warning(f"[gateway] Bot '{bot_name}' not found or not configured")
         return JSONResponse({"success": False, "message": f"Bot '{bot_name}' 不存在或未配置 port"}, status_code=404)
 
-    # --- MODIFIED FOR RAILWAY DEPLOYMENT ---
-    # Use the bot_name as the hostname for inter-service communication
-    # This assumes the service name in Railway matches the bot_name
-    backend_host = bot_name
+    backend_host = "127.0.0.1"
     
     path = stripped_path
     if not path.startswith("/"):
         path = "/" + path
     query = request.url.query
     
+    target_url = f"http://{backend_host}:{port}{path}"
     if query:
-        target_url = f"http://{backend_host}:{port}{path}?{query}"
-    else:
-        target_url = f"http://{backend_host}:{port}{path}"
-    # --- END MODIFICATION ---
+        target_url += f"?{query}"
     
     method = request.method
     
-    # 檢查是否為 WebSocket 升級請求
-    if (request.headers.get("upgrade", "").lower() == "websocket" or 
-        request.headers.get("connection", "").lower() == "upgrade"):
-        logger.warning(f"[gateway] WebSocket upgrade request detected for /{bot_name}/{stripped_path} - not supported")
-        return JSONResponse({"success": False, "message": "WebSocket connections not supported through gateway"}, status_code=501)
-
-    # 準備 headers：去除 hop-by-hop，補上 X-Forwarded-*
     headers: Dict[str, str] = dict(request.headers)
     for h in list(headers.keys()):
         if h.lower() in HOP_BY_HOP_HEADERS:
@@ -290,175 +283,56 @@ async def proxy_to_bot(bot_name: str, request: Request, stripped_path: str = "")
     headers["x-forwarded-for"] = (request.client.host if request.client else "")
     headers["x-forwarded-prefix"] = f"/{bot_name}"
 
-    # 讀取 request body
     body = await request.body()
     content = body if body else None
     
-    # 記錄請求詳情，幫助診斷問題
     logger.info(f"[gateway] {method} /{bot_name}/{stripped_path} -> {target_url}")
-    if content:
-        logger.debug(f"[gateway] Request body length: {len(content)}, Content-Type: {headers.get('content-type', 'unknown')}")
     
-    # 修正：設定完整的 timeout 參數
-    timeout = httpx.Timeout(
-        connect=CONNECT_TIMEOUT,
-        read=READ_TIMEOUT,
-        write=WRITE_TIMEOUT,
-        pool=POOL_TIMEOUT
-    )
+    timeout = httpx.Timeout(connect=CONNECT_TIMEOUT, read=READ_TIMEOUT, write=WRITE_TIMEOUT, pool=POOL_TIMEOUT)
 
     try:
         async with httpx.AsyncClient(timeout=timeout, follow_redirects=False) as client:
-            # 修改：使用普通請求而非 streaming，避免 chunked encoding 問題
             resp = await client.request(method, target_url, headers=headers, content=content)
-            logger.info(f"[gateway] ✅ {method} /{bot_name}/{stripped_path} -> {resp.status_code}")
-            logger.debug(f"[gateway] Backend response: {resp.status_code}, Content-Type: {resp.headers.get('content-type')}")
             
-            # 如果是錯誤狀態，記錄響應內容幫助診斷
-            if resp.status_code >= 400:
-                logger.error(f"[gateway] Backend error {resp.status_code} for /{bot_name}/{stripped_path}")
-                try:
-                    error_text = resp.text[:500]  # 只記錄前500個字符
-                    logger.error(f"[gateway] Error response: {error_text}")
-                except:
-                    pass
-            
-            # 準備回應 headers
             response_headers: Dict[str, str] = {}
-            skipped_headers = []
             for k, v in resp.headers.items():
-                lk = k.lower()
-                # 跳過 hop-by-hop headers
-                if lk in HOP_BY_HOP_HEADERS:
-                    skipped_headers.append(f"{k} (hop-by-hop)")
-                    continue
-                # 修正 Location: /xxx → /{bot_name}/xxx（避免 302 把使用者帶回根）
-                if lk == "location" and isinstance(v, str) and v.startswith("/"):
-                    v = f"/{bot_name}{v}"
-                response_headers[k] = v
+                if k.lower() not in HOP_BY_HOP_HEADERS:
+                    if k.lower() == "location" and v.startswith("/"):
+                        v = f"/{bot_name}{v}"
+                    response_headers[k] = v
             
-            if skipped_headers:
-                logger.debug(f"[gateway] Skipped headers: {', '.join(skipped_headers)}")
-
-            # 處理 HTML 內容中的相對路徑，修正靜態資源路徑
-            content = resp.content
-            content_type = resp.headers.get("content-type", "").lower()
+            final_content = resp.content
             
-            # 只修改 HTML 內容，不修改 API 響應（如 JSON）
-            if content_type.startswith("text/html") and content and resp.status_code == 200:
-                try:
-                    # 解碼 HTML 內容
-                    html_content = content.decode('utf-8')
-                    
-                    # 修正常見的靜態資源路徑
-                    html_content = html_content.replace('href="/', f'href="/{bot_name}/')
-                    html_content = html_content.replace("href='/", f"href='/{bot_name}/")
-                    html_content = html_content.replace('src="/', f'src="/{bot_name}/')
-                    html_content = html_content.replace("src='/", f"src='/{bot_name}/")
-                    html_content = html_content.replace('action="/', f'action="/{bot_name}/')
-                    html_content = html_content.replace("action='/", f"action='/{bot_name}/")
-                    
-                    # 修正 fetch() 和其他 JavaScript API 調用 - 絕對路徑
-                    html_content = html_content.replace('fetch("/', f'fetch("/{bot_name}/')
-                    html_content = html_content.replace("fetch('/", f"fetch('/{bot_name}/")
-                    
-                    # 特別處理 /api/ 路徑 - 這是遺漏的關鍵！
-                    html_content = html_content.replace('"/api/', f'"/{bot_name}/api/')
-                    html_content = html_content.replace("'/api/", f"'/{bot_name}/api/")
-                    
-                    # 修正相對路徑的常見 API 端點
-                    common_endpoints = ['chat', 'api', 'stream', 'upload', 'download', 'health']
-                    for endpoint in common_endpoints:
-                        # fetch('chat') → fetch('/test_02/chat')
-                        html_content = html_content.replace(f"fetch('{endpoint}'", f"fetch('/{bot_name}/{endpoint}'")
-                        html_content = html_content.replace(f'fetch("{endpoint}"', f'fetch("/{bot_name}/{endpoint}"')
-                        
-                        # fetch('./chat') → fetch('/test_02/chat')  
-                        html_content = html_content.replace(f"fetch('./{endpoint}'", f"fetch('/{bot_name}/{endpoint}'")
-                        html_content = html_content.replace(f'fetch("./{endpoint}"', f'fetch("/{bot_name}/{endpoint}"')
-                        
-                        # 其他 AJAX 調用
-                        html_content = html_content.replace(f"url: '{endpoint}'", f"url: '/{bot_name}/{endpoint}'")
-                        html_content = html_content.replace(f'url: "{endpoint}"', f'url: "/{bot_name}/{endpoint}"')
-                        html_content = html_content.replace(f"url:'{endpoint}'", f"url:'/{bot_name}/{endpoint}'")
-                        html_content = html_content.replace(f'url:"{endpoint}"', f'url:"/{bot_name}/{endpoint}"')
-                    
-                    # 通用的相對路徑模式 (更激進的方法)
-                    # 匹配 fetch('單詞') 模式，但跳過已經有 / 的
-                    pattern = r"fetch\(['\"]([a-zA-Z][a-zA-Z0-9_-]*)['\"]"
-                    def replace_fetch(match):
-                        endpoint = match.group(1)
-                        if not endpoint.startswith('/') and not endpoint.startswith('http'):
-                            return f"fetch('/{bot_name}/{endpoint}'"
-                        return match.group(0)
-                    html_content = re.sub(pattern, replace_fetch, html_content)
-                    
-                    # 重新編碼
-                    content = html_content.encode('utf-8')
-                    
-                    # 更新 Content-Length（如果有的話）
-                    if "content-length" in response_headers:
-                        response_headers["content-length"] = str(len(content))
-                        
-                    logger.debug(f"[gateway] Modified HTML content for bot {bot_name}, new length: {len(content)}")
-                    
-                except Exception as e:
-                    logger.warning(f"[gateway] Failed to modify HTML content: {e}")
-                    # 如果處理失敗，使用原始內容
-                    content = resp.content
-
-            # 使用 Response 而非 StreamingResponse，避免 chunked encoding 問題
-            final_resp = Response(
-                content=content,
+            return Response(
+                content=final_content,
                 status_code=resp.status_code,
                 headers=response_headers,
                 media_type=resp.headers.get("content-type")
             )
 
-            # 多重 Set-Cookie 支援
-            try:
-                for sc in resp.headers.get_list("set-cookie"):
-                    final_resp.headers.append("set-cookie", sc)
-            except Exception:
-                pass
-
-            logger.debug(f"[gateway] ✅ {method} /{bot_name}/{stripped_path} -> {resp.status_code}")
-            return final_resp
-
     except httpx.ConnectError as e:
         logger.error(f"[gateway] Connection error to bot {bot_name} on port {port}: {e}")
         return JSONResponse({"success": False, "message": f"Bot '{bot_name}' 未啟動或無法連線 (port: {port})"}, status_code=503)
-    except httpx.TimeoutException as e:
-        logger.error(f"[gateway] Timeout error for bot {bot_name}: {e}")
-        return JSONResponse({"success": False, "message": "後端回應逾時"}, status_code=504)
-    except httpx.ReadError as e:
-        logger.error(f"[gateway] Read error for bot {bot_name}: {e}")
-        return JSONResponse({"success": False, "message": "讀取後端回應時發生錯誤"}, status_code=502)
-    except httpx.WriteError as e:
-        logger.error(f"[gateway] Write error for bot {bot_name}: {e}")
-        return JSONResponse({"success": False, "message": "向後端發送請求時發生錯誤"}, status_code=502)
     except Exception as e:
         logger.exception(f"[gateway] 代理錯誤 for bot {bot_name}: {e}")
         return JSONResponse({"success": False, "message": f"代理錯誤: {e}"}, status_code=502)
 
 
-# -------------------------
+# ------------------------
 # 通用代理路由（請放在其它固定路由之後）
-# -------------------------
+# ------------------------
 @app.api_route("/{bot_name}", methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"])
 async def gateway_root(bot_name: str, request: Request):
-    # 導向後端的根路徑 "/"
     return await proxy_to_bot(bot_name, request, stripped_path="")
 
 @app.api_route("/{bot_name}/{full_path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"])
 async def gateway_catchall(bot_name: str, full_path: str, request: Request):
-    # 導向後端的相對路徑
     return await proxy_to_bot(bot_name, request, stripped_path=full_path)
 
 
-# -------------------------
+# ------------------------
 # Entrypoint
-# -------------------------
+# ------------------------
 if __name__ == "__main__":
     print("============================================================")
     print("🌐 API Gateway")
@@ -470,6 +344,6 @@ if __name__ == "__main__":
     else:
         print("⚠️  開發模式未設 GATEWAY_ADMIN_TOKEN（正式環境請務必設定）")
     print("🏥 健康檢查: http://localhost:%d/health" % GATEWAY_PORT)
-    print("🔌 使用方式: http://localhost:%d/<bot>/ ... 例如 http://localhost:%d/test_01/health" % (GATEWAY_PORT, GATEWAY_PORT))
+    print("🔌 使用方式: http://localhost:%d/<bot>/ ... 或 /manager/" % GATEWAY_PORT)
     print("============================================================")
     uvicorn.run(app, host="0.0.0.0", port=GATEWAY_PORT, log_level="info")
