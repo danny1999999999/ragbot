@@ -160,7 +160,7 @@ class ChatbotInstance:
         self.session_shown_links = {}
         
         self.setup_routes()
-        logger.info(f"✅ 机器人实例 '{self.bot_name}' 初始化完成，对话记录数据库：{self.conversation_db_path}")
+        logger.info(f"✅ 机器人实例 '{self.bot_name}' 初始化完成，对话记录数据库配置类型：{db_config.get('type')}")
 
     def _load_config(self) -> dict:
         """载入机器人配置"""
