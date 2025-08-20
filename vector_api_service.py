@@ -19,6 +19,13 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
+import sys
+from pathlib import Path
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
+from config import config  # ⭐ 關鍵導入
+
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 

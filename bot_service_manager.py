@@ -29,6 +29,13 @@ import uvicorn
 import httpx
 from langchain_community.vectorstores.utils import filter_complex_metadata
 
+import sys
+from pathlib import Path
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
+from config import config  # ⭐ 關鍵導入
+
+
 USE_VECTOR_API = os.getenv("USE_VECTOR_API", "false").lower() == "true"
 VECTOR_API_URL = os.getenv("VECTOR_API_URL", "http://localhost:9002")
 BASE_PUBLIC_URL = os.getenv("BASE_PUBLIC_URL", "http://localhost:8000")

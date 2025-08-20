@@ -21,11 +21,13 @@ import uvicorn
 from fastapi import FastAPI, Request, Response, Header
 from fastapi.responses import JSONResponse, Response, PlainTextResponse
 
-# -------------------------
-# 通用代理路由（請放在其它固定路由之後）
-# -------------------------
-# 基本設定
-# -------------------------
+import sys
+from pathlib import Path
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
+from config import config  # ⭐ 關鍵導入
+
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)s %(name)s: %(message)s"
