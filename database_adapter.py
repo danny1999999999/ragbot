@@ -616,3 +616,49 @@ def test_corrected_adapter():
 
 if __name__ == "__main__":
     test_corrected_adapter()
+# ========== SQLDialect ¸É¤B ==========
+from enum import Enum
+
+class SQLDialect(Enum):
+    SQLITE = "sqlite"
+    POSTGRESQL = "postgresql"
+    
+    @classmethod
+    def from_string(cls, dialect_str: str):
+        dialect_str = dialect_str.lower().strip()
+        if dialect_str in ["sqlite", "sqlite3"]:
+            return cls.SQLITE
+        elif dialect_str in ["postgresql", "postgres"]:
+            return cls.POSTGRESQL
+        else:
+            return cls.SQLITE
+    
+    @staticmethod
+    def get_auto_increment_column(db_type: str) -> str:
+        if db_type.lower() == "sqlite":
+            return "INTEGER PRIMARY KEY AUTOINCREMENT"
+        elif db_type.lower() in ["postgresql", "postgres"]:
+            return "SERIAL PRIMARY KEY"
+        else:
+            return "INTEGER PRIMARY KEY AUTOINCREMENT"
+    
+    @staticmethod
+    def get_timestamp_column(db_type: str) -> str:
+        if db_type.lower() == "sqlite":
+            return "TEXT DEFAULT CURRENT_TIMESTAMP"
+        elif db_type.lower() in ["postgresql", "postgres"]:
+            return "TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
+        else:
+            return "TEXT DEFAULT CURRENT_TIMESTAMP"
+    
+    @staticmethod
+    def get_boolean_column(db_type: str, default_value: bool = False) -> str:
+        if db_type.lower() == "sqlite":
+            default_val = "1" if default_value else "0"
+            return f"INTEGER DEFAULT {default_val}"
+        elif db_type.lower() in ["postgresql", "postgres"]:
+            default_val = "TRUE" if default_value else "FALSE"
+            return f"BOOLEAN DEFAULT {default_val}"
+        else:
+            default_val = "1" if default_value else "0"
+            return f"INTEGER DEFAULT {default_val}"

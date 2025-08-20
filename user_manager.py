@@ -40,6 +40,13 @@ def safe_print(*args, **kwargs):
             safe_args = [str(arg).encode('ascii', errors='replace').decode('ascii') for arg in args]
             print(*safe_args, **kwargs)
 
+import sys
+from pathlib import Path
+project_root = Path(__file__).parent
+sys.path.insert(0, str(project_root))
+from config import app_config  # ⭐ 統一導入
+
+
 @dataclass
 class User:
     """用戶數據類 - 完全向後兼容"""

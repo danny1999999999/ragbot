@@ -33,6 +33,13 @@ logger = logging.getLogger(__name__)
 import urllib.parse
 from urllib.parse import quote_plus
 
+import sys
+from pathlib import Path
+project_root = Path(__file__).parent
+sys.path.insert(0, str(project_root))
+from config import app_config  # ⭐ 統一導入
+
+
 
 # 🆕 1. 添加 Railway 環境檢測函數（放在文件頂部，導入語句之後）
 def detect_railway_environment():

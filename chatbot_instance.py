@@ -30,6 +30,13 @@ import uvicorn
 from auth_middleware import OptionalAuth, User, JWTManager
 from conversation_logger_simple import EnhancedConversationLogger as ConversationLogger
 
+
+import sys
+from pathlib import Path
+project_root = Path(__file__).parent
+sys.path.insert(0, str(project_root))
+from config import app_config  # ⭐ 統一導入
+
 # 🔧 检查API模式依赖
 try:
     import httpx
@@ -69,7 +76,7 @@ class ChatbotInstance:
         self.collection_name = f"collection_{self.bot_name}"
         
         # 🔧 向量API配置
-        self.vector_api_url = os.getenv("VECTOR_API_URL", "http://localhost:9002")
+        self.vector_api_url = app_config.get_vector_api_url()
         self.use_api_mode = (
             HTTPX_AVAILABLE and 
             os.getenv("USE_VECTOR_API", "false").lower() == "true"
@@ -97,7 +104,7 @@ class ChatbotInstance:
             self.search_mode = "disabled"
         
         # 每个机器人实例使用独立的对话记录数据库
-        self.conversation_db_path = f"{self.bot_name}_conversations.db"
+        self.conversation_db_path = app_config.get_conversation_db_path(bot_name)
         self.logger = ConversationLogger(db_path=self.conversation_db_path)
         
         self.app = FastAPI(title=f"{self.bot_name} Chatbot")

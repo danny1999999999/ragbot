@@ -31,9 +31,9 @@ from langchain_community.vectorstores.utils import filter_complex_metadata
 
 import sys
 from pathlib import Path
-project_root = Path(__file__).parent.parent
+project_root = Path(__file__).parent
 sys.path.insert(0, str(project_root))
-from config import config  # ⭐ 關鍵導入
+from config import app_config  # ⭐ 統一導入
 
 
 USE_VECTOR_API = os.getenv("USE_VECTOR_API", "false").lower() == "true"

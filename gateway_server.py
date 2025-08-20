@@ -23,10 +23,9 @@ from fastapi.responses import JSONResponse, Response, PlainTextResponse
 
 import sys
 from pathlib import Path
-project_root = Path(__file__).parent.parent
+project_root = Path(__file__).parent
 sys.path.insert(0, str(project_root))
-from config import config  # ⭐ 關鍵導入
-
+from config import app_config  # ⭐ 統一導入
 
 logging.basicConfig(
     level=logging.INFO,
