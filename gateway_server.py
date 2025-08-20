@@ -184,43 +184,12 @@ async def gw_unregister(payload: dict, x_admin_token: Optional[str] = Header(def
 # ------------------------
 async def proxy_to_bot(bot_name: str, request: Request, stripped_path: str = "") -> Response:
     """將 /{bot_name}/<stripped_path> 轉到 127.0.0.1:{port}/<stripped_path>"""
-    
-    # 特殊處理：如果 bot_name 是常見的 API 端點，嘗試智能路由
-    if bot_name in ['chat', 'api', 'stream', 'upload', 'download', 'login']:
-        referer = request.headers.get("referer", "")
-        logger.info(f"[gateway] Detecting relative path request: /{bot_name}, referer: '{referer}'")
-        
-        real_bot_name = None
-        
-        # 方法1: 從 referer 提取（如果有的話）
-        if referer:
-            match = re.search(r'/(test_\d+)/', referer) # 尋找 /test_01/ 這樣的格式
-            if match:
-                real_bot_name = match.group(1)
-                logger.info(f"[gateway] Extracted bot '{real_bot_name}' from referer: '{referer}'")
-
-        if not real_bot_name:
-            # 如果 referer 中沒有，則使用預設或第一個可用的 bot
-            available_bots = [b for b in (list(REGISTRY.keys()) + [f.stem for f in BOT_CONFIGS_DIR.glob("*.json")]) if b.startswith('test_')]
-            if 'test_01' in available_bots:
-                real_bot_name = 'test_01'
-            elif available_bots:
-                real_bot_name = available_bots[0]
-        
-        if real_bot_name:
-            logger.info(f"[gateway] Redirecting relative path: /{bot_name} -> /{real_bot_name}/{bot_name}")
-            new_path = f"{bot_name}/{stripped_path}" if stripped_path else bot_name
-            return await proxy_to_bot(real_bot_name, request, stripped_path=new_path)
-        
-        return JSONResponse({"success": False, "message": f"無法確定目標 bot，請使用完整路徑：/bot_name/{bot_name}"}, status_code=400)
-    
     port = get_bot_port(bot_name)
     if port is None:
         logger.warning(f"[gateway] Bot '{bot_name}' not found or not configured")
         return JSONResponse({"success": False, "message": f"Bot '{bot_name}' 不存在或未配置 port"}, status_code=404)
 
     backend_host = "127.0.0.1"
-    
     path = stripped_path
     if not path.startswith("/"):
         path = "/" + path
@@ -231,7 +200,6 @@ async def proxy_to_bot(bot_name: str, request: Request, stripped_path: str = "")
         target_url += f"?{query}"
     
     method = request.method
-    
     headers: Dict[str, str] = dict(request.headers)
     for h in list(headers.keys()):
         if h.lower() in HOP_BY_HOP_HEADERS:
@@ -261,7 +229,19 @@ async def proxy_to_bot(bot_name: str, request: Request, stripped_path: str = "")
                     response_headers[k] = v
             
             final_content = resp.content
-            
+            content_type = resp.headers.get("content-type", "").lower()
+
+            # --- 全新的路徑修正邏輯 ---
+            if content_type.startswith("text/html") and final_content:
+                html_str = final_content.decode('utf-8')
+                # 修正 CSS 和 JS 的路徑
+                html_str = html_str.replace('href="/modern/static/', f'href="/{bot_name}/modern/static/')
+                html_str = html_str.replace('src="/modern/static/', f'src="/{bot_name}/modern/static/')
+                # 修正 API 的路徑
+                html_str = html_str.replace("fetch('/api/", f"fetch('/{bot_name}/api/")
+                final_content = html_str.encode('utf-8')
+                response_headers["content-length"] = str(len(final_content))
+
             return Response(
                 content=final_content,
                 status_code=resp.status_code,
