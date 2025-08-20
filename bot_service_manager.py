@@ -42,7 +42,12 @@ class BotManager:
     def __init__(self):
         self.gateway_url = os.getenv("GATEWAY_URL", "http://127.0.0.1:8000")
         self.gateway_admin_token = os.getenv("GATEWAY_ADMIN_TOKEN", "")
-        logger.info("✅ BotManager (logic class) initialized.")
+        logger.info("✅ BotManager class initialized.")
+
+    def update_gateway_url(self, port: int):
+        """Allows the main app to update the gateway URL with the correct port."""
+        self.gateway_url = f"http://127.0.0.1:{port}"
+        logger.info(f"BotManager's gateway URL updated to: {self.gateway_url}")
 
     def get_all_bots(self) -> List[Dict]:
         """Gets a list of all available bots and their status."""

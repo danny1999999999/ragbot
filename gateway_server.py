@@ -39,6 +39,10 @@ ROOT_DIR = Path(__file__).resolve().parent
 BOT_CONFIGS_DIR = Path(os.getenv("BOT_CONFIGS_DIR", str(ROOT_DIR / "bot_configs")))
 GATEWAY_PORT = int(os.getenv("PORT", "8000"))
 
+# Tell the bot manager the correct port to use for internal communication
+from bot_service_manager import bot_manager
+bot_manager.update_gateway_url(GATEWAY_PORT)
+
 # hop-by-hop headers 不應被代理轉發
 HOP_BY_HOP_HEADERS = {
     "connection", "keep-alive", "proxy-authenticate", "proxy-authorization",
