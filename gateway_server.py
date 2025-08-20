@@ -265,7 +265,6 @@ from fastapi.templating import Jinja2Templates
 from auth_middleware import AdminAuth, User, auth_response, JWTManager # 匯入認證
 from user_manager import user_manager # 匯入使用者管理
 from bot_service_manager import bot_manager # 匯入我們改造後的機器人總管
-# 匯入其他需要的模組
 from fastapi import UploadFile, File
 import asyncio
 
@@ -316,7 +315,7 @@ async def handle_login(request: Request):
 async def handle_logout():
     return auth_response.create_logout_response()
 
-# --- 機器人管理 API ---
+# --- 機器人管理 API (新架構) ---
 @app.get("/api/bots")
 async def get_all_bots(current_user: User = Depends(AdminAuth)):
     bots = bot_manager.get_all_bots()
@@ -324,68 +323,17 @@ async def get_all_bots(current_user: User = Depends(AdminAuth)):
 
 @app.post("/api/bots/{bot_name}/start")
 async def start_bot(bot_name: str, current_user: User = Depends(AdminAuth)):
-    result = await bot_manager.start_bot(bot_name, current_user)
+    # 將主 app 實例傳遞給管理器，以便掛載
+    result = bot_manager.start_bot(bot_name, app)
     return JSONResponse(result)
 
 @app.post("/api/bots/{bot_name}/stop")
 async def stop_bot(bot_name: str, current_user: User = Depends(AdminAuth)):
-    result = bot_manager.stop_bot(bot_name, current_user)
+    result = bot_manager.stop_bot(bot_name, app)
     return JSONResponse(result)
 
-@app.get("/api/bots/{bot_name}/config")
-async def get_bot_config(bot_name: str, current_user: User = Depends(AdminAuth)):
-    config = bot_manager.get_bot_config(bot_name)
-    if config:
-        return JSONResponse({"success": True, "config": config})
-    return JSONResponse({"success": False, "message": "Config not found"}, status_code=404)
-
-@app.post("/api/bots/{bot_name}/config")
-async def save_bot_config(bot_name: str, request: Request, current_user: User = Depends(AdminAuth)):
-    data = await request.json()
-    success = bot_manager.save_bot_config(bot_name, data, current_user)
-    if success:
-        return JSONResponse({"success": True, "message": "Config saved"})
-    return JSONResponse({"success": False, "message": "Failed to save config"}, status_code=500)
-
-@app.delete("/api/bots/{bot_name}")
-async def delete_bot(bot_name: str, current_user: User = Depends(AdminAuth)):
-    result = bot_manager.delete_bot(bot_name, current_user)
-    return JSONResponse(result)
-
-# --- 知識庫與對話 API (未來可以從 vector_api_service 整合進來) ---
-# 佔位符 - 讓前端請求不會直接失敗
-@app.get("/api/bots/{bot_name}/knowledge/files")
-async def get_knowledge_files_placeholder(bot_name: str, current_user: User = Depends(AdminAuth)):
-    # 在此處可以呼叫 vector_service 的邏輯
-    logger.warning(f"Placeholder for get_knowledge_files for {bot_name}")
-    return JSONResponse({"success": True, "documents": [], "total": 0, "message": "API endpoint not fully implemented yet."})
-
-@app.get("/api/bots/{bot_name}/log")
-async def get_bot_log(bot_name: str, current_user: User = Depends(AdminAuth)):
-    """新增：獲取特定機器人的日誌檔案內容。"""
-    log_path = ROOT_DIR / "logs" / f"{bot_name}.log"
-    if not log_path.exists():
-        return JSONResponse({"success": False, "message": "Log file not found."}, status_code=404)
-    try:
-        with open(log_path, 'r', encoding='utf-8') as f:
-            # 讀取最多最後100行
-            lines = f.readlines()
-            last_lines = lines[-100:]
-            return PlainTextResponse(''.join(last_lines))
-    except Exception as e:
-        return JSONResponse({"success": False, "message": str(e)}, status_code=500)
-
-
-# -------------------------
-# 通用代理路由（請放在其它固定路由之後）
-# -------------------------
-@app.api_route("/{bot_name}", methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"])
-async def gateway_root(bot_name: str, request: Request):
-    return await proxy_to_bot(bot_name, request, stripped_path="")
-
-@app.api_route("/{bot_name}/{full_path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"])
-async def gateway_catchall(bot_name: str, full_path: str, request: Request):
-    return await proxy_to_bot(bot_name, request, stripped_path=full_path)
+# 移除舊的通用代理路由，因為現在是動態掛載
+# @app.api_route("/{bot_name}/{full_path:path}" ...)
 
 
 # ------------------------
