@@ -27,6 +27,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import tempfile
 # 🔧 強制載入環境變數
 from dotenv import load_dotenv
+from database_adapter import DatabaseFactory, PostgreSQLAdapter
 load_dotenv('.env', override=True)
 logger = logging.getLogger(__name__)
 
@@ -283,146 +284,7 @@ POSTGRES_CONFIG = {
 }
 """
 
-# ====================
-# 步驟 3: 添加新的函數（在註釋掉的配置後面）
-# ====================
 
-def detect_railway_environment():
-    """檢測是否在 Railway 環境中運行"""
-    railway_indicators = [
-        os.getenv("RAILWAY_PROJECT_ID"),
-        os.getenv("RAILWAY_SERVICE_ID"), 
-        os.getenv("DATABASE_URL"),
-        "railway.internal" in os.getenv("POSTGRES_HOST", "")
-    ]
-    
-    is_railway = any(railway_indicators)
-    if is_railway:
-        print("🚂 檢測到 Railway 部署環境")
-    
-    return is_railway
-
-def get_postgres_config():
-    """獲取PostgreSQL配置，優先使用Railway的DATABASE_URL - 修正版"""
-    
-    # 🔍 檢測 Railway 環境
-    is_railway = bool(os.getenv("RAILWAY_PROJECT_ID"))
-    
-    if is_railway:
-        print("🚂 Railway 環境檢測")
-        
-        # 🎯 方法 1：直接使用 Railway 提供的 DATABASE_URL
-        database_url = os.getenv("DATABASE_URL")
-        print(f"--- DEBUG: DATABASE_URL from env is:{database_url} ---")
-
-        if database_url and database_url.startswith("postgresql://"):
-            print("✅ 使用 Railway DATABASE_URL")
-            # 確保有 SSL 參數
-            if "sslmode=" not in database_url:
-                separator = "&" if "?" in database_url else "?"
-                database_url += f"{separator}sslmode=require"
-            
-            print(f"🔗 Railway 連接字符串已準備就緒")
-            return database_url
-        
-        # 🔧 方法 2：從環境變數構建（如果 DATABASE_URL 不可用）
-        pg_components = {
-            "user": os.getenv("PGUSER", "postgres"),
-            "password": os.getenv("PGPASSWORD"),
-            "host": os.getenv("PGHOST"),
-            "port": os.getenv("PGPORT", "5432"),
-            "database": os.getenv("PGDATABASE", "railway")
-        }
-        
-        # 檢查必需的組件
-        missing = [k for k, v in pg_components.items() if not v and k != "user"]
-        if not missing:
-            if pg_components["password"]:
-                encoded_password = quote_plus(pg_components["password"])
-                connection_url = (
-                    f"postgresql://{pg_components['user']}:{encoded_password}"
-                    f"@{pg_components['host']}:{pg_components['port']}"
-                    f"/{pg_components['database']}?sslmode=require"
-                )
-            else:
-                connection_url = (
-                    f"postgresql://{pg_components['user']}"
-                    f"@{pg_components['host']}:{pg_components['port']}"
-                    f"/{pg_components['database']}?sslmode=require"
-                )
-            
-            print("🔧 從環境變數構建連接字符串")
-            print(f"🔗 目標主機: {pg_components['host']}:{pg_components['port']}")
-            return connection_url
-        else:
-            print(f"❌ 缺少環境變數: {missing}")
-            
-    else:
-        # 🏠 本地環境
-        print("💻 本地環境")
-        host = os.getenv("POSTGRES_HOST", "localhost")
-        port = os.getenv("POSTGRES_PORT", "5432")
-        database = os.getenv("POSTGRES_DATABASE", "chatbot_system")
-        user = os.getenv("POSTGRES_USER", "postgres")
-        password = os.getenv("POSTGRES_PASSWORD", "")
-        
-        if password:
-            encoded_password = quote_plus(password)
-            connection_string = f"postgresql://{user}:{encoded_password}@{host}:{port}/{database}?sslmode=prefer"
-        else:
-            connection_string = f"postgresql://{user}@{host}:{port}/{database}?sslmode=prefer"
-        
-        print(f"🔗 本地連接字符串: postgresql://{user}:***@{host}:{port}/{database}")
-        return connection_string
-    
-    # 🚨 所有方法都失敗
-    print("❌ 無法構建有效的連接字符串")
-    return None
-
-# 添加 PostgreSQL 連接檢查：
-def check_postgresql_connection():
-    """檢查 PostgreSQL 連接"""
-    try:
-        import psycopg2
-        
-        connection_string = get_postgres_config()  # ✅ 使用新函數
-        print(f"🔌 嘗試連接 PostgreSQL...")
-        
-        conn = psycopg2.connect(connection_string)
-        
-        # 檢查 pgvector 擴展
-        with conn.cursor() as cursor:
-            cursor.execute("SELECT 1 FROM pg_extension WHERE extname = 'vector';")
-            vector_available = cursor.fetchone() is not None
-            
-            if vector_available:
-                print("✅ pgvector 擴展已安裝")
-            else:
-                print("⚠️ pgvector 擴展未安裝，嘗試安裝...")
-                try:
-                    cursor.execute("CREATE EXTENSION IF NOT EXISTS vector;")
-                    conn.commit()
-                    print("✅ pgvector 擴展安裝成功")
-                except Exception as e:
-                    print(f"❌ pgvector 擴展安裝失敗: {e}")
-        
-        conn.close()
-        print("✅ PostgreSQL 連接正常")
-        return True
-        
-    except Exception as e:
-        print(f"❌ PostgreSQL 連接失敗: {e}")
-        
-        # 詳細錯誤診斷
-        error_msg = str(e).lower()
-        if "authentication failed" in error_msg:
-            print("🔍 診斷：密碼認證失敗，檢查 POSTGRES_PASSWORD 環境變量")
-        elif "could not connect" in error_msg:
-            print("🔍 診斷：無法連接到服務器，檢查 POSTGRES_HOST 和 POSTGRES_PORT")
-        elif "database" in error_msg and "does not exist" in error_msg:
-            print("🔍 診斷：數據庫不存在，檢查 POSTGRES_DATABASE 環境變量")
-        
-        return False
 
 
 
@@ -1821,15 +1683,33 @@ class OptimizedVectorSystem:
         # 建立目錄
         self.data_dir.mkdir(exist_ok=True)
         
-        # 🐘 PostgreSQL 連接配置
-        self.connection_string = get_postgres_config()
+        # --- REFACTORED DATABASE CONNECTION ---
+        self.db_adapter = None
+        self.connection_string = None
+        self.use_postgres = False
 
-        # 🔧 檢查 PostgreSQL 連接
-        if not check_postgresql_connection():
+        try:
+            # Attempt to create a PostgreSQL adapter from environment variables
+            # The factory correctly prioritizes DATABASE_URL
+            self.db_adapter = DatabaseFactory.create_from_env("pgvector") # Use a unique name
+            
+            # Check if the adapter is for PostgreSQL
+            if isinstance(self.db_adapter, PostgreSQLAdapter):
+                 self.db_adapter.connect() # Test the connection
+                 self.connection_string = self.db_adapter.connection_string
+                 self.use_postgres = True
+                 print("✅ PostgreSQL (via DatabaseFactory) 連接成功")
+                 self.db_adapter.disconnect() # Close test connection
+            else:
+                # The factory returned a SQLite adapter, which we don't want here.
+                self.db_adapter = None
+
+        except Exception as e:
+            print(f"⚠️ PostgreSQL (via DatabaseFactory) 連接失敗: {e}")
+
+        if not self.use_postgres:
             print("⚠️ PostgreSQL 不可用，將使用 Chroma 作為備用")
-            self.use_postgres = False
-        else:
-            self.use_postgres = True
+        # --- END REFACTORING ---
         
         # 建立目錄
         for dir_path in [self.persist_dir, self.data_dir]:
