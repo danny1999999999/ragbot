@@ -1860,7 +1860,8 @@ def main():
     """主函數 - 添加清理邏輯"""
     server = BotServiceManager()
     app = server.app
-    port = int(os.getenv("MANAGER_PORT", 9001))
+    port = int(os.getenv("PORT", os.getenv("MANAGER_PORT", 9001)))
+
     
     print("=" * 60)
     print("🤖 聊天機器人服務管理器 - 統一認證版")
