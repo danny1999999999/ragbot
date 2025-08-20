@@ -1076,6 +1076,9 @@ class BotServiceManager:
 
             # 明確傳遞環境變數給子程序（避免在服務形態下讀不到 .env）
             child_env = os.environ.copy()
+            # 確保關鍵的環境變數被傳遞下去
+            if os.getenv("DATABASE_URL"):
+                child_env["DATABASE_URL"] = os.getenv("DATABASE_URL")
             child_env["USE_VECTOR_API"] = "true" if USE_VECTOR_API else "false"
             child_env["VECTOR_API_URL"] = VECTOR_API_URL
 
@@ -1098,16 +1101,26 @@ class BotServiceManager:
             global_bot_processes[bot_name] = process
             global_bot_log_files[bot_name] = log_file
 
-            # 非阻塞：通知 Gateway 註冊（失敗不擋流程）
-            try:
-                async with httpx.AsyncClient(timeout=httpx.Timeout(3.0, connect=1.0)) as client:
-                    await client.post(
-                        f"{GATEWAY_URL}/_gateway/register",
-                        headers={"X-Admin-Token": GATEWAY_ADMIN_TOKEN} if GATEWAY_ADMIN_TOKEN else {},
-                        json={"bot": bot_name, "port": port}
-                    )
-            except Exception as ge:
-                logger.warning(f"[manager] Gateway 註冊失敗（忽略不擋流程）：{ge}")
+            # 增加重試機制的非阻塞 Gateway 註冊
+            registration_success = False
+            for attempt in range(3): # 最多重試3次
+                try:
+                    async with httpx.AsyncClient(timeout=httpx.Timeout(5.0, connect=2.0)) as client:
+                        await client.post(
+                            f"{GATEWAY_URL}/_gateway/register",
+                            headers={"X-Admin-Token": GATEWAY_ADMIN_TOKEN} if GATEWAY_ADMIN_TOKEN else {},
+                            json={"bot": bot_name, "port": port}
+                        )
+                    registration_success = True
+                    logger.info(f"✅ Gateway 註冊成功 (嘗試 {attempt+1}/3)")
+                    break # 成功後跳出循環
+                except Exception as ge:
+                    logger.warning(f"[manager] Gateway 註冊失敗 (嘗試 {attempt+1}/3): {ge}")
+                    if attempt < 2: # 如果不是最後一次嘗試，則等待後重試
+                        time.sleep(2) # 等待2秒
+            
+            if not registration_success:
+                logger.error(f"❌ Gateway 註冊最終失敗，請檢查 Gateway 服務狀態")
 
             logger.info(f"✅ 機器人 {bot_name} 已啟動，操作者: {current_user.username}")
             return JSONResponse({"success": True, "message": f"機器人 {bot_name} 已啟動"})
