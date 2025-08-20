@@ -2,7 +2,7 @@
 
 python-dotenv
 PyJWT
-request
+requests
 langchain-community
 langchain-openai
 langchain-postgres
@@ -20,7 +20,7 @@ pydantic
 fastapi>=0.104.0
 uvicorn[standard]>=0.24.0
 httpx>=0.25.0
-python-dotenv>=1.0.0
+
 langchain>=0.0.335
 psycopg2-binary
 
