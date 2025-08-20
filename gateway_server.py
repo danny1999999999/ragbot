@@ -18,7 +18,7 @@ from typing import Dict, Optional, Tuple
 
 import httpx
 import uvicorn
-from fastapi import FastAPI, Request, Response, Header
+from fastapi import FastAPI, Request, Response, Header, Depends, Depends
 from fastapi.responses import JSONResponse, StreamingResponse, PlainTextResponse, HTMLResponse
 from starlette.background import BackgroundTask
 
