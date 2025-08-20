@@ -318,9 +318,83 @@ async def proxy_to_bot(bot_name: str, request: Request, stripped_path: str = "")
         return JSONResponse({"success": False, "message": f"代理錯誤: {e}"}, status_code=502)
 
 
-# ------------------------
+
+# -------------------------
+# 管理介面整合 (新增)
+# -------------------------
+from fastapi.templating import Jinja2Templates
+from auth_middleware import AdminAuth, User, auth_response, JWTManager # 匯入認證
+from user_manager import user_manager # 匯入使用者管理
+from bot_service_manager import bot_manager # 匯入我們改造後的機器人總管
+
+templates = Jinja2Templates(directory=str(ROOT_DIR))
+
+@app.get("/login", response_class=HTMLResponse)
+async def login_page(request: Request):
+    return templates.TemplateResponse("manager_login.html", {"request": request})
+
+@app.get("/manager", response_class=HTMLResponse)
+async def manager_page(request: Request, current_user: User = Depends(AdminAuth)):
+    """管理器主頁面 - 需要管理員權限"""
+    return templates.TemplateResponse("manager_ui.html", {"request": request, "user": current_user})
+
+@app.post("/api/login")
+async def handle_login(request: Request):
+    """處理登入 - 邏輯從 bot_service_manager 搬移至此"""
+    try:
+        data = await request.json()
+        username = data.get("username", "").strip()
+        password = data.get("password", "")
+
+        if not username or not password:
+            return JSONResponse({"success": False, "message": "請填寫用戶名和密碼"}, status_code=400)
+
+        if not user_manager:
+            raise HTTPException(status_code=503, detail="用戶系統未初始化")
+
+        success, token_or_msg, user = user_manager.authenticate(
+            username, password,
+            ip_address=request.client.host if request.client else "unknown"
+        )
+        
+        if success and user.role in ["admin", "super_admin"]:
+            jwt_token = JWTManager.create_access_token(user)
+            response = auth_response.create_login_response(user, jwt_token)
+            logger.info(f"✅ 用戶 {username} 登入閘道器成功")
+            return response
+        elif success:
+            return JSONResponse({"success": False, "message": "需要管理員權限"}, status_code=403)
+        else:
+            logger.warning(f"閘道器認證失敗: {username}")
+            return JSONResponse({"success": False, "message": token_or_msg}, status_code=401)
+
+    except Exception as e:
+        logger.error(f"登入處理異常: {e}", exc_info=True)
+        return JSONResponse({"success": False, "message": f"登入系統異常: {str(e)}"}, status_code=500)
+
+@app.post("/api/logout")
+async def handle_logout():
+    return auth_response.create_logout_response()
+
+@app.get("/api/bots")
+async def get_all_bots(current_user: User = Depends(AdminAuth)):
+    bots = bot_manager.get_all_bots()
+    return JSONResponse(bots)
+
+@app.post("/api/bots/{bot_name}/start")
+async def start_bot(bot_name: str, current_user: User = Depends(AdminAuth)):
+    result = await bot_manager.start_bot(bot_name, current_user)
+    return JSONResponse(result)
+
+@app.post("/api/bots/{bot_name}/stop")
+async def stop_bot(bot_name: str, current_user: User = Depends(AdminAuth)):
+    result = bot_manager.stop_bot(bot_name, current_user)
+    return JSONResponse(result)
+
+
+# -------------------------
 # 通用代理路由（請放在其它固定路由之後）
-# ------------------------
+# -------------------------
 @app.api_route("/{bot_name}", methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"])
 async def gateway_root(bot_name: str, request: Request):
     return await proxy_to_bot(bot_name, request, stripped_path="")
