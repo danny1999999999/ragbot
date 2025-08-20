@@ -360,6 +360,21 @@ async def get_knowledge_files_placeholder(bot_name: str, current_user: User = De
     logger.warning(f"Placeholder for get_knowledge_files for {bot_name}")
     return JSONResponse({"success": True, "documents": [], "total": 0, "message": "API endpoint not fully implemented yet."})
 
+@app.get("/api/bots/{bot_name}/log")
+async def get_bot_log(bot_name: str, current_user: User = Depends(AdminAuth)):
+    """新增：獲取特定機器人的日誌檔案內容。"""
+    log_path = ROOT_DIR / "logs" / f"{bot_name}.log"
+    if not log_path.exists():
+        return JSONResponse({"success": False, "message": "Log file not found."}, status_code=404)
+    try:
+        with open(log_path, 'r', encoding='utf-8') as f:
+            # 讀取最多最後100行
+            lines = f.readlines()
+            last_lines = lines[-100:]
+            return PlainTextResponse(''.join(last_lines))
+    except Exception as e:
+        return JSONResponse({"success": False, "message": str(e)}, status_code=500)
+
 
 # -------------------------
 # 通用代理路由（請放在其它固定路由之後）
