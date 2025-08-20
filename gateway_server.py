@@ -63,52 +63,7 @@ _FILE_CACHE: Dict[str, Tuple[int, float]] = {}
 app = FastAPI(title="Internal API Gateway", version="1.2")
 
 
-# --------------------------------------------------
-# --- 新增：反向代理到管理介面 ---
-# --------------------------------------------------
-MANAGER_SERVICE_URL = "http://127.0.0.1:9001"
-proxy_client = httpx.AsyncClient(base_url=MANAGER_SERVICE_URL, follow_redirects=True)
 
-@app.api_route("/manager/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"])
-async def reverse_proxy_manager(request: Request, path: str):
-    """
-    捕獲所有 /manager/ 的請求，並轉發到 9001 port 的管理服務。
-    """
-    # 修正路徑，確保它以 / 開頭
-    if not path.startswith("/"):
-        path = "/" + path
-
-    url = httpx.URL(path=path, query=request.url.query.encode("utf-8"))
-    
-    rp_request = proxy_client.build_request(
-        method=request.method,
-        url=url,
-        headers=request.headers.raw,
-        content=await request.body()
-    )
-    
-    try:
-        rp_response = await proxy_client.send(rp_request, stream=True)
-        
-        excluded_headers = ["content-encoding", "content-length", "transfer-encoding", "connection"]
-        headers = [(name, value) for (name, value) in rp_response.headers.items() if name.lower() not in excluded_headers]
-        
-        # 處理重定向路徑
-        for i, (name, value) in enumerate(headers):
-            if name.lower() == 'location':
-                # 如果重定向到根，則加上 /manager 前綴
-                if value.startswith('/'):
-                    headers[i] = (name, f"/manager{value}")
-                logger.info(f"Redirecting to: {headers[i][1]}")
-
-        return StreamingResponse(
-            rp_response.aiter_raw(),
-            status_code=rp_response.status_code,
-            headers=headers,
-            background=BackgroundTask(rp_response.aclose)
-        )
-    except httpx.ConnectError:
-        return JSONResponse(status_code=503, content={"detail": "Manager service is unavailable."})
 
 
 # ------------------------
