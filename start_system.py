@@ -130,14 +130,14 @@ def get_service_config(service_name):
         configs = {
             "vector_api": {
                 "port": base_port,
-                "url": f"http://localhost:{base_port}/api/vector/health"
+                "url": f"http://localhost:{base_port}/health"  # ✅ 修正為 /health
             },
             "gateway": {
-                "port": base_port + 1,  # 小偏移避免衝突
+                "port": base_port + 1,
                 "url": f"http://localhost:{base_port + 1}/health"
             },
             "manager": {
-                "port": base_port + 2,  # 小偏移避免衝突
+                "port": base_port + 2,
                 "url": f"http://localhost:{base_port + 2}/health"
             }
         }
@@ -146,7 +146,7 @@ def get_service_config(service_name):
         configs = {
             "vector_api": {
                 "port": 9002,
-                "url": "http://localhost:9002/health"
+                "url": "http://localhost:9002/health"  # ✅ 修正為 /health
             },
             "gateway": {
                 "port": 8000, 
