@@ -119,10 +119,11 @@ class CompatibleUserManager:
         self.db_file = db_file
         self.lock = threading.RLock()
         
-        # 🔧 決定使用哪種模式
-        use_adapter = os.getenv("USE_DATABASE_ADAPTER", "false").lower() == "true"
+        # 🔧 決定使用哪種模式 (新版邏輯：偵測到Railway環境時強制使用Adapter)
+        is_railway = bool(os.getenv('RAILWAY_PROJECT_ID'))
+        use_adapter_env = os.getenv("USE_DATABASE_ADAPTER", "false").lower() == "true"
         
-        if use_adapter and ADAPTER_AVAILABLE:
+        if (use_adapter_env or is_railway) and ADAPTER_AVAILABLE:
             self._init_with_adapter()
         else:
             self._init_traditional_sqlite()
