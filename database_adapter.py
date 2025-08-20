@@ -1,10 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-database_adapter_corrected.py - 完全修復版數據庫抽象層
-支持 SQLite 和 PostgreSQL，適用於用戶管理和對話記錄系統
-版本：3.0 - 完全修復所有錯誤
-"""
 
 import os
 import json
@@ -616,7 +609,7 @@ def test_corrected_adapter():
 
 if __name__ == "__main__":
     test_corrected_adapter()
-# ========== SQLDialect �ɤB ==========
+# ========== SQLDialect �ɤB ==========
 from enum import Enum
 
 class SQLDialect(Enum):
