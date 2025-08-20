@@ -1,2 +1,2 @@
 [start]
-cmd = "python start_system.py"
+cmd = "python bot_service_manager.py"
