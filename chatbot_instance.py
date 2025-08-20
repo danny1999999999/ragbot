@@ -103,9 +103,9 @@ class ChatbotInstance:
             logger.warning("⚠️ 向量搜索功能不可用")
             self.search_mode = "disabled"
         
-        # 每个机器人实例使用独立的对话记录数据库
-        self.conversation_db_path = app_config.get_conversation_db_path(bot_name)
-        self.logger = ConversationLogger(db_path=self.conversation_db_path)
+        # 每个机器人实例使用獨立的對話記錄資料庫
+        db_config = self._get_db_config()
+        self.logger = ConversationLogger(db_config=db_config)
         
         self.app = FastAPI(title=f"{self.bot_name} Chatbot")
         try:
@@ -182,6 +182,25 @@ class ChatbotInstance:
                 logger.warning(f"自动保存显示名称失败: {e}")
         
         return config
+
+    def _get_db_config(self) -> dict:
+        """Gets the database configuration, forcing PostgreSQL on Railway."""
+        is_railway = bool(os.getenv('RAILWAY_PROJECT_ID'))
+        database_url = os.getenv("DATABASE_URL")
+
+        if is_railway and database_url:
+            logger.info(f"✅ Bot '{self.bot_name}' is using PostgreSQL via DATABASE_URL.")
+            return {
+                "type": "postgresql",
+                "connection_string": database_url
+            }
+        else:
+            db_path = f"{self.bot_name}_conversations.db"
+            logger.info(f"⚠️ Bot '{self.bot_name}' is using fallback SQLite: {db_path}")
+            return {
+                "type": "sqlite",
+                "db_file": db_path
+            }
 
     def create_anonymous_user(self, request: Request) -> User:
         """创建匿名用户对象"""
