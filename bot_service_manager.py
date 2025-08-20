@@ -111,45 +111,44 @@ except ImportError as e:
 
 def get_database_config(bot_name: str) -> Dict:
     """
-    每個機器人可以有獨立的數據庫配置 - 支援連接池版本
+    獲取資料庫配置，優先使用 Railway 的 DATABASE_URL
     """
-    # 檢查是否有機器人專屬配置
-    bot_db_type = os.getenv(f"DB_TYPE_{bot_name.upper()}", os.getenv("DB_TYPE", "sqlite")).lower()
-    
-    if bot_db_type == "postgresql":
+    # 首先檢查是否有 DATABASE_URL
+    database_url = os.getenv("DATABASE_URL")
+    if database_url and database_url.startswith("postgresql://"):
+        print(f"✅ Bot '{bot_name}' 使用 Railway DATABASE_URL")
+        # 確保有 SSL 參數
+        if "sslmode=" not in database_url:
+            separator = "&" if "?" in database_url else "?"
+            database_url += f"{separator}sslmode=require"
+        
+        # 從 URL 解析元件以供返回
+        from urllib.parse import urlparse
+        parsed = urlparse(database_url)
         return {
             "type": "postgresql",
-            "host": os.getenv(f"POSTGRES_HOST_{bot_name.upper()}", os.getenv("POSTGRES_HOST", "localhost")),
-            "port": int(os.getenv(f"POSTGRES_PORT_{bot_name.upper()}", os.getenv("POSTGRES_PORT", "5432"))),
-            "database": os.getenv(f"POSTGRES_DATABASE_{bot_name.upper()}", os.getenv("POSTGRES_DATABASE", f"chatbot_{bot_name}")),
-            "user": os.getenv(f"POSTGRES_USER_{bot_name.upper()}", os.getenv("POSTGRES_USER", "postgres")),
-            "password": os.getenv(f"POSTGRES_PASSWORD_{bot_name.upper()}", os.getenv("POSTGRES_PASSWORD", "")),
-            "schema": os.getenv(f"POSTGRES_SCHEMA_{bot_name.upper()}", os.getenv("POSTGRES_SCHEMA", "public")),
-            
-            # ✅ 新增：連接池配置
-            "min_connections": int(os.getenv(f"POSTGRES_MIN_CONNECTIONS_{bot_name.upper()}", 
-                                           os.getenv("POSTGRES_MIN_CONNECTIONS", "1"))),
-            "max_connections": int(os.getenv(f"POSTGRES_MAX_CONNECTIONS_{bot_name.upper()}", 
-                                           os.getenv("POSTGRES_MAX_CONNECTIONS", "10"))),
-            
-            # ✅ 新增：超時配置
-            "connect_timeout": int(os.getenv(f"POSTGRES_CONNECT_TIMEOUT_{bot_name.upper()}", 
-                                           os.getenv("POSTGRES_CONNECT_TIMEOUT", "30"))),
-            "command_timeout": int(os.getenv(f"POSTGRES_COMMAND_TIMEOUT_{bot_name.upper()}", 
-                                           os.getenv("POSTGRES_COMMAND_TIMEOUT", "30")))
+            "url": database_url, # 直接返回 URL
+            "host": parsed.hostname,
+            "port": parsed.port,
+            "database": parsed.path[1:],
+            "user": parsed.username,
+            "password": parsed.password,
+            "min_connections": int(os.getenv("POSTGRES_MIN_CONNECTIONS", "1")),
+            "max_connections": int(os.getenv("POSTGRES_MAX_CONNECTIONS", "10")),
+            "connect_timeout": int(os.getenv("POSTGRES_CONNECT_TIMEOUT", "30")),
+            "command_timeout": int(os.getenv("POSTGRES_COMMAND_TIMEOUT", "30"))
         }
-    else:
-        # SQLite 配置（向後兼容）
-        return {
-            "type": "sqlite",
-            "db_file": str(ROOT_DIR / f"{bot_name}_conversations.db"),
-            "timeout": float(os.getenv("SQLITE_TIMEOUT", "30.0")),
-            
-            # ✅ 新增：SQLite 優化配置
-            "journal_mode": os.getenv("SQLITE_JOURNAL_MODE", "WAL"),
-            "synchronous": os.getenv("SQLITE_SYNCHRONOUS", "NORMAL"),
-            "cache_size": int(os.getenv("SQLITE_CACHE_SIZE", "2000"))
-        }
+
+    # 如果沒有 DATABASE_URL，則回退到舊的 SQLite 邏輯（適用於本地開發）
+    print(f"⚠️ Bot '{bot_name}' 未找到 DATABASE_URL，回退到本地 SQLite")
+    return {
+        "type": "sqlite",
+        "db_file": str(ROOT_DIR / f"{bot_name}_conversations.db"),
+        "timeout": float(os.getenv("SQLITE_TIMEOUT", "30.0")),
+        "journal_mode": os.getenv("SQLITE_JOURNAL_MODE", "WAL"),
+        "synchronous": os.getenv("SQLITE_SYNCHRONOUS", "NORMAL"),
+        "cache_size": int(os.getenv("SQLITE_CACHE_SIZE", "2000"))
+    }
 
 
 # 配置目錄

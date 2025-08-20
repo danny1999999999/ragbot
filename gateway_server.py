@@ -255,7 +255,22 @@ async def proxy_to_bot(bot_name: str, request: Request, stripped_path: str = "")
         logger.warning(f"[gateway] Bot '{bot_name}' not found or not configured")
         return JSONResponse({"success": False, "message": f"Bot '{bot_name}' 不存在或未配置 port"}, status_code=404)
 
-    target_url = build_backend_url(port, stripped_path, request.url.query)
+    # --- MODIFIED FOR RAILWAY DEPLOYMENT ---
+    # Use the bot_name as the hostname for inter-service communication
+    # This assumes the service name in Railway matches the bot_name
+    backend_host = bot_name
+    
+    path = stripped_path
+    if not path.startswith("/"):
+        path = "/" + path
+    query = request.url.query
+    
+    if query:
+        target_url = f"http://{backend_host}:{port}{path}?{query}"
+    else:
+        target_url = f"http://{backend_host}:{port}{path}"
+    # --- END MODIFICATION ---
+    
     method = request.method
     
     # 檢查是否為 WebSocket 升級請求
