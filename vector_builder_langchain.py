@@ -3592,7 +3592,7 @@ class OptimizedVectorSystem:
                 SELECT table_name FROM information_schema.tables 
                 WHERE table_schema = 'public' 
                 AND table_name LIKE '%%langchain%%';
-            """")
+            """)
             
             tables = [row[0] for row in cursor.fetchall()]
             total_deleted = 0
@@ -3635,7 +3635,7 @@ class OptimizedVectorSystem:
                 SELECT table_name FROM information_schema.tables 
                 WHERE table_schema = 'public' 
                 AND table_name LIKE '%%langchain%%';
-            """")
+            """)
             
             tables = [row[0] for row in cursor.fetchall()]
             total_deleted = 0
@@ -3691,7 +3691,7 @@ class OptimizedVectorSystem:
                 SELECT table_name FROM information_schema.tables 
                 WHERE table_schema = 'public' 
                 AND table_name LIKE '%%collection%%';
-            """")
+            """)
             
             tables = cursor.fetchall()
             total_deleted = 0
