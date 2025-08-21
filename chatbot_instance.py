@@ -185,22 +185,18 @@ class ChatbotInstance:
 
     def _get_db_config(self) -> dict:
         """Gets the database configuration, forcing PostgreSQL on Railway."""
-        database_url = os.getenv("DATABASE_URL")
+         database_url = os.getenv("DATABASE_URL")
 
-        if database_url:
-            logger.info(f"✅ Bot '{self.bot_name}' is using PostgreSQL via DATABASE_URL.")
-            return {
-                "type": "postgresql",
-                "connection_string": database_url
-            }
-        else:
-            db_path = f"{self.bot_name}_conversations.db"
-            logger.info(f"⚠️ Bot '{self.bot_name}' is using fallback SQLite: {db_path}")
-            return {
-                "type": "sqlite",
-                "db_file": db_path
-            }
-
+        if not database_url:
+            error_msg = "環境變數 DATABASE_URL 未設定。對話紀錄功能需要 PostgreSQL資料庫。"
+            logger.error(f"❌ 機器人 ' {self.bot_name}' - {error_msg}")
+            raise ValueError(error_msg)
+        logger.info(f"✅ 機器人 ' {self.bot_name}' 將使用 PostgreSQL (透過 DATABASE_URL)記錄對話。")
+        return {
+             "type": "postgresql"
+             "connection_string": database_url
+        } 
+  
     def create_anonymous_user(self, request: Request) -> User:
         """创建匿名用户对象"""
         client_ip = request.client.host if request.client else "unknown"
