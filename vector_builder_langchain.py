@@ -3286,40 +3286,63 @@ class OptimizedVectorSystem:
         return {"success": True, "documents": page_documents, "total": total, "page": page, "limit": limit, "total_pages": total_pages}
 
     def _get_documents_from_pgvector(self, vectorstore, collection_name: str, page: int, limit: int, search: str) -> Dict:
-        """從 PGVector 獲取檔案 - 使用檔案記錄"""
+        """從 PGVector 獲取檔案 - 修正資料格式"""
         try:
+            print(f"🔍 從檔案記錄獲取 {collection_name} 的檔案列表")
+            
             if collection_name not in self.file_records:
+                print(f"⚠️ 集合 {collection_name} 在檔案記錄中不存在")
                 return {"success": True, "documents": [], "total": 0, "page": page, "limit": limit, "total_pages": 0}
             
             files = self.file_records[collection_name]
             file_stats = {}
             
+            print(f"🔍 處理 {len(files)} 個檔案記錄")
+            
             for file_path, file_info in files.items():
                 try:
                     filename = Path(file_path).name
+                    
                     if filename not in file_stats:
+                        # 🔧 修正：確保所有必要欄位都有值
                         upload_time = 0
-                        if hasattr(file_info, 'uploaded_at'):
+                        uploaded_by = "未知"
+                        
+                        # 獲取上傳時間
+                        if hasattr(file_info, 'uploaded_at') and file_info.uploaded_at:
                             upload_time = file_info.uploaded_at
-                        elif hasattr(file_info, 'mtime'):
+                        elif hasattr(file_info, 'mtime') and file_info.mtime:
                             upload_time = file_info.mtime
                         elif isinstance(file_info, dict):
                             upload_time = file_info.get('uploaded_at', file_info.get('mtime', 0))
                         
+                        # 獲取上傳者信息
+                        if hasattr(file_info, 'uploaded_by') and file_info.uploaded_by:
+                            uploaded_by = file_info.uploaded_by
+                        elif hasattr(file_info, 'file_source') and file_info.file_source:
+                            uploaded_by = "管理介面" if file_info.file_source == "upload" else "同步"
+                        elif isinstance(file_info, dict):
+                            uploaded_by = file_info.get('uploaded_by', file_info.get('file_source', '未知'))
+                            if uploaded_by == 'upload':
+                                uploaded_by = "管理介面"
+                        
                         file_stats[filename] = {
                             'filename': filename,
                             'source': file_path,
-                            'total_chunks': 0,
-                            'upload_time': upload_time
+                            'total_chunks': 0,  # 🔧 確保初始化為 0
+                            'upload_time': upload_time,
+                            'uploaded_by': uploaded_by  # 🔧 新增上傳者欄位
                         }
                     
-                    # 獲取實際的分塊數量
+                    # 🔧 修正：實際獲取分塊數量
                     try:
                         chunks = self.get_document_chunks(collection_name, filename)
-                        file_stats[filename]['total_chunks'] = len(chunks)
+                        actual_chunk_count = len(chunks)
+                        file_stats[filename]['total_chunks'] = actual_chunk_count
+                        print(f"   📄 {filename}: {actual_chunk_count} 個分塊")
                     except Exception as chunk_error:
                         logger.warning(f"獲取 {filename} 分塊數量失敗: {chunk_error}")
-                        file_stats[filename]['total_chunks'] = 1
+                        file_stats[filename]['total_chunks'] = 0  # 🔧 失敗時設為 0，而不是 1
                         
                 except Exception as file_error:
                     logger.warning(f"處理檔案記錄失敗 {file_path}: {file_error}")
@@ -3327,30 +3350,64 @@ class OptimizedVectorSystem:
             
             safe_documents = list(file_stats.values())
             
-            # 添加格式化時間
+            # 🔧 修正：格式化時間，確保不會是 "Invalid Date"
             for doc in safe_documents:
                 try:
                     from datetime import datetime
-                    doc['upload_time_formatted'] = datetime.fromtimestamp(doc['upload_time']).strftime('%Y-%m-%d %H:%M:%S') if doc['upload_time'] else 'N/A'
-                except:
-                    doc['upload_time_formatted'] = 'Invalid Date'
+                    if doc['upload_time'] and doc['upload_time'] > 0:
+                        doc['upload_time_formatted'] = datetime.fromtimestamp(doc['upload_time']).strftime('%Y-%m-%d %H:%M:%S')
+                    else:
+                        doc['upload_time_formatted'] = '未知'
+                except Exception as e:
+                    print(f"⚠️ 時間格式化失敗: {e}")
+                    doc['upload_time_formatted'] = '未知'
+                
+                # 🔧 確保上傳者不是空值
+                if not doc.get('uploaded_by') or doc['uploaded_by'] in ['', 'unknown']:
+                    doc['uploaded_by'] = '未知'
 
             # 過濾和分頁
             if search:
                 safe_documents = [doc for doc in safe_documents if search.lower() in doc['filename'].lower()]
             
             safe_documents.sort(key=lambda x: x.get('upload_time', 0), reverse=True)
+
             total = len(safe_documents)
             total_pages = (total + limit - 1) // limit if total > 0 else 1
             start = (page - 1) * limit
             end = start + limit
             page_documents = safe_documents[start:end]
 
-            return {"success": True, "documents": page_documents, "total": total, "page": page, "limit": limit, "total_pages": total_pages}
+            # 🔧 調試：打印返回的資料格式
+            print(f"✅ PGVector 檔案列表獲取成功: {total} 個檔案")
+            if page_documents:
+                sample_doc = page_documents[0]
+                print(f"📋 樣本資料格式: {list(sample_doc.keys())}")
+                print(f"   filename: {sample_doc.get('filename')}")
+                print(f"   total_chunks: {sample_doc.get('total_chunks')}")
+                print(f"   uploaded_by: {sample_doc.get('uploaded_by')}")
+                print(f"   upload_time_formatted: {sample_doc.get('upload_time_formatted')}")
+
+            return {
+                "success": True,
+                "documents": page_documents,
+                "total": total,
+                "page": page,
+                "limit": limit,
+                "total_pages": total_pages
+            }
             
         except Exception as e:
             logger.error(f"PGVector 檔案獲取失敗: {e}")
-            return {"success": False, "error": f"PGVector 獲取失敗: {str(e)}", "documents": [], "total": 0, "page": page, "limit": limit, "total_pages": 0}
+            return {
+                "success": False, 
+                "error": f"PGVector 獲取失敗: {str(e)}", 
+                "documents": [], 
+                "total": 0, 
+                "page": page, 
+                "limit": limit, 
+                "total_pages": 0
+            }
         
     def get_document_chunks(self, collection_name: str, source_file: str) -> List[Dict]:
         """獲取指定檔案的所有分塊 - 兼容 Chroma 和 PGVector"""
