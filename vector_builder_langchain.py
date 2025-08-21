@@ -3585,47 +3585,47 @@ class OptimizedVectorSystem:
             return None
 
     def get_available_collections(self) -> List[Dict]:
-    """獲取所有可用的集合列表 - 純 PostgreSQL 版本"""
-    try:
-        collections = []
-        
-        # 從環境或配置中獲取已知集合
-        known_collections = ["collection_test_01", "collection_test", "collection_default"]
-        
-        for collection_name in known_collections:
-            display_name = collection_name.replace('collection_', '')
+        """獲取所有可用的集合列表 - 純 PostgreSQL 版本"""
+        try:
+            collections = []
             
-            try:
-                vectorstore = self.get_or_create_vectorstore(collection_name)
-                docs = vectorstore.similarity_search("", k=100)
+            # 從環境或配置中獲取已知集合
+            known_collections = ["collection_test_01", "collection_test", "collection_default"]
+            
+            for collection_name in known_collections:
+                display_name = collection_name.replace('collection_', '')
                 
-                if docs:  # 只有當集合中有文檔時才加入
-                    doc_count = len(docs)
+                try:
+                    vectorstore = self.get_or_create_vectorstore(collection_name)
+                    docs = vectorstore.similarity_search("", k=100)
                     
-                    # 計算文件數（按檔名去重）
-                    unique_files = set()
-                    for doc in docs:
-                        filename = doc.metadata.get('original_filename') or doc.metadata.get('filename', 'unknown')
-                        if filename != 'unknown':
-                            unique_files.add(filename)
-                    
-                    collections.append({
-                        'collection_name': collection_name,
-                        'display_name': display_name,
-                        'document_count': doc_count,
-                        'file_count': len(unique_files),
-                        'status': 'active'
-                    })
-                    
-            except Exception as e:
-                logger.warning(f"檢查集合失敗 {collection_name}: {e}")
-        
-        collections.sort(key=lambda x: x['display_name'])
-        return collections
-        
-    except Exception as e:
-        logger.error(f"獲取集合列表失敗: {e}")
-        return []
+                    if docs:  # 只有當集合中有文檔時才加入
+                        doc_count = len(docs)
+                        
+                        # 計算文件數（按檔名去重）
+                        unique_files = set()
+                        for doc in docs:
+                            filename = doc.metadata.get('original_filename') or doc.metadata.get('filename', 'unknown')
+                            if filename != 'unknown':
+                                unique_files.add(filename)
+                        
+                        collections.append({
+                            'collection_name': collection_name,
+                            'display_name': display_name,
+                            'document_count': doc_count,
+                            'file_count': len(unique_files),
+                            'status': 'active'
+                        })
+                        
+                except Exception as e:
+                    logger.warning(f"檢查集合失敗 {collection_name}: {e}")
+            
+            collections.sort(key=lambda x: x['display_name'])
+            return collections
+            
+        except Exception as e:
+            logger.error(f"獲取集合列表失敗: {e}")
+            return []
 
     def test_knowledge_management(self):
         """測試知識庫管理功能"""
