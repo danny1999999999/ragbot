@@ -104,6 +104,25 @@ async def upload_knowledge_file(bot_name: str, file: UploadFile = File(...), cur
         return JSONResponse(result)
     except Exception as e:
         return JSONResponse({"success": False, "message": str(e)}, status_code=500)
+    
+@app.get("/api/bots/{bot_name}/knowledge/files/{filename}/details")
+async def get_file_details(bot_name: str, filename: str, current_user: User = Depends(AdminAuth)):
+    try:
+        collection_name = f"collection_{bot_name}"
+        chunks = vector_system.get_document_chunks(collection_name, filename)
+        
+        if not chunks:
+            return JSONResponse({"success": False, "message": "文件不存在"}, status_code=404)
+        
+        return JSONResponse({
+            "success": True,
+            "filename": filename,
+            "total_chunks": len(chunks),
+            "chunks": chunks
+        })
+        
+    except Exception as e:
+        return JSONResponse({"success": False, "message": str(e)}, status_code=500)
 
 @app.get("/api/bots/{bot_name}/knowledge/files")
 async def get_knowledge_files(bot_name: str, current_user: User = Depends(AdminAuth)):
