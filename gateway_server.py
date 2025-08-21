@@ -10,6 +10,8 @@ from fastapi import FastAPI, Request, Response, Header, Depends, HTTPException, 
 from fastapi.responses import JSONResponse, HTMLResponse, PlainTextResponse
 from fastapi.templating import Jinja2Templates
 from dotenv import load_dotenv
+import urllib.parse
+
 
 # Load environment variables at the very top
 load_dotenv()
