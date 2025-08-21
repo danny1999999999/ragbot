@@ -3224,24 +3224,50 @@ class OptimizedVectorSystem:
             }
 
     def get_collection_documents(self, collection_name: str, 
-                               page: int = 1, limit: int = 20,
-                               search: str = "") -> Dict:
-        """獲取集合中的文檔信息 - SANITIZED VERSION"""
-        logger.info("--- SANITIZED VERSION: Manually building a safe response. ---")
+                           page: int = 1, limit: int = 20,
+                           search: str = "") -> Dict:
+        """獲取集合中的文檔信息 - 兼容 Chroma 和 PGVector"""
         try:
             vectorstore = self.get_or_create_vectorstore(collection_name)
-            all_docs_raw = vectorstore.get() # This is the suspected problem source
-
+            
+            # 🔧 檢查向量庫類型，使用對應的 API
+            if self.use_postgres:
+                # ✅ PostgreSQL + PGVector 的方法
+                print("🔍 使用 PGVector API 獲取文檔列表")
+                return self._get_documents_from_pgvector(vectorstore, collection_name, page, limit, search)
+            else:
+                # ✅ Chroma 的方法
+                print("🔍 使用 Chroma API 獲取文檔列表")
+                return self._get_documents_from_chroma(vectorstore, collection_name, page, limit, search)
+                
+        except Exception as e:
+            logger.error(f"獲取文檔列表失敗: {e}", exc_info=True)
+            return {
+                "success": False, 
+                "error": str(e), 
+                "documents": [], 
+                "total": 0, 
+                "page": page, 
+                "limit": limit, 
+                "total_pages": 0
+            }
+        
+    def _get_documents_from_chroma(self, vectorstore, collection_name: str, page: int, limit: int, search: str) -> Dict:
+        """從 Chroma 獲取文檔 - 原有邏輯"""
+        try:
+            all_docs_raw = vectorstore.get()  # ✅ Chroma 的 API
+            
             if not all_docs_raw or not all_docs_raw.get('metadatas'):
                 return {"success": True, "documents": [], "total": 0, "page": page, "limit": limit, "total_pages": 0}
 
-            # Manually build a safe list from metadata, which should be serializable
+            # 手動構建安全的文檔列表
             file_stats = {}
             
             for metadata in all_docs_raw.get('metadatas', []):
                 try:
                     filename = metadata.get('original_filename', metadata.get('filename', 'unknown_file'))
-                    if filename == 'unknown_file': continue
+                    if filename == 'unknown_file': 
+                        continue
 
                     if filename not in file_stats:
                         file_stats[filename] = {
@@ -3252,11 +3278,11 @@ class OptimizedVectorSystem:
                         }
                     file_stats[filename]['total_chunks'] += 1
                 except Exception:
-                    continue # Skip malformed metadata
+                    continue
 
             safe_documents = list(file_stats.values())
 
-            # Add formatted time
+            # 添加格式化時間
             for doc in safe_documents:
                 try:
                     from datetime import datetime
@@ -3264,7 +3290,7 @@ class OptimizedVectorSystem:
                 except:
                     doc['upload_time_formatted'] = 'Invalid Date'
 
-            # Filtering and pagination
+            # 過濾和分頁
             if search:
                 safe_documents = [doc for doc in safe_documents if search.lower() in doc['filename'].lower()]
             
@@ -3284,9 +3310,103 @@ class OptimizedVectorSystem:
                 "limit": limit,
                 "total_pages": total_pages
             }
+            
         except Exception as e:
-            logger.error(f"SANITIZED VERSION FAILED: {e}", exc_info=True)
-            return {"success": False, "error": str(e), "documents": [], "total": 0, "page": page, "limit": limit, "total_pages": 0}
+            logger.error(f"Chroma 文檔獲取失敗: {e}")
+            raise e
+
+    def _get_documents_from_pgvector(self, vectorstore, collection_name: str, page: int, limit: int, search: str) -> Dict:
+        """從 PGVector 獲取文檔 - 使用文件記錄"""
+        try:
+            print(f"🔍 從文件記錄獲取 {collection_name} 的文檔列表")
+            
+            # ✅ 使用文件記錄獲取文檔信息（PGVector 沒有 get() 方法）
+            if collection_name not in self.file_records:
+                print(f"⚠️ 集合 {collection_name} 在文件記錄中不存在")
+                return {"success": True, "documents": [], "total": 0, "page": page, "limit": limit, "total_pages": 0}
+            
+            files = self.file_records[collection_name]
+            file_stats = {}
+            
+            print(f"🔍 處理 {len(files)} 個文件記錄")
+            
+            for file_path, file_info in files.items():
+                try:
+                    filename = Path(file_path).name
+                    
+                    if filename not in file_stats:
+                        # 獲取上傳時間
+                        upload_time = 0
+                        if hasattr(file_info, 'uploaded_at'):
+                            upload_time = file_info.uploaded_at
+                        elif hasattr(file_info, 'mtime'):
+                            upload_time = file_info.mtime
+                        elif isinstance(file_info, dict):
+                            upload_time = file_info.get('uploaded_at', file_info.get('mtime', 0))
+                        
+                        file_stats[filename] = {
+                            'filename': filename,
+                            'source': file_path,
+                            'total_chunks': 0,
+                            'upload_time': upload_time
+                        }
+                    
+                    # 🔧 獲取實際的分塊數量（查詢 PGVector）
+                    try:
+                        chunks = self.get_document_chunks(collection_name, filename)
+                        file_stats[filename]['total_chunks'] = len(chunks)
+                    except Exception as chunk_error:
+                        logger.warning(f"獲取 {filename} 分塊數量失敗: {chunk_error}")
+                        file_stats[filename]['total_chunks'] = 1  # 預設值
+                        
+                except Exception as file_error:
+                    logger.warning(f"處理文件記錄失敗 {file_path}: {file_error}")
+                    continue
+            
+            safe_documents = list(file_stats.values())
+            
+            # 添加格式化時間
+            for doc in safe_documents:
+                try:
+                    from datetime import datetime
+                    doc['upload_time_formatted'] = datetime.fromtimestamp(doc['upload_time']).strftime('%Y-%m-%d %H:%M:%S') if doc['upload_time'] else 'N/A'
+                except:
+                    doc['upload_time_formatted'] = 'Invalid Date'
+
+            # 過濾和分頁
+            if search:
+                safe_documents = [doc for doc in safe_documents if search.lower() in doc['filename'].lower()]
+            
+            safe_documents.sort(key=lambda x: x.get('upload_time', 0), reverse=True)
+
+            total = len(safe_documents)
+            total_pages = (total + limit - 1) // limit if total > 0 else 1
+            start = (page - 1) * limit
+            end = start + limit
+            page_documents = safe_documents[start:end]
+
+            print(f"✅ PGVector 文檔列表獲取成功: {total} 個文件，第 {page} 頁")
+
+            return {
+                "success": True,
+                "documents": page_documents,
+                "total": total,
+                "page": page,
+                "limit": limit,
+                "total_pages": total_pages
+            }
+            
+        except Exception as e:
+            logger.error(f"PGVector 文檔獲取失敗: {e}")
+            return {
+                "success": False, 
+                "error": f"PGVector 獲取失敗: {str(e)}", 
+                "documents": [], 
+                "total": 0, 
+                "page": page, 
+                "limit": limit, 
+                "total_pages": 0
+            }
 
     def get_document_chunks(self, collection_name: str, source_file: str) -> List[Dict]:
         """
