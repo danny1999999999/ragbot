@@ -1675,15 +1675,16 @@ class OptimizedVectorSystem:
     """🚀 完整優化版向量系統"""
     
     def __init__(self, data_dir: str = None, model_type: str = None):
-        """✅ 修正版初始化方法 - 正確的執行順序"""
+        """✅ 純 PostgreSQL 初始化 - 移除 file_records 依賴"""
         
         # 🔧 1. 基本變數設置
         self.data_dir = Path(data_dir or SYSTEM_CONFIG["data_dir"])
         self.model_type = model_type or "openai"
         self.persist_dir = Path(SYSTEM_CONFIG["persist_dir"])  # Chroma備用
 
-        # 建立目錄
-        self.data_dir.mkdir(exist_ok=True)
+        # ❌ 不再建立本地目錄 (純 PostgreSQL 方案)
+        # self.data_dir.mkdir(exist_ok=True)
+        print("🚀 純 PostgreSQL 方案：不使用本地 data 目錄")
         
         # 🔧 2. 資料庫連接設置（但不測試）
         self.db_adapter = None
@@ -1734,17 +1735,26 @@ class OptimizedVectorSystem:
         self.batch_processor = AdaptiveBatchProcessor()
         self.text_splitter = OptimizedTextSplitter()
         
-        # 🔧 7. 初始化存儲和記錄
+        # 🔧 7. 初始化存儲（移除檔案記錄）
         self._vector_stores = {}
-        self.file_records = self._load_file_records()
+        
+        # ❌ 移除本地檔案記錄相關
+        # self.file_records = self._load_file_records()  # ❌ 刪除這行
+        
+        # ✅ 改為純 PostgreSQL 初始化
+        print("🚀 純 PostgreSQL 方案：所有檔案數據將直接存儲在 PostgreSQL 中")
+        print("📄 不再維護本地檔案記錄 (file_records.json)")
+        
         self.processing_lock = threading.Lock()
         
         print(f"🚀 完整優化版向量系統初始化完成")
         print(f"   🤖 嵌入模型: {self.model_type}")
-        print(f"   📁 數據目錄: {self.data_dir}")
+        print(f"   📁 數據目錄: 不使用 (純 PostgreSQL)")
         print(f"   🗄️ 向量庫: {'PostgreSQL + PGVector' if self.use_postgres else 'Chroma (本地)'}")
         print(f"   🧠 智能文本處理: ✅")
         print(f"   🔧 自適應批次: ✅")
+        print(f"   📦 純 PostgreSQL 方案: {'✅' if self.use_postgres else '❌'}")
+
 
 
     def _setup_embedding_model(self):
@@ -2888,78 +2898,33 @@ class OptimizedVectorSystem:
         return "collection_other"
     
     def sync_collections(self) -> int:
-        """同步所有集合"""
-        print("🔄 開始智能增量同步...")
-        
-        directories = [d for d in self.data_dir.iterdir() if d.is_dir()]
-        print(f"📁 掃描到 {len(directories)} 個目錄")
-        
-        if not directories:
-            print("   ⚠️ 數據目錄為空")
-            return 0
-        
-        total_changes = 0
-        
-        for i, dir_path in enumerate(directories, 1):
-            collection_name = self.get_collection_name(dir_path)
-            folder_name = collection_name.replace('collection_', '')
-            
-            print(f"\n[{i}/{len(directories)}] 檢查目錄: {folder_name}")
-            
-            try:
-                added_files, modified_files, deleted_files, current_files = \
-                    self.scan_directory_changes(dir_path, collection_name)
-                
-                if not added_files and not modified_files and not deleted_files:
-                    print(f"      ✅ 無變更")
-                    continue
-                
-                print(f"      📊 新增: {len(added_files)}, 修改: {len(modified_files)}, 刪除: {len(deleted_files)}")
-                
-                success = self.incremental_update(
-                    collection_name, added_files, modified_files, deleted_files, current_files
-                )
-                
-                if success:
-                    changes = len(added_files) + len(modified_files) + len(deleted_files)
-                    total_changes += changes
-                    print(f"      ✅ 目錄更新完成")
-                else:
-                    print(f"      ❌ 目錄更新失敗")
-                    
-            except Exception as e:
-                print(f"      ❌ 目錄處理錯誤: {e}")
-                logger.error(f"目錄同步失敗 {dir_path}: {e}")
-        
-        print(f"\n✅ 智能增量同步完成")
-        print(f"   📊 總變更數: {total_changes}")
-        
-        # 顯示性能統計
-        stats = self.batch_processor.get_performance_stats()
-        if stats['total_batches'] > 0:
-            print(f"   📈 性能統計:")
-            print(f"      批次數: {stats['total_batches']}")
-            print(f"      成功率: {stats['success_rate']*100:.1f}%")
-            print(f"      平均處理時間: {stats['avg_batch_time']:.1f}s/批次")
-        
-        return total_changes
+        """純 PostgreSQL 方案：不再掃描本地目錄"""
+        print("📄 純 PostgreSQL 方案：跳過本地目錄掃描")
+        print("✅ 所有數據都在 PostgreSQL 中，無需同步")
+        return 0
     
     def get_stats(self) -> Dict:
-        """獲取系統統計 - 修正：從file_records而非persist_dir獲取集合"""
+        """獲取系統統計 - 純 PostgreSQL 版本"""
         try:
             stats = {}
             
-            # 🔧 修正：從file_records獲取已知的集合，而不是掃描persist_dir
-            for collection_name in self.file_records.keys():
-                folder_name = collection_name.replace('collection_', '')
+            # 從所有已知集合獲取統計
+            collections = self.get_available_collections()
+            
+            for collection_info in collections:
+                collection_name = collection_info['collection_name']
+                display_name = collection_info['display_name']
                 
                 try:
                     vectorstore = self.get_or_create_vectorstore(collection_name)
-                    count = vectorstore._collection.count()
-                    stats[folder_name] = count
+                    
+                    # 直接查詢 PostgreSQL 計算文檔數
+                    docs = vectorstore.similarity_search("", k=5000)
+                    stats[display_name] = len(docs)
+                    
                 except Exception as e:
                     logger.warning(f"獲取集合統計失敗 {collection_name}: {e}")
-                    stats[folder_name] = 0
+                    stats[display_name] = 0
             
             return stats
         except Exception as e:
@@ -3084,7 +3049,9 @@ class OptimizedVectorSystem:
         return diagnosis
     
     def upload_single_file(self, file_content: bytes, filename: str, collection_name: str) -> Dict:
-        """純 PostgreSQL 方案：直接處理文件內容，不保存到本地"""
+        """
+        純 PostgreSQL 方案：直接處理文件內容，不保存到本地
+        """
         try:
             # 基本驗證
             if not file_content:
@@ -3098,15 +3065,15 @@ class OptimizedVectorSystem:
             if file_extension not in SUPPORTED_EXTENSIONS:
                 return {
                     "success": False,
-                    "message": f"不支援的文件格式: {file_extension}",
+                    "message": f"不支援的文件格式: {file_extension}。支援格式: {', '.join(SUPPORTED_EXTENSIONS)}",
                     "chunks": []
                 }
             
-            print(f"📄 直接處理文件內容: {filename}")
+            print(f"📄 純 PostgreSQL 方案：直接處理文件內容 {filename}")
             
             # ✅ 使用臨時文件處理
             import tempfile
-            with tempfile.NamedTemporaryFile(suffix=Path(filename).suffix, delete=False) as temp_file:
+            with tempfile.NamedTemporaryFile(suffix=file_extension, delete=False) as temp_file:
                 temp_file.write(file_content)
                 temp_file_path = Path(temp_file.name)
             
@@ -3123,53 +3090,52 @@ class OptimizedVectorSystem:
                     doc.metadata.update({
                         'collection': collection_name,
                         'original_filename': filename,
+                        'filename': filename,  # ✅ 確保兩個欄位都有
                         'upload_timestamp': current_timestamp,
                         'file_source': 'upload',
-                        'source': f"upload://{filename}",  # ✅ 虛擬路徑
-                        'file_extension': file_extension,
                         'uploaded_by': 'upload_interface',
-                        'saved_to_postgresql': True  # ✅ 標記僅存於PostgreSQL
+                        'source': f"postgresql://{collection_name}/{filename}",  # ✅ 虛擬 PostgreSQL 路徑
+                        'file_extension': file_extension,
+                        'stored_in': 'postgresql_only',  # ✅ 標記僅存於 PostgreSQL
+                        'file_size': len(file_content)
                     })
                 
                 # 向量化處理
                 vectorstore = self.get_or_create_vectorstore(collection_name)
                 
-                # 刪除已存在的同名文件
+                # ✅ 先徹底刪除已存在的同名文件
+                print(f"🗑️ 清理現有文件: {filename}")
                 try:
-                    delete_conditions = [
-                        {"original_filename": filename},
-                        {"filename": filename}
-                    ]
-                    
-                    for condition in delete_conditions:
-                        try:
-                            vectorstore.delete(filter=condition)
-                            print(f"🗑️ 刪除現有文件: {condition}")
-                        except Exception:
-                            pass
+                    self._postgresql_delete_file_completely(vectorstore, filename)
                 except Exception as e:
                     print(f"⚠️ 清理現有文件時出現警告: {e}")
                 
                 # 批次處理
+                print(f"🔄 開始向量化處理...")
                 batches = self.batch_processor.create_smart_batches(documents)
                 success_count = self._process_batches(vectorstore, batches)
                 
-                # ❌ 移除本地文件記錄更新
-                # self.file_records[collection_name] = ...
-                # self._save_file_records()
+                print(f"✅ 文件上傳完成: {filename}")
+                print(f"   📁 保存位置: PostgreSQL ({collection_name})")
+                print(f"   📄 分塊數量: {len(documents)}")
+                print(f"   ✅ 成功向量化: {success_count}")
                 
                 return {
                     "success": True,
-                    "message": f"文件上傳成功，共生成 {len(documents)} 個分塊",
+                    "message": f"文件上傳成功，僅保存到 PostgreSQL，共生成 {len(documents)} 個分塊",
                     "filename": filename,
+                    "collection": collection_name,
                     "total_chunks": len(documents),
-                    "success_chunks": success_count
+                    "success_chunks": success_count,
+                    "upload_time": current_timestamp,
+                    "storage_location": "postgresql_only"
                 }
                 
             finally:
                 # 清理臨時文件
                 if temp_file_path.exists():
                     temp_file_path.unlink()
+                    print(f"🧹 清理臨時文件: {temp_file_path}")
                     
         except Exception as e:
             logger.error(f"文件上傳失敗 {filename}: {e}")
@@ -3239,12 +3205,12 @@ class OptimizedVectorSystem:
         return {"success": True, "documents": page_documents, "total": total, "page": page, "limit": limit, "total_pages": total_pages}
 
     def _get_documents_from_pgvector(self, vectorstore, collection_name: str, page: int, limit: int, search: str) -> Dict:
-        """純 PostgreSQL 方案：完全不依賴本地記錄"""
+        """純 PostgreSQL 方案：完全不依賴本地記錄，修正前端欄位匹配"""
         try:
             print(f"🔍 純 PostgreSQL 獲取 {collection_name} 的檔案列表")
             
             # ✅ 直接查詢 PostgreSQL 中的所有文檔
-            docs = vectorstore.similarity_search("", k=2000)  # 增加限制以處理更多文件
+            docs = vectorstore.similarity_search("", k=2000)
             
             if not docs:
                 return {"success": True, "documents": [], "total": 0, "page": page, "limit": limit, "total_pages": 0}
@@ -3254,44 +3220,51 @@ class OptimizedVectorSystem:
             
             for doc in docs:
                 metadata = doc.metadata
-                filename = metadata.get('original_filename', metadata.get('filename', 'unknown'))
+                filename = metadata.get('original_filename') or metadata.get('filename', 'unknown')
                 
                 if filename == 'unknown':
                     continue
                 
                 if filename not in file_stats:
+                    # ✅ 使用前端期望的欄位名稱
                     file_stats[filename] = {
                         'filename': filename,
-                        'source': metadata.get('source', 'postgresql://virtual'),
-                        'chunks': 0,
+                        'source': metadata.get('source', f'postgresql://{collection_name}'),
+                        'chunks': 0,  # ✅ 前端期望的欄位名 (不是 total_chunks)
                         'upload_time': metadata.get('upload_timestamp', 0),
-                        'uploader': metadata.get('uploaded_by', '未知'),
+                        'uploader': '未知',  # ✅ 前端期望的欄位名 (不是 uploaded_by)
                         'upload_time_formatted': '未知',
                         'file_extension': metadata.get('file_extension', ''),
-                        'stored_in': 'postgresql'  # ✅ 標記存儲位置
+                        'stored_in': 'postgresql'
                     }
                 
                 file_stats[filename]['chunks'] += 1
-            
-            # ✅ 格式化數據
-            for filename, stats in file_stats.items():
-                # 格式化上傳者
-                if stats['uploader'] == 'upload_interface':
-                    stats['uploader'] = '管理介面'
-                elif stats['uploader'] == 'sync':
-                    stats['uploader'] = '同步'
-                elif not stats['uploader'] or stats['uploader'] == 'unknown':
-                    stats['uploader'] = '未知'
                 
-                # 格式化時間
+                # ✅ 更新上傳者信息（使用最新的記錄）
+                uploader_info = metadata.get('uploaded_by') or metadata.get('file_source', 'unknown')
+                if uploader_info and uploader_info != 'unknown':
+                    if uploader_info == 'upload_interface' or uploader_info == 'upload':
+                        file_stats[filename]['uploader'] = '管理介面'
+                    elif uploader_info == 'sync':
+                        file_stats[filename]['uploader'] = '同步'
+                    else:
+                        file_stats[filename]['uploader'] = str(uploader_info)
+            
+            # ✅ 後處理：格式化時間
+            for filename, stats in file_stats.items():
                 try:
                     if stats['upload_time'] and stats['upload_time'] > 0:
                         from datetime import datetime
                         stats['upload_time_formatted'] = datetime.fromtimestamp(stats['upload_time']).strftime('%Y-%m-%d %H:%M:%S')
                     else:
                         stats['upload_time_formatted'] = '未知'
-                except:
+                except Exception as e:
+                    logger.warning(f"時間格式化失敗 {filename}: {e}")
                     stats['upload_time_formatted'] = '未知'
+                
+                # ✅ 確保上傳者不是空值
+                if not stats['uploader'] or stats['uploader'] in ['unknown', 'None', '']:
+                    stats['uploader'] = '未知'
             
             safe_documents = list(file_stats.values())
             
@@ -3308,6 +3281,15 @@ class OptimizedVectorSystem:
             page_documents = safe_documents[start:end]
             
             print(f"✅ 純 PostgreSQL 獲取成功: {total} 個檔案")
+            
+            # ✅ 調試：打印前幾個文件的格式
+            if page_documents:
+                sample = page_documents[0]
+                print(f"📋 返回數據格式範例:")
+                print(f"   filename: {sample.get('filename')}")
+                print(f"   chunks: {sample.get('chunks')}")
+                print(f"   uploader: {sample.get('uploader')}")
+                print(f"   upload_time_formatted: {sample.get('upload_time_formatted')}")
             
             return {
                 "success": True,
@@ -3459,37 +3441,94 @@ class OptimizedVectorSystem:
         
         return {"success": True, "message": f"檔案 {source_file} 及其 {chunk_count} 個分塊已刪除", "deleted_chunks": chunk_count, "filename": source_file}
 
-    def _delete_from_pgvector(self, vectorstore, collection_name: str, source_file: str, chunk_count: int) -> Dict:
-        """純 PostgreSQL 刪除 - 不涉及本地記錄"""
+    def _postgresql_delete_file_completely(self, vectorstore, filename: str) -> int:
+        """徹底刪除 PostgreSQL 中的文件 - 使用多種方法確保完全刪除"""
+        deleted_count = 0
+        
+        # ✅ 方法1: 使用 original_filename 刪除
         try:
-            deleted_count = 0
+            vectorstore.delete(filter={"original_filename": filename})
+            print(f"✅ 使用 original_filename 刪除: {filename}")
+            deleted_count += 1
+        except Exception as e:
+            print(f"⚠️ original_filename 刪除失敗: {e}")
+        
+        # ✅ 方法2: 使用 filename 刪除
+        try:
+            vectorstore.delete(filter={"filename": filename})
+            print(f"✅ 使用 filename 刪除: {filename}")
+            deleted_count += 1
+        except Exception as e:
+            print(f"⚠️ filename 刪除失敗: {e}")
+        
+        # ✅ 方法3: 先查詢再刪除（確保刪除）
+        try:
+            # 查詢所有匹配的文檔
+            docs = vectorstore.similarity_search("", k=2000)
+            matching_docs = []
             
-            # 嘗試多種刪除條件
-            delete_conditions = [
-                {"filename": source_file},
-                {"original_filename": source_file}
-            ]
+            for doc in docs:
+                doc_filename = doc.metadata.get('original_filename') or doc.metadata.get('filename', '')
+                if doc_filename == filename:
+                    matching_docs.append(doc)
             
-            for condition in delete_conditions:
-                try:
-                    vectorstore.delete(filter=condition)
-                    print(f"✅ 使用條件 {condition} 刪除成功")
-                    deleted_count = chunk_count
-                    break
-                except Exception as e:
-                    print(f"⚠️ 條件 {condition} 刪除失敗: {e}")
+            if matching_docs:
+                print(f"🔍 找到 {len(matching_docs)} 個匹配文檔，逐一刪除...")
+                
+                # 嘗試使用 source 路徑刪除
+                for doc in matching_docs:
+                    source_path = doc.metadata.get('source', '')
+                    if source_path:
+                        try:
+                            vectorstore.delete(filter={"source": source_path})
+                            print(f"✅ 使用 source 路徑刪除: {source_path}")
+                            deleted_count += 1
+                        except Exception as e:
+                            print(f"⚠️ source 路徑刪除失敗: {e}")
+            
+        except Exception as e:
+            print(f"⚠️ 查詢刪除失敗: {e}")
+        
+        print(f"🗑️ PostgreSQL 刪除操作完成，嘗試了 {deleted_count} 次刪除")
+        return deleted_count
+
+
+    def _delete_from_pgvector(self, vectorstore, collection_name: str, source_file: str, chunk_count: int) -> Dict:
+        """純 PostgreSQL 刪除 - 確保徹底刪除"""
+        try:
+            print(f"🗑️ 開始從 PostgreSQL 刪除文件: {source_file}")
+            
+            # ✅ 使用加強版刪除方法
+            deleted_count = self._postgresql_delete_file_completely(vectorstore, source_file)
+            
+            # ✅ 驗證刪除結果
+            remaining_docs = vectorstore.similarity_search("", k=1000)
+            remaining_count = 0
+            
+            for doc in remaining_docs:
+                doc_filename = doc.metadata.get('original_filename') or doc.metadata.get('filename', '')
+                if doc_filename == source_file:
+                    remaining_count += 1
+            
+            actual_deleted = chunk_count - remaining_count
+            success = remaining_count == 0
+            
+            if success:
+                print(f"✅ 文件完全刪除成功: {source_file}")
+            else:
+                print(f"⚠️ 部分刪除，還剩 {remaining_count} 個分塊")
             
             return {
-                "success": deleted_count > 0,
-                "message": f"檔案 {source_file} 及其 {deleted_count} 個分塊已從 PostgreSQL 刪除" if deleted_count > 0 else "刪除失敗",
-                "deleted_chunks": deleted_count,
+                "success": success,
+                "message": f"檔案 {source_file} 刪除完成，移除了 {actual_deleted} 個分塊" if success else f"部分刪除失敗，還剩 {remaining_count} 個分塊",
+                "deleted_chunks": actual_deleted,
+                "remaining_chunks": remaining_count,
                 "filename": source_file
             }
             
         except Exception as e:
             logger.error(f"PostgreSQL 刪除失敗: {e}")
             return {"success": False, "message": f"刪除失敗: {str(e)}", "deleted_chunks": 0}
-        
     def get_chunk_content(self, collection_name: str, chunk_id: str) -> Optional[Dict]:
         """
         獲取指定分塊的詳細內容
@@ -3546,47 +3585,47 @@ class OptimizedVectorSystem:
             return None
 
     def get_available_collections(self) -> List[Dict]:
-        """
-        獲取所有可用的集合列表 - 修正：從file_records而非persist_dir獲取
-        """
-        try:
-            collections = []
+    """獲取所有可用的集合列表 - 純 PostgreSQL 版本"""
+    try:
+        collections = []
+        
+        # 從環境或配置中獲取已知集合
+        known_collections = ["collection_test_01", "collection_test", "collection_default"]
+        
+        for collection_name in known_collections:
+            display_name = collection_name.replace('collection_', '')
             
-            # 🔧 修正：從file_records獲取集合信息，而不是掃描persist_dir
-            for collection_name in self.file_records.keys():
-                display_name = collection_name.replace('collection_', '')
+            try:
+                vectorstore = self.get_or_create_vectorstore(collection_name)
+                docs = vectorstore.similarity_search("", k=100)
                 
-                try:
-                    vectorstore = self.get_or_create_vectorstore(collection_name)
-                    doc_count = vectorstore._collection.count()
+                if docs:  # 只有當集合中有文檔時才加入
+                    doc_count = len(docs)
                     
-                    docs_result = self.get_collection_documents(collection_name, page=1, limit=1000)
-                    file_count = len(docs_result.get('documents', [])) if docs_result['success'] else 0
+                    # 計算文件數（按檔名去重）
+                    unique_files = set()
+                    for doc in docs:
+                        filename = doc.metadata.get('original_filename') or doc.metadata.get('filename', 'unknown')
+                        if filename != 'unknown':
+                            unique_files.add(filename)
                     
                     collections.append({
                         'collection_name': collection_name,
                         'display_name': display_name,
                         'document_count': doc_count,
-                        'file_count': file_count,
+                        'file_count': len(unique_files),
                         'status': 'active'
                     })
                     
-                except Exception as e:
-                    logger.warning(f"獲取集合統計失敗 {collection_name}: {e}")
-                    collections.append({
-                        'collection_name': collection_name,
-                        'display_name': display_name,
-                        'document_count': 0,
-                        'file_count': 0,
-                        'status': 'error'
-                    })
-            
-            collections.sort(key=lambda x: x['display_name'])
-            return collections
-            
-        except Exception as e:
-            logger.error(f"獲取集合列表失敗: {e}")
-            return []
+            except Exception as e:
+                logger.warning(f"檢查集合失敗 {collection_name}: {e}")
+        
+        collections.sort(key=lambda x: x['display_name'])
+        return collections
+        
+    except Exception as e:
+        logger.error(f"獲取集合列表失敗: {e}")
+        return []
 
     def test_knowledge_management(self):
         """測試知識庫管理功能"""
