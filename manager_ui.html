@@ -666,6 +666,21 @@
     </div>
 
     <script>
+    // ✅ 新增：安全的 HTML 轉義函數（放在 script 開頭）
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // ✅ 新增：安全的檔案名編碼函數
+        function safeEncodeFilename(filename) {
+            return encodeURIComponent(filename);
+        }
+
+
+
         const createBotForm = document.getElementById('createBotForm');
         const editBotForm = document.getElementById('editBotForm');
         const botTableBody = document.getElementById('botTableBody');
@@ -1035,169 +1050,259 @@
             `;
         }
 
-        // 保存機器人配置 - 包含顯示名稱
-        editBotForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            if (!currentBotName) return;
-
-            const displayName = document.getElementById('editDisplayName').value.trim();
-            const systemRole = document.getElementById('editSystemRole').value;
-            const temperature = parseFloat(document.getElementById('editTemperature').value);
-            const maxTokens = parseInt(document.getElementById('editMaxTokens').value);
-            const port = parseInt(document.getElementById('editPort').value);
+        // ✅ 修復後的刪除文件函數
+            async function deleteFileSafe(botName, filename) {
+        if (!botName || !filename) {
+            showMessage('缺少必要參數：botName 或 filename', true, true);
+            return;
+        }
+        
+        if (!confirm(`⚠️ 確定要永久刪除知識庫中的文件嗎？\n\n文件名: ${filename}\n\n此操作將會：\n• 從伺服器刪除原始文件\n• 從向量資料庫中移除相關數據\n\n⚠️ 這個操作無法復原！`)) {
+            return;
+        }
+        
+        try {
+            console.log('🚀 開始刪除文件:', { botName, filename });
             
-            // 驗證顯示名稱
-            const validation = validateDisplayName(displayName);
-            if (!validation.valid) {
-                showMessage(validation.message, true, true);
-                return;
-            }
+            // ✅ 使用 encodeURIComponent 正確編碼檔名
+            const encodedFilename = encodeURIComponent(filename);
+            const deleteUrl = `/api/bots/${botName}/knowledge/files/${encodedFilename}`;
             
-            // 正確讀取 checkbox 值
-            const dynamicRecommendationsEnabled = document.getElementById('editDynamicRecommendations').checked;
-            const dynamicRecommendationsCount = parseInt(document.getElementById('editDynamicRecommendationsCount').value) || 0;
-            const citeSourcesEnabled = document.getElementById('editCiteSources').checked;
-
-            try {
-                const response = await fetch(`/api/bots/${currentBotName}/config`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        display_name: displayName,
-                        system_role: systemRole,
-                        temperature: temperature,
-                        max_tokens: maxTokens,
-                        port: port,
-                        dynamic_recommendations_enabled: dynamicRecommendationsEnabled,
-                        dynamic_recommendations_count: dynamicRecommendationsCount,
-                        cite_sources_enabled: citeSourcesEnabled
-                    })
-                });
-                
-                const data = await response.json();
-                if (response.ok) {
-                    showMessage('配置已保存成功！', false, true);
-                    await loadBotConfig(); // 重新載入配置
-                } else {
-                    throw new Error(data.error || data.message);
+            console.log('📡 刪除請求URL:', deleteUrl);
+            
+            const response = await fetch(deleteUrl, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json'
                 }
-            } catch (error) {
-                showMessage('保存配置失敗: ' + error.message, true, true);
+            });
+            
+            const data = await response.json();
+            console.log('📥 刪除回應:', data);
+            
+            if (response.ok && data.success) {
+                showMessage(`✅ 文件 "${filename}" 已成功刪除`, false, true);
+                // 重新載入文件列表
+                loadKnowledgeFiles(botName);
+            } else {
+                throw new Error(data.message || `刪除失敗 (HTTP ${response.status})`);
             }
-        });
+            
+        } catch (error) {
+            console.error('❌ 刪除文件失敗:', error);
+            showMessage(`❌ 刪除失敗: ${error.message}`, true, true);
+        }
+    }
+
+            // 保存機器人配置 - 包含顯示名稱
+            editBotForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                if (!currentBotName) return;
+
+                const displayName = document.getElementById('editDisplayName').value.trim();
+                const systemRole = document.getElementById('editSystemRole').value;
+                const temperature = parseFloat(document.getElementById('editTemperature').value);
+                const maxTokens = parseInt(document.getElementById('editMaxTokens').value);
+                const port = parseInt(document.getElementById('editPort').value);
+                
+                // 驗證顯示名稱
+                const validation = validateDisplayName(displayName);
+                if (!validation.valid) {
+                    showMessage(validation.message, true, true);
+                    return;
+                }
+                
+                // 正確讀取 checkbox 值
+                const dynamicRecommendationsEnabled = document.getElementById('editDynamicRecommendations').checked;
+                const dynamicRecommendationsCount = parseInt(document.getElementById('editDynamicRecommendationsCount').value) || 0;
+                const citeSourcesEnabled = document.getElementById('editCiteSources').checked;
+
+                try {
+                    const response = await fetch(`/api/bots/${currentBotName}/config`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            display_name: displayName,
+                            system_role: systemRole,
+                            temperature: temperature,
+                            max_tokens: maxTokens,
+                            port: port,
+                            dynamic_recommendations_enabled: dynamicRecommendationsEnabled,
+                            dynamic_recommendations_count: dynamicRecommendationsCount,
+                            cite_sources_enabled: citeSourcesEnabled
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    if (response.ok) {
+                        showMessage('配置已保存成功！', false, true);
+                        await loadBotConfig(); // 重新載入配置
+                    } else {
+                        throw new Error(data.error || data.message);
+                    }
+                } catch (error) {
+                    showMessage('保存配置失敗: ' + error.message, true, true);
+                }
+            });
 
         // 🆕 修正後的載入知識庫文件函數
         async function loadKnowledgeFiles(botName) {
-            const listDiv = document.getElementById('knowledgeFilesList');
-            const statsDiv = document.getElementById('knowledgeStats');
-            const totalFilesEl = document.getElementById('totalFilesCount');
-            const totalChunksEl = document.getElementById('totalChunksCount');
-            const statusEl = document.getElementById('knowledgeStatus');
+        const listDiv = document.getElementById('knowledgeFilesList');
+        const statsDiv = document.getElementById('knowledgeStats');
+        const totalFilesEl = document.getElementById('totalFilesCount');
+        const totalChunksEl = document.getElementById('totalChunksCount');
+        const statusEl = document.getElementById('knowledgeStatus');
+        
+        listDiv.innerHTML = '<p>正在獲取文件列表...</p>';
+        statsDiv.style.display = 'none';
+
+        try {
+            const response = await fetch(`/api/bots/${botName}/knowledge/files`);
+            if (!response.ok) throw new Error(`伺服器錯誤: ${response.status}`);
             
-            listDiv.innerHTML = '<p>正在獲取文件列表...</p>';
-            statsDiv.style.display = 'none';
+            const responseData = await response.json();
+            console.log('✅ API 回應:', responseData);
 
-            try {
-                const response = await fetch(`/api/bots/${botName}/knowledge/files`);
-                if (!response.ok) throw new Error(`伺服器錯誤: ${response.status}`);
-                
-                // 🔧 修正：正確處理後端返回的對象格式
-                const responseData = await response.json();
-                console.log('API 回應:', responseData); // 調試用
+            let documents = [];
+            let totalFiles = 0;
+            let apiMessage = '';
 
-                let documents = [];
-                let totalFiles = 0;
-                let apiMessage = '';
-
-                // 處理不同的響應格式
-                if (responseData.success === false) {
-                    // 錯誤情況
-                    throw new Error(responseData.message || '獲取文件列表失敗');
-                } else if (responseData.documents && Array.isArray(responseData.documents)) {
-                    // 標準對象格式
-                    documents = responseData.documents;
-                    totalFiles = responseData.total || documents.length;
-                    apiMessage = responseData.message || '';
-                } else if (Array.isArray(responseData)) {
-                    // 舊的數組格式（備用相容）
-                    documents = responseData;
-                    totalFiles = documents.length;
-                } else {
-                    throw new Error("API 返回的資料格式不正確");
-                }
-
-                // 顯示統計信息
-                totalFilesEl.textContent = totalFiles;
-                statusEl.textContent = apiMessage || (totalFiles > 0 ? '就緒' : '空');
-                statsDiv.style.display = 'flex';
-
-                if (documents.length === 0) {
-                    totalChunksEl.textContent = '0';
-                    listDiv.innerHTML = '<p style="color:#6c757d; text-align:center; padding: 20px;">此知識庫中沒有文件。</p>';
-                    return;
-                }
-
-                // 建立文件列表表格
-                let tableHtml = `
-                    <table style="width: 100%; border-collapse: collapse;">
-                        <thead>
-                            <tr style="background-color: #f8f9fa;">
-                                <th style="padding: 12px; text-align: left;">文件名</th>
-                                <th style="padding: 12px; text-align: center;">Chunks</th>
-                                <th style="padding: 12px; text-align: left;">上傳者</th>
-                                <th style="padding: 12px; text-align: left;">上傳時間</th>
-                                <th style="padding: 12px; text-align: center;">操作</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                `;
-                
-                let totalChunks = 0;
-                documents.forEach(doc => {
-                    const filename = doc.filename || doc.name || 'unknown';
-                    const safeFilename = filename.replace(/\./g, '-');
-                    
-                    tableHtml += `
-                        <tr id="file-row-${safeFilename}" style="border-bottom: 1px solid #eee;">
-                            <td style="padding: 10px; word-break: break-all;">📄 ${filename}</td>
-                            <td id="chunk-count-${safeFilename}" style="padding: 10px; text-align: center;">${doc.chunk_count || '...'}</td>
-                            <td id="uploader-${safeFilename}" style="padding: 10px;">${doc.uploaded_by || '...'}</td>
-                            <td id="upload-time-${safeFilename}" style="padding: 10px;">${doc.uploaded_at ? new Date(doc.uploaded_at).toLocaleString('zh-TW') : '...'}</td>
-                            <td style="padding: 10px; text-align: center;">
-                                <button onclick="deleteFile('${botName}', '${filename}')" class="btn-delete" style="padding: 5px 10px; font-size: 0.9em; background-color: #dc3545; color: white;">🗑️ 刪除</button>
-                            </td>
-                        </tr>
-                    `;
-                    
-                    // 累計 chunks
-                    if (doc.chunk_count && typeof doc.chunk_count === 'number') {
-                        totalChunks += doc.chunk_count;
-                    }
-                });
-                
-                tableHtml += '</tbody></table>';
-                listDiv.innerHTML = tableHtml;
-
-                // 更新總 chunks 數
-                totalChunksEl.textContent = totalChunks;
-
-                // 對於沒有詳細信息的文件，異步獲取
-                documents.forEach(doc => {
-                    const filename = doc.filename || doc.name;
-                    if (!doc.chunk_count || !doc.uploaded_by) {
-                        fetchFileDetails(botName, filename);
-                    }
-                });
-
-            } catch (error) {
-                console.error('載入知識庫文件失敗:', error);
-                listDiv.innerHTML = `<p style="color:red; text-align:center; padding: 20px;">載入文件列表失敗: ${error.message}</p>`;
-                statusEl.textContent = '錯誤';
-                totalFilesEl.textContent = '0';
-                totalChunksEl.textContent = '0';
-                statsDiv.style.display = 'flex';
+            // 處理不同的響應格式
+            if (responseData.success === false) {
+                throw new Error(responseData.message || '獲取文件列表失敗');
+            } else if (responseData.documents && Array.isArray(responseData.documents)) {
+                documents = responseData.documents;
+                totalFiles = responseData.total || documents.length;
+                apiMessage = responseData.message || '';
+            } else if (Array.isArray(responseData)) {
+                documents = responseData;
+                totalFiles = documents.length;
+            } else {
+                throw new Error("API 返回的資料格式不正確");
             }
+
+            // 顯示統計信息
+            totalFilesEl.textContent = totalFiles;
+            statusEl.textContent = apiMessage || (totalFiles > 0 ? '就緒' : '空');
+            statsDiv.style.display = 'flex';
+
+            if (documents.length === 0) {
+                totalChunksEl.textContent = '0';
+            listDiv.innerHTML = '<p style="color:#6c757d; text-align:center; padding: 20px;">此知識庫中沒有文件。</p>';
+                return;
+            }
+
+            // ✅ 建立文件列表表格（使用事件委託）
+            let tableHtml = `
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="background-color: #f8f9fa;">
+                        <th style="padding: 12px; text-align: left;">文件名</th>
+                        <th style="padding: 12px; text-align: center;">Chunks</th>
+                        <th style="padding: 12px; text-align: left;">上傳者</th>
+                        <th style="padding: 12px; text-align: left;">上傳時間</th>
+                        <th style="padding: 12px; text-align: center;">操作</th>
+                    </tr>
+                </thead>
+                <tbody id="fileTableBody">
+        `;
+
+        let totalChunks = 0;
+        documents.forEach((doc, index) => {
+            const filename = doc.filename || doc.name || 'unknown';
+            const safeFilename = filename.replace(/\./g, '-').replace(/[^a-zA-Z0-9\-_]/g, '_');
+                
+               // ✅ 修復：使用正確的字段名
+    const chunkCount = doc.chunks || doc.chunk_count || 'N/A';
+    const uploader = doc.uploader || doc.uploaded_by || '未知';
+    const uploadTime = doc.upload_time_formatted || 
+                      (doc.uploaded_at ? new Date(doc.uploaded_at).toLocaleString('zh-TW') : '未知');
+
+
+                // ✅ 使用 data 屬性，避免特殊字符問題
+    tableHtml += `
+        <tr data-file-id="${index}">
+            <td style="padding: 10px; word-break: break-all;">📄 ${escapeHtml(filename)}</td>
+            <td style="padding: 10px; text-align: center;">${chunkCount}</td>
+            <td style="padding: 10px;">${escapeHtml(uploader)}</td>
+            <td style="padding: 10px;">${escapeHtml(uploadTime)}</td>
+            <td style="padding: 10px; text-align: center;">
+                <button class="btn-delete delete-file-btn" 
+                        data-bot-name="${escapeHtml(botName)}" 
+                        data-filename="${escapeHtml(filename)}"
+                        style="padding: 5px 10px; font-size: 0.9em; background-color: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;"
+                        title="刪除文件: ${escapeHtml(filename)}">
+                    🗑️ 刪除
+                </button>
+            </td>
+        </tr>
+    `;
+        // 累計 chunks
+            if (typeof chunkCount === 'number') {
+                totalChunks += chunkCount;
+            } else if (typeof chunkCount === 'string' && !isNaN(parseInt(chunkCount))) {
+                totalChunks += parseInt(chunkCount);
+            }
+        });
+            
+            tableHtml += '</tbody></table>';
+            listDiv.innerHTML = tableHtml;
+
+            // ✅ 設置事件委託
+            setupDeleteButtonEvents();
+
+            // 更新總 chunks 數
+            totalChunksEl.textContent = totalChunks;
+
+            console.log(`✅ 載入完成：${totalFiles} 個文件，總計 ${totalChunks} 個 chunks`);
+
+        } catch (error) {
+            console.error('❌ 載入知識庫文件失敗:', error);
+            listDiv.innerHTML = `<p style="color:red; text-align:center; padding: 20px;">載入文件列表失敗: ${error.message}</p>`;
+            statusEl.textContent = '錯誤';
+            totalFilesEl.textContent = '0';
+            totalChunksEl.textContent = '0';
+            statsDiv.style.display = 'flex';
         }
+    }
+
+    function setupDeleteButtonEvents() {
+        const tableBody = document.getElementById('fileTableBody');
+        if (!tableBody) return;
+        
+        // 移除舊的事件監聽器（如果存在）
+        const newTableBody = tableBody.cloneNode(true);
+        tableBody.parentNode.replaceChild(newTableBody, tableBody);
+        
+        // 添加新的事件委託
+        newTableBody.addEventListener('click', function(e) {
+            if (e.target.classList.contains('delete-file-btn') || 
+                e.target.closest('.delete-file-btn')) {
+                
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const button = e.target.classList.contains('delete-file-btn') ? 
+                            e.target : e.target.closest('.delete-file-btn');
+                
+                const botName = button.dataset.botName;
+                const filename = button.dataset.filename;
+                
+                console.log('🗑️ 刪除文件請求:', { botName, filename });
+                deleteFileSafe(botName, filename);
+            }
+        });
+    }
+
+
+            // ✅ 新增：防止文件拖拽到頁面其他地方觸發瀏覽器打開文件
+        document.addEventListener('dragover', function(e) {
+            e.preventDefault();
+        });
+
+        document.addEventListener('drop', function(e) {
+            e.preventDefault();
+        });
 
         // 獲取單個文件的詳細資訊
         async function fetchFileDetails(botName, filename) {
@@ -1279,27 +1384,8 @@
             }
         }
 
-        // 刪除文件
-        async function deleteFile(botName, filename) {
-            if (!confirm(`您確定要永久刪除知識庫中的文件 "${filename}" 嗎？\n\n此操作將會：\n1. 從伺服器刪除原始文件。\n2. 從向量資料庫中移除相關的數據。\n\n這個操作無法復原！`)) {
-                return;
-            }
-            
-            try {
-                const response = await fetch(`/api/bots/${botName}/knowledge/files/${filename}`, {
-                    method: 'DELETE' 
-                });
-                const data = await response.json();
-                if (response.ok && data.success) {
-                    showMessage(`文件 ${filename} 已成功刪除。`, false, true);
-                    loadKnowledgeFiles(botName);
-                } else {
-                    throw new Error(data.message || '刪除失敗');
-                }
-            } catch (error) {
-                showMessage('刪除失敗: ' + error.message, true, true);
-            }
-        }
+
+   
 
         // ================= 對話記錄管理功能 =================
 
