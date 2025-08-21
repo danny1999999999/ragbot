@@ -107,22 +107,31 @@ async def upload_knowledge_file(bot_name: str, file: UploadFile = File(...), cur
     
 @app.get("/api/bots/{bot_name}/knowledge/files/{filename}/details")
 async def get_file_details(bot_name: str, filename: str, current_user: User = Depends(AdminAuth)):
+    """獲取檔案詳細資訊"""
     try:
         collection_name = f"collection_{bot_name}"
         chunks = vector_system.get_document_chunks(collection_name, filename)
         
         if not chunks:
-            return JSONResponse({"success": False, "message": "文件不存在"}, status_code=404)
+            return JSONResponse({"success": False, "message": "檔案不存在"}, status_code=404)
+        
+        # 計算統計資訊
+        total_tokens = sum(chunk.get('token_count', 0) for chunk in chunks)
+        total_chars = sum(len(chunk.get('content', '')) for chunk in chunks)
         
         return JSONResponse({
             "success": True,
             "filename": filename,
             "total_chunks": len(chunks),
-            "chunks": chunks
+            "total_tokens": total_tokens,
+            "total_characters": total_chars,
+            "chunks": chunks[:3]  # 只返回前3個分塊預覽
         })
         
     except Exception as e:
+        logger.error(f"獲取檔案詳情失敗: {e}")
         return JSONResponse({"success": False, "message": str(e)}, status_code=500)
+
 
 @app.get("/api/bots/{bot_name}/knowledge/files")
 async def get_knowledge_files(bot_name: str, current_user: User = Depends(AdminAuth)):
@@ -142,6 +151,48 @@ async def get_conversations(bot_name: str, page: int = 1, limit: int = 20, searc
         "success": True, "conversations": conversations, "total": total,
         "page": page, "limit": limit, "total_pages": total_pages
     })
+
+@app.get("/api/bots/{bot_name}/knowledge/files/{filename}/details")
+async def get_file_details(bot_name: str, filename: str, current_user: User = Depends(AdminAuth)):
+    """獲取文件詳細資訊"""
+    try:
+        collection_name = f"collection_{bot_name}"
+        chunks = vector_system.get_document_chunks(collection_name, filename)
+        
+        if not chunks:
+            return JSONResponse({"success": False, "message": "文件不存在"}, status_code=404)
+        
+        # 計算統計資訊
+        total_tokens = sum(chunk.get('token_count', 0) for chunk in chunks)
+        
+        return JSONResponse({
+            "success": True,
+            "filename": filename,
+            "total_chunks": len(chunks),
+            "total_tokens": total_tokens,
+            "chunks": chunks
+        })
+        
+    except Exception as e:
+        logger.error(f"獲取文件詳情失敗: {e}")
+        return JSONResponse({"success": False, "message": str(e)}, status_code=500)
+
+@app.delete("/api/bots/{bot_name}/knowledge/files/{filename}")
+async def delete_file(bot_name: str, filename: str, current_user: User = Depends(AdminAuth)):
+    """刪除指定檔案及其向量"""
+    try:
+        collection_name = f"collection_{bot_name}"
+        result = vector_system.delete_document(collection_name, filename)
+        
+        if result["success"]:
+            return JSONResponse(result)
+        else:
+            status_code = 404 if "不存在" in result["message"] else 500
+            return JSONResponse(result, status_code=status_code)
+            
+    except Exception as e:
+        logger.error(f"刪除檔案失敗: {e}")
+        return JSONResponse({"success": False, "message": str(e)}, status_code=500)
 
 # --- Health & Debug Routes ---
 @app.get("/health")
