@@ -287,7 +287,6 @@ POSTGRES_CONFIG = {
 
 
 
-
 # 3️⃣ 修改 OptimizedVectorSystem 類的 load_document 方法
 # 📍 在 load_document 方法中添加 EPUB 處理邏輯
 
@@ -631,7 +630,7 @@ class ChineseTextNormalizer:
         
         # 中文文本正規化規則
         self.normalization_rules = [
-            (r'[　\u3000]+', ' '),                    # 統一空格
+            (r'[\u3000]+', ' '),
             (r'\r\n|\r', '\n'),                       # 統一換行
             (r'\n{3,}', '\n\n'),                      # 限制連續換行
             (r'[\u201C\u201D\u2018\u2019\u201E\u201A\u2033\u2032]', '"'),  # 統一引號
@@ -960,7 +959,7 @@ class SmartTextAnalyzer:
                 break
         
         # 檢測列表
-        if re.search(r'^\s*[•\-\*]\s+', text, re.MULTILINE) or \
+        if re.search(r'^\s*[•\-*]\s+', text, re.MULTILINE) or \
            re.search(r'^\s*\d+\.\s+', text, re.MULTILINE):
             structure_info['has_lists'] = True
         
@@ -1061,8 +1060,8 @@ class OptimizedTextSplitter:
         
         print("🔧 優化版文本分割器初始化完成")
         print(f"   📏 支持 {len(self.config)} 種文本類型")
-        print(f"   🧠 智能策略選擇")
-        print(f"   ⚡ 性能優化")
+        print("   🧠 智能策略選擇")
+        print("   ⚡ 性能優化")
     
     def get_splitter(self, chunk_size: int, chunk_overlap: int) -> RecursiveCharacterTextSplitter:
         """獲取分割器實例（帶快取）"""
@@ -1077,7 +1076,7 @@ class OptimizedTextSplitter:
                     "\n\n", "\n",          # 段落
                     "。", "！", "？", "；",  # 句子結束
                     "，", "、",            # 短語分隔
-                    " ", ""                # 最後resort
+                    " ", ""
                 ],
                 keep_separator=True,
                 length_function=len
@@ -2026,9 +2025,11 @@ class OptimizedVectorSystem:
                     
                     # 掃描目錄中的檔案
                     for file_path in collection_dir.rglob('*'):
-                        if (file_path.is_file() and 
+                        if (
+                            file_path.is_file() and 
                             file_path.suffix.lower() in SUPPORTED_EXTENSIONS and
-                            not file_path.name.startswith('.')):
+                            not file_path.name.startswith('.')
+                        ):
                             
                             try:
                                 file_info = self.get_file_info(file_path)
@@ -2052,9 +2053,9 @@ class OptimizedVectorSystem:
             
         except Exception as e:
             logger.error(f"重建檔案記錄失敗: {e}")
-            return {}    
-
+            return {}
         
+
     def _save_file_records(self):
         """儲存文件記錄 - 修正：使用data_dir而不是persist_dir"""
         try:
@@ -2411,7 +2412,7 @@ class OptimizedVectorSystem:
                 # 分級處理不同大小的檔案
                 if stat.st_size == 0:
                     # 空檔案
-                    file_hash = hashlib.md5(b"").hexdigest()
+                    file_hash = hashlib.md5(b"" ).hexdigest()
                 elif stat.st_size < 1024 * 1024:  # 小於 1MB
                     # 小檔案：直接讀取全部內容
                     try:
@@ -2490,7 +2491,8 @@ class OptimizedVectorSystem:
         # 遞迴掃描目錄
         file_count = 0
         for file_path in dir_path.rglob('*'):
-            if (file_path.is_file() and 
+            if (
+                file_path.is_file() and 
                 file_path.suffix.lower() in SUPPORTED_EXTENSIONS and
                 not file_path.name.startswith('.') and
                 file_path.stat().st_size > 0):  # 跳過空文件
@@ -2569,15 +2571,17 @@ class OptimizedVectorSystem:
                     old_file_name = Path(old_path).name
                     
                     # 檔案名相同且哈希相同 = 同一檔案
-                    if (current_file_name == old_file_name and 
+                    if (
+                        current_file_name == old_file_name and 
                         current_hash == old_info.hash):
                         file_found = True
                         print(f"🔄 路徑變更但內容相同: {current_file_name}")
                         break
                         
                     # 檔案名相同但哈希不同 = 檔案被修改
-                    elif (current_file_name == old_file_name and 
-                          current_hash != old_info.hash):
+                    elif (
+                        current_file_name == old_file_name and 
+                        current_hash != old_info.hash):
                         modified_files.append(Path(file_path))
                         file_found = True
                         print(f"📝 修改檔案 (路徑變更): {current_file_name}")
@@ -3186,10 +3190,8 @@ class OptimizedVectorSystem:
             vectorstore = self.get_or_create_vectorstore(collection_name)
             
             if self.use_postgres:
-                print("🔍 使用 PGVector API 獲取檔案列表")
                 return self._get_documents_from_pgvector(vectorstore, collection_name, page, limit, search)
             else:
-                print("🔍 使用 Chroma API 獲取檔案列表")
                 return self._get_documents_from_chroma(vectorstore, collection_name, page, limit, search)
                 
         except Exception as e:
@@ -3406,7 +3408,8 @@ class OptimizedVectorSystem:
                         doc_filename = metadata.get('filename', metadata.get('original_filename', ''))
                         doc_source = metadata.get('source', '')
                         
-                        if (doc_filename == source_file or 
+                        if (
+                            doc_filename == source_file or 
                             doc_source.endswith(source_file) or
                             search_path in doc_source):
                             
@@ -3493,7 +3496,8 @@ class OptimizedVectorSystem:
                 doc_filename = (metadata.get('original_filename') or 
                             metadata.get('filename', ''))
                 
-                if (doc_filename == filename or 
+                if (
+                    doc_filename == filename or 
                     filename in str(metadata.get('source', ''))):
                     matching_docs.append(doc)
             
@@ -3581,8 +3585,8 @@ class OptimizedVectorSystem:
             cursor.execute("""
                 SELECT table_name FROM information_schema.tables 
                 WHERE table_schema = 'public' 
-                AND table_name LIKE '%langchain%';
-            """)
+                AND table_name LIKE '%%langchain%%';
+            """")
             
             tables = [row[0] for row in cursor.fetchall()]
             total_deleted = 0
@@ -3591,9 +3595,9 @@ class OptimizedVectorSystem:
                 try:
                     cursor.execute(f"""
                         DELETE FROM {table} 
-                        WHERE cmetadata::text LIKE %s 
-                        OR cmetadata::text LIKE %s;
-                    """, (f'%"filename": "{filename}"%', f'%"original_filename": "{filename}"%'))
+                        WHERE cmetadata::text LIKE %%s 
+                        OR cmetadata::text LIKE %%s;
+                    """, (f'%%"filename": "{filename}"%%', f'%%"original_filename": "{filename}"%%'))
                     
                     deleted = cursor.rowcount
                     total_deleted += deleted
@@ -3614,54 +3618,44 @@ class OptimizedVectorSystem:
         """增強版 SQL 直接刪除"""
         try:
             import psycopg2
+            import json
             conn = psycopg2.connect(self.connection_string)
             cursor = conn.cursor()
             
             print(f"      🗂️ 開始增強版 SQL 刪除...")
             
-            # 查找所有 langchain 相關表
             cursor.execute("""
                 SELECT table_name FROM information_schema.tables 
                 WHERE table_schema = 'public' 
-                AND table_name LIKE '%langchain%';
-            """)
+                AND table_name LIKE '%%langchain%%';
+            """")
             
             tables = [row[0] for row in cursor.fetchall()]
             total_deleted = 0
             
+            # 準備 JSONB 查詢條件
+            json_query_fn = json.dumps({'filename': filename})
+            json_query_orig_fn = json.dumps({'original_filename': filename})
+
             for table_name in tables:
                 try:
-                    # 檢查表是否有 cmetadata 列
-                    cursor.execute(f"""
-                        SELECT column_name FROM information_schema.columns 
-                        WHERE table_name = '{table_name}' 
-                        AND column_name = 'cmetadata';
-                    """)
-                    
-                    if not cursor.fetchone():
-                        continue
-                    
-                    # 使用多種模式匹配
-                    patterns = [
-                        f'%"filename": "{filename}"%',
-                        f'%"original_filename": "{filename}"%',
-                        f'%{filename}%'
-                    ]
-                    
-                    for pattern in patterns:
-                        cursor.execute(f"""
-                            DELETE FROM {table_name} 
-                            WHERE cmetadata::text LIKE %s;
-                        """, (pattern,))
-                        
+                    # Check for cmetadata column
+                    cursor.execute(f"SELECT 1 FROM information_schema.columns WHERE table_name = '{table_name}' AND column_name = 'cmetadata'")
+                    if cursor.fetchone():
+                        # Use the @> operator which means 'contains' for JSONB
+                        delete_query = f"""
+                            DELETE FROM {table_name}
+                            WHERE cmetadata @> %s::jsonb OR cmetadata @> %s::jsonb;
+                        """
+                        cursor.execute(delete_query, (json_query_fn, json_query_orig_fn))
                         deleted = cursor.rowcount
                         if deleted > 0:
                             total_deleted += deleted
-                            print(f"         ✅ 表 {table_name}: 刪除 {deleted} 條")
-                            break
-                    
+                            print(f"         ✅ 表 {table_name}: 使用 JSONB 運算符刪除 {deleted} 條記錄")
+                
                 except Exception as table_error:
                     print(f"         ⚠️ 表 {table_name} 處理失敗: {table_error}")
+                    conn.rollback()
                     continue
             
             conn.commit()
@@ -3673,6 +3667,8 @@ class OptimizedVectorSystem:
             
         except Exception as e:
             print(f"      ❌ SQL 刪除失敗: {e}")
+            if 'conn' in locals() and conn and not conn.closed:
+                conn.close()
             return 0
 
 
@@ -3687,8 +3683,8 @@ class OptimizedVectorSystem:
             cursor.execute("""
                 SELECT table_name FROM information_schema.tables 
                 WHERE table_schema = 'public' 
-                AND table_name LIKE '%collection%';
-            """)
+                AND table_name LIKE '%%collection%%';
+            """")
             
             tables = cursor.fetchall()
             total_deleted = 0
@@ -3699,13 +3695,13 @@ class OptimizedVectorSystem:
                 # 刪除匹配記錄
                 delete_query = f"""
                     DELETE FROM {table_name} 
-                    WHERE cmetadata::text LIKE %s 
-                    OR cmetadata::text LIKE %s;
+                    WHERE cmetadata::text LIKE %%s 
+                    OR cmetadata::text LIKE %%s;
                 """
                 
                 cursor.execute(delete_query, (
-                    f'%"filename": "{filename}"%',
-                    f'%"original_filename": "{filename}"%'
+                    f'%%"filename": "{filename}"%%',
+                    f'%%"original_filename": "{filename}"%%'
                 ))
                 
                 deleted = cursor.rowcount
@@ -3909,7 +3905,6 @@ class OptimizedVectorSystem:
     
 
 
-
 def main():
     """主程式"""
     print("🇨🇳 === 完整優化版 LangChain 中文向量系統 === 🇨🇳")
@@ -3967,7 +3962,6 @@ def main():
         logger.error(f"系統初始化失敗: {e}")
         return None
     
-
 
 
 if __name__ == "__main__":
