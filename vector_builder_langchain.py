@@ -8,7 +8,7 @@
 - 🚀 性能和錯誤處理優化
 - Python 3.11.7 環境
 """
-
+import time
 import json
 import shutil
 import time
@@ -3446,41 +3446,269 @@ class OptimizedVectorSystem:
             logger.error(f"PGVector 分塊獲取失敗: {e}")
             return []
         
-
-    def delete_by_file_ids(self, collection_name: str, filename: str) -> Dict:
-        """Direct deletion using doc_id and chunk_id - 修正版"""
+    def delete_by_file_ids_simple(self, collection_name: str, filename: str) -> Dict:
+        """簡化版：只使用 PGVector API 刪除"""
         try:
             vectorstore = self.get_or_create_vectorstore(collection_name)
             
-            # Step 1: 修正 - 使用更可靠的方法獲取所有文檔
-            file_ids = self._find_file_ids_corrected(vectorstore, filename)
+            # 找到文件的所有 chunk IDs
+            all_docs = vectorstore.similarity_search("", k=5000)
+            chunk_ids = []
             
-            if not file_ids["doc_ids"] and not file_ids["chunk_ids"]:
+            for doc in all_docs:
+                doc_filename = (doc.metadata.get('original_filename') or 
+                            doc.metadata.get('filename', ''))
+                if doc_filename == filename:
+                    # 獲取文檔ID（可能的字段名）
+                    doc_id = (doc.metadata.get('id') or 
+                            doc.metadata.get('chunk_id') or 
+                            doc.metadata.get('uuid'))
+                    if doc_id:
+                        chunk_ids.append(str(doc_id))
+            
+            if not chunk_ids:
+                return {"success": False, "message": f"File '{filename}' not found", "deleted_chunks": 0}
+            
+            print(f"🎯 找到 {len(chunk_ids)} 個 chunks，開始刪除...")
+            
+            # ✅ 使用正確的 PGVector 語法刪除
+            vectorstore.delete(ids=chunk_ids)
+            
+            print(f"✅ 刪除完成")
+            
+            return {
+                "success": True,
+                "message": f"成功刪除文件 {filename}，共 {len(chunk_ids)} 個分塊",
+                "deleted_chunks": len(chunk_ids),
+                "filename": filename
+            }
+            
+        except Exception as e:
+            logger.error(f"刪除失敗: {e}")
+            return {"success": False, "message": f"刪除失敗: {str(e)}", "deleted_chunks": 0}
+
+
+
+    def delete_by_file_ids(self, collection_name: str, filename: str) -> Dict:
+        """修正版：直接使用 chunk_ids 刪除 - 更可靠的方法"""
+        try:
+            vectorstore = self.get_or_create_vectorstore(collection_name)
+            
+            # Step 1: 找到所有相關的 chunk_ids（最可靠的方法）
+            chunk_ids = self._find_chunk_ids_reliable(vectorstore, filename)
+            
+            if not chunk_ids:
                 return {
                     "success": False, 
                     "message": f"File '{filename}' not found",
                     "deleted_chunks": 0
                 }
             
-            logger.info(f"🔍 Found file IDs: {len(file_ids['doc_ids'])} doc_ids, {len(file_ids['chunk_ids'])} chunk_ids")
+            print(f"🎯 Found {len(chunk_ids)} chunks for file: {filename}")
             
-            # Step 2: 使用最可靠的刪除方法
-            if file_ids["doc_ids"]:
-                # Method 1: Delete by doc_id (preferred)
-                return self._delete_by_doc_ids_corrected(vectorstore, file_ids["doc_ids"], filename)
-            elif file_ids["chunk_ids"]:
-                # Method 2: Delete by chunk_ids (fallback)
-                return self._delete_by_chunk_ids_corrected(vectorstore, file_ids["chunk_ids"], filename)
-            else:
-                return {
-                    "success": False,
-                    "message": "No valid IDs found for deletion",
-                    "deleted_chunks": 0
-                }
-                
+            # Step 2: 使用正確的 PGVector 語法直接刪除
+            return self._delete_by_chunk_ids_fixed(vectorstore, chunk_ids, filename)
+            
         except Exception as e:
-            logger.error(f"Delete by IDs failed: {e}")
+            logger.error(f"Delete file failed: {e}")
             return {"success": False, "message": f"Delete failed: {str(e)}", "deleted_chunks": 0}
+
+    def _find_chunk_ids_reliable(self, vectorstore, filename: str) -> List[str]:
+        """修正版：更可靠地找到文件的所有 chunk_ids"""
+        try:
+            print(f"🔍 搜尋文件: {filename}")
+            
+            # 方法1：嘗試使用 get() 方法（如果支援）
+            chunk_ids = []
+            
+            if hasattr(vectorstore, 'get'):
+                try:
+                    # 嘗試不同的查詢條件
+                    search_conditions = [
+                        {"original_filename": filename},
+                        {"filename": filename}
+                    ]
+                    
+                    for condition in search_conditions:
+                        try:
+                            result = vectorstore.get(where=condition)
+                            if result and result.get('ids'):
+                                chunk_ids.extend(result['ids'])
+                                print(f"   ✅ 使用條件 {condition} 找到 {len(result['ids'])} 個 chunk")
+                                break
+                        except Exception as e:
+                            print(f"   ⚠️ 查詢條件 {condition} 失敗: {e}")
+                            continue
+                            
+                except Exception as e:
+                    print(f"   ⚠️ get() 方法失敗: {e}")
+            
+            # 方法2：備用 - 使用 similarity_search
+            if not chunk_ids:
+                print(f"   🔄 使用 similarity_search 備用方法")
+                try:
+                    all_docs = vectorstore.similarity_search("", k=5000)
+                    
+                    for doc in all_docs:
+                        metadata = doc.metadata
+                        doc_filename = (metadata.get('original_filename') or 
+                                    metadata.get('filename', ''))
+                        
+                        if doc_filename == filename:
+                            # 嘗試獲取文檔ID（可能是UUID格式）
+                            doc_id = (metadata.get('id') or 
+                                    metadata.get('chunk_id') or 
+                                    metadata.get('uuid'))
+                            
+                            if doc_id:
+                                chunk_ids.append(str(doc_id))
+                    
+                    print(f"   ✅ similarity_search 找到 {len(chunk_ids)} 個 chunk")
+                    
+                except Exception as e:
+                    print(f"   ❌ similarity_search 也失敗: {e}")
+            
+            # 去重並返回
+            unique_chunk_ids = list(set(chunk_ids))
+            print(f"🎯 總共找到 {len(unique_chunk_ids)} 個唯一 chunk_ids")
+            
+            return unique_chunk_ids
+            
+        except Exception as e:
+            logger.error(f"Find chunk IDs failed: {e}")
+            return []
+
+    def _delete_by_chunk_ids_fixed(self, vectorstore, chunk_ids: List[str], filename: str) -> Dict:
+        """修正版：使用正確的 PGVector 語法刪除"""
+        try:
+            if not chunk_ids:
+                return {"success": False, "message": "No chunk IDs found", "deleted_chunks": 0}
+            
+            print(f"🗑️ 開始刪除 {len(chunk_ids)} 個 chunks")
+            
+            # 記錄刪除前的數量
+            before_count = len(chunk_ids)
+            
+            # ✅ 使用正確的 PGVector 語法
+            try:
+                print(f"   📡 調用 vectorstore.delete(ids=chunk_ids)")
+                vectorstore.delete(ids=chunk_ids)
+                deletion_method = "direct_ids"
+                print(f"   ✅ 批量刪除完成")
+                
+            except Exception as batch_error:
+                print(f"   ⚠️ 批量刪除失敗: {batch_error}")
+                
+                # 備用方案：逐個刪除
+                print(f"   🔄 嘗試逐個刪除...")
+                deleted_count = 0
+                
+                for i, chunk_id in enumerate(chunk_ids):
+                    try:
+                        vectorstore.delete(ids=[chunk_id])
+                        deleted_count += 1
+                        if (i + 1) % 10 == 0:  # 每10個顯示進度
+                            print(f"      進度: {i + 1}/{len(chunk_ids)}")
+                    except Exception as individual_error:
+                        print(f"      ❌ chunk_id {chunk_id} 刪除失敗: {individual_error}")
+                
+                deletion_method = f"individual_ids_{deleted_count}"
+                print(f"   📊 逐個刪除完成: {deleted_count}/{len(chunk_ids)}")
+            
+            # 驗證刪除結果
+            time.sleep(2)  # 等待數據庫更新
+            remaining_chunks = self._verify_deletion(vectorstore, filename)
+            actual_deleted = before_count - remaining_chunks
+            
+            success = remaining_chunks == 0
+            
+            print(f"📊 刪除結果:")
+            print(f"   原始數量: {before_count}")
+            print(f"   剩餘數量: {remaining_chunks}")  
+            print(f"   實際刪除: {actual_deleted}")
+            print(f"   成功率: {(actual_deleted/before_count*100):.1f}%")
+            
+            return {
+                "success": success,
+                "message": f"刪除完成: {actual_deleted}/{before_count} chunks" if success 
+                        else f"部分刪除失敗，還剩 {remaining_chunks} chunks",
+                "deleted_chunks": actual_deleted,
+                "remaining_chunks": remaining_chunks,
+                "filename": filename,
+                "method": deletion_method,
+                "total_chunk_ids": len(chunk_ids)
+            }
+            
+        except Exception as e:
+            logger.error(f"Delete by chunk IDs failed: {e}")
+            return {"success": False, "message": f"刪除失敗: {str(e)}", "deleted_chunks": 0}
+        
+    def _verify_deletion(self, vectorstore, filename: str) -> int:
+        """驗證刪除結果 - 計算剩餘chunks數量（簡化版，避免重複調用）"""
+        try:
+            # 使用簡單的 similarity_search 驗證
+            all_docs = vectorstore.similarity_search("", k=1000)
+            remaining_count = 0
+            
+            for doc in all_docs:
+                doc_filename = (doc.metadata.get('original_filename') or 
+                            doc.metadata.get('filename', ''))
+                if doc_filename == filename:
+                    remaining_count += 1
+            
+            return remaining_count
+            
+        except Exception as e:
+            print(f"⚠️ 驗證刪除結果失敗: {e}")
+            return -1  # 無法驗證
+
+    def _postgresql_delete_file_completely_fixed(self, vectorstore, filename: str) -> int:
+        """修正版：完整的 PostgreSQL 文件刪除方案"""
+        print(f"🗑️ 開始徹底刪除: {filename}")
+        
+        try:
+            # 方案1：使用修正的 PGVector API
+            chunk_ids = self._find_chunk_ids_reliable(vectorstore, filename)
+            
+            if not chunk_ids:
+                print(f"   ⚠️ 沒有找到匹配的文檔")
+                return 0
+            
+            print(f"   🎯 找到 {len(chunk_ids)} 個 chunks")
+            
+            # 使用修正的刪除方法
+            result = self._delete_by_chunk_ids_fixed(vectorstore, chunk_ids, filename)
+            deleted_count = result.get('deleted_chunks', 0)
+            
+            # 如果 API 刪除不完全，嘗試使用現有的 SQL 方法（如果存在）
+            if result.get('remaining_chunks', 0) > 0:
+                print(f"   🔧 API 刪除不完全，嘗試 SQL 補充刪除...")
+                try:
+                    # 嘗試調用現有的 SQL 刪除方法
+                    if hasattr(self, '_direct_sql_delete_enhanced'):
+                        sql_deleted = self._direct_sql_delete_enhanced(filename)
+                        deleted_count += sql_deleted
+                    elif hasattr(self, '_direct_sql_delete'):
+                        sql_deleted = self._direct_sql_delete(filename)
+                        deleted_count += sql_deleted
+                    else:
+                        print(f"   ⚠️ 沒有可用的 SQL 刪除方法")
+                except Exception as sql_error:
+                    print(f"   ⚠️ SQL 刪除失敗: {sql_error}")
+            
+            # 最終驗證
+            final_remaining = self._verify_deletion(vectorstore, filename)
+            if final_remaining == 0:
+                print(f"   ✅ 文件完全刪除成功")
+            elif final_remaining > 0:
+                print(f"   ⚠️ 仍有 {final_remaining} 個 chunks 未刪除")
+            
+            return deleted_count
+            
+        except Exception as e:
+            print(f"   ❌ 刪除失敗: {e}")
+            return 0
+
 
     def _find_file_ids_corrected(self, vectorstore, filename: str) -> Dict[str, List[str]]:
         """修正版：找出檔案的所有 doc_id 和 chunk_id"""
@@ -3750,23 +3978,66 @@ class OptimizedVectorSystem:
         
 
     def delete_document(self, collection_name: str, source_file: str) -> Dict:
-        """刪除指定檔案及其所有向量 - 兼容 Chroma 和 PGVector"""
+        """修正版：刪除指定檔案及其所有向量 - 兼容 Chroma 和 PGVector"""
         try:
             vectorstore = self.get_or_create_vectorstore(collection_name)
-            existing_chunks = self.get_document_chunks(collection_name, source_file)
-            chunk_count = len(existing_chunks)
+            
+            # 獲取文件信息
+            if self.use_postgres:
+                chunk_ids = self._find_chunk_ids_reliable(vectorstore, source_file)
+                chunk_count = len(chunk_ids)
+            else:
+                existing_chunks = self.get_document_chunks(collection_name, source_file)
+                chunk_count = len(existing_chunks)
             
             if chunk_count == 0:
                 return {"success": False, "message": "檔案不存在或已被刪除", "deleted_chunks": 0}
             
             if self.use_postgres:
-                return self._delete_from_pgvector(vectorstore, collection_name, source_file, chunk_count)
+                return self._delete_from_pgvector_fixed(vectorstore, collection_name, source_file, chunk_count)
             else:
                 return self._delete_from_chroma(vectorstore, collection_name, source_file, chunk_count)
                 
         except Exception as e:
             logger.error(f"刪除檔案失敗 {collection_name}/{source_file}: {e}")
             return {"success": False, "message": f"刪除檔案失敗: {str(e)}", "deleted_chunks": 0}
+        
+    def _delete_from_pgvector_fixed(self, vectorstore, collection_name: str, source_file: str, chunk_count: int) -> Dict:
+        """修正版 PGVector 刪除方法"""
+        try:
+            print(f"🗑️ 從 PostgreSQL 刪除文件: {source_file}")
+            
+            # 使用修正版本的刪除方法
+            deleted_count = self._postgresql_delete_file_completely_fixed(vectorstore, source_file)
+            
+            # 驗證刪除結果
+            remaining_count = self._verify_deletion(vectorstore, source_file)
+            if remaining_count == -1:  # 無法驗證
+                remaining_count = chunk_count - deleted_count
+            
+            success = remaining_count == 0
+            
+            if success:
+                print(f"✅ 文件完全刪除成功: {source_file}")
+            else:
+                print(f"⚠️ 部分刪除失敗，還剩 {remaining_count} 個分塊")
+            
+            return {
+                "success": success,
+                "message": f"文件 {source_file} 刪除完成，移除了 {deleted_count} 個分塊" if success 
+                        else f"部分刪除失敗，還剩 {remaining_count} 個分塊",
+                "deleted_chunks": deleted_count,
+                "remaining_chunks": remaining_count,
+                "filename": source_file
+            }
+            
+        except Exception as e:
+            logger.error(f"PostgreSQL 刪除失敗: {e}")
+            return {
+                "success": False, 
+                "message": f"刪除失敗: {str(e)}", 
+                "deleted_chunks": 0
+            }
 
     def _delete_from_chroma(self, vectorstore, collection_name: str, source_file: str, chunk_count: int) -> Dict:
         """從 Chroma 刪除檔案"""
