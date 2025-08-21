@@ -183,6 +183,7 @@ except ImportError:
 
 
 
+
 # 🔧 檢查環境變數
 def check_openai_api_key():
     """檢查 OpenAI API Key"""
@@ -810,7 +811,7 @@ class EpubProcessor:
         # EPUB 特定清理
         epub_cleaning_rules = [
             (r'\n{4,}', '\n\n'),                    # 限制連續換行
-            (r'[ \t]{3,}', ' '),                    # 限制連續空格
+            (r'[ \t]{3,}', ' ' ),                    # 限制連續空格
             (r'^[ \t]+', '', re.MULTILINE),          # 移除行首空白
             (r'[ \t]+$', '', re.MULTILINE),          # 移除行尾空白
             (r'\n[ \t]*\n', '\n\n'),                # 清理空行
@@ -1060,8 +1061,8 @@ class OptimizedTextSplitter:
         
         print("🔧 優化版文本分割器初始化完成")
         print(f"   📏 支持 {len(self.config)} 種文本類型")
-        print("   🧠 智能策略選擇")
-        print("   ⚡ 性能優化")
+        print(f"   🧠 智能策略選擇")
+        print(f"   ⚡ 性能優化")
     
     def get_splitter(self, chunk_size: int, chunk_overlap: int) -> RecursiveCharacterTextSplitter:
         """獲取分割器實例（帶快取）"""
@@ -2495,7 +2496,8 @@ class OptimizedVectorSystem:
                 file_path.is_file() and 
                 file_path.suffix.lower() in SUPPORTED_EXTENSIONS and
                 not file_path.name.startswith('.') and
-                file_path.stat().st_size > 0):  # 跳過空文件
+                file_path.stat().st_size > 0
+            ):  # 跳過空文件
                 
                 file_info = self.get_file_info(file_path)
                 if file_info:
@@ -2573,7 +2575,8 @@ class OptimizedVectorSystem:
                     # 檔案名相同且哈希相同 = 同一檔案
                     if (
                         current_file_name == old_file_name and 
-                        current_hash == old_info.hash):
+                        current_hash == old_info.hash
+                    ):
                         file_found = True
                         print(f"🔄 路徑變更但內容相同: {current_file_name}")
                         break
@@ -2581,7 +2584,8 @@ class OptimizedVectorSystem:
                     # 檔案名相同但哈希不同 = 檔案被修改
                     elif (
                         current_file_name == old_file_name and 
-                        current_hash != old_info.hash):
+                        current_hash != old_info.hash
+                    ):
                         modified_files.append(Path(file_path))
                         file_found = True
                         print(f"📝 修改檔案 (路徑變更): {current_file_name}")
@@ -3411,7 +3415,8 @@ class OptimizedVectorSystem:
                         if (
                             doc_filename == source_file or 
                             doc_source.endswith(source_file) or
-                            search_path in doc_source):
+                            search_path in doc_source
+                        ):
                             
                             chunk_info = {
                                 'chunk_id': metadata.get('chunk_id', f'chunk_{len(matching_chunks)+1}'),
@@ -3498,7 +3503,8 @@ class OptimizedVectorSystem:
                 
                 if (
                     doc_filename == filename or 
-                    filename in str(metadata.get('source', ''))):
+                    filename in str(metadata.get('source', ''))
+                ):
                     matching_docs.append(doc)
             
             if not matching_docs:
@@ -3614,15 +3620,16 @@ class OptimizedVectorSystem:
         except Exception as e:
             print(f"   SQL 清理失敗: {e}")
             return 0
+
     def _direct_sql_delete_enhanced(self, filename: str) -> int:
-        """增強版 SQL 直接刪除"""
+        """增強版 SQL 直接刪除 - 使用 JSONB 運算符"""
         try:
             import psycopg2
             import json
             conn = psycopg2.connect(self.connection_string)
             cursor = conn.cursor()
             
-            print(f"      🗂️ 開始增強版 SQL 刪除...")
+            print(f"      🗂️ 開始增強版 SQL 刪除 (使用 JSONB 運算符)...")
             
             cursor.execute("""
                 SELECT table_name FROM information_schema.tables 
@@ -3903,7 +3910,6 @@ class OptimizedVectorSystem:
             return False
 
     
-
 
 def main():
     """主程式"""
