@@ -1688,32 +1688,26 @@ class OptimizedVectorSystem:
         self.connection_string = None
         self.use_postgres = False
 
-        try:
-            # Attempt to create a PostgreSQL adapter from environment variables
-            # The factory correctly prioritizes DATABASE_URL
-            self.db_adapter = DatabaseFactory.create_from_env("pgvector") # Use a unique name
-            
-            # Check if the adapter is for PostgreSQL
-            if isinstance(self.db_adapter, PostgreSQLAdapter):
-                 self.db_adapter.connect() # Test the connection
-                 self.connection_string = self.db_adapter.connection_string
-                 self.use_postgres = True
-                 print("✅ PostgreSQL (via DatabaseFactory) 連接成功")
-                 self.db_adapter.disconnect() # Close test connection
-            else:
-                # The factory returned a SQLite adapter, which we don't want here.
-                self.db_adapter = None
-
-        except Exception as e:
-            print(f"⚠️ PostgreSQL (via DatabaseFactory) 連接失敗: {e}")
-
+        # --- NEW: Simplified and Forced PostgreSQL Connection Logic ---
+        database_url = os.getenv("DATABASE_URL")
+        if PGVECTOR_AVAILABLE and database_url:
+            try:
+                self.connection_string = database_url
+                # Test connection by trying to get a client
+                PGVector.from_existing_index(
+                    collection_name="_test_connection",
+                    embedding=self.embeddings,
+                    connection_string=self.connection_string
+                )
+                self.use_postgres = True
+                print("✅ PostgreSQL (pgvector) 連接成功")
+            except Exception as e:
+                print(f"⚠️ PostgreSQL (pgvector) 連接測試失敗: {e}")
+                self.use_postgres = False
+        
         if not self.use_postgres:
             print("⚠️ PostgreSQL 不可用，將使用 Chroma 作為備用")
-        # --- END REFACTORING ---
-        
-        # 建立目錄
-        for dir_path in [self.persist_dir, self.data_dir]:
-            dir_path.mkdir(exist_ok=True)
+            self.persist_dir.mkdir(exist_ok=True)
         
         # 初始化組件
         self._setup_embedding_model()

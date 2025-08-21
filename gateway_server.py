@@ -18,7 +18,7 @@ load_dotenv()
 from config import app_config
 from auth_middleware import AdminAuth, User, auth_response, JWTManager
 from user_manager import user_manager
-from bot_service_manager import bot_manager
+from bot_service_manager import bot_manager, global_bot_instances
 from conversation_logger_simple import create_logger_instance
 from vector_builder_langchain import OptimizedVectorSystem
 
@@ -30,7 +30,7 @@ logger = logging.getLogger("gateway")
 ROOT_DIR = Path(__file__).resolve().parent
 
 # --- FastAPI App Initialization ---
-app = FastAPI(title="Unified API Gateway", version="2.0")
+app = FastAPI(title="Unified API Gateway", version="3.0")
 templates = Jinja2Templates(directory=str(ROOT_DIR))
 
 # --- Service Initialization ---
@@ -55,7 +55,7 @@ async def login_page(request: Request):
 async def manager_page(request: Request, current_user: User = Depends(AdminAuth)):
     return templates.TemplateResponse("manager_ui.html", {"request": request, "user": current_user})
 
-# --- Authentication API ---
+# --- Authentication & Management API ---
 @app.post("/api/login")
 async def handle_login(request: Request):
     data = await request.json()
@@ -74,7 +74,6 @@ async def handle_login(request: Request):
 async def handle_logout():
     return auth_response.create_logout_response()
 
-# --- Bot Management API ---
 @app.get("/api/bots")
 async def get_all_bots(current_user: User = Depends(AdminAuth)):
     return JSONResponse(bot_manager.get_all_bots())
@@ -94,7 +93,18 @@ async def get_bot_config(bot_name: str, current_user: User = Depends(AdminAuth))
         return JSONResponse({"success": True, "config": config})
     return JSONResponse({"success": False, "message": "Config not found"}, status_code=404)
 
-# --- Knowledge Base API ---
+@app.post("/api/bots/{bot_name}/knowledge/upload")
+async def upload_knowledge_file(bot_name: str, file: UploadFile = File(...), current_user: User = Depends(AdminAuth)):
+    try:
+        collection_name = f"collection_{bot_name}"
+        file_content = await file.read()
+        result = vector_system.upload_single_file(
+            file_content=file_content, filename=file.filename, collection_name=collection_name
+        )
+        return JSONResponse(result)
+    except Exception as e:
+        return JSONResponse({"success": False, "message": str(e)}, status_code=500)
+
 @app.get("/api/bots/{bot_name}/knowledge/files")
 async def get_knowledge_files(bot_name: str, current_user: User = Depends(AdminAuth)):
     try:
@@ -102,32 +112,30 @@ async def get_knowledge_files(bot_name: str, current_user: User = Depends(AdminA
         docs_result = vector_system.get_collection_documents(collection_name)
         return JSONResponse(docs_result)
     except Exception as e:
-        logger.error(f"Error getting knowledge files for {bot_name}: {e}")
         return JSONResponse({"success": False, "message": str(e)}, status_code=500)
 
-# --- Conversation History API ---
 @app.get("/api/bots/{bot_name}/conversations")
 async def get_conversations(bot_name: str, page: int = 1, limit: int = 20, search: str = "", current_user: User = Depends(AdminAuth)):
-    try:
-        conv_logger = get_conversation_logger(bot_name)
-        conversations, total = conv_logger.get_conversations(limit=limit, offset=(page - 1) * limit, search=search if search else None)
-        total_pages = (total + limit - 1) // limit if total > 0 else 1
-        return JSONResponse({
-            "success": True,
-            "conversations": conversations,
-            "total": total,
-            "page": page,
-            "limit": limit,
-            "total_pages": total_pages
-        })
-    except Exception as e:
-        logger.error(f"Error getting conversations for {bot_name}: {e}")
-        return JSONResponse({"success": False, "message": str(e)}, status_code=500)
+    conv_logger = get_conversation_logger(bot_name)
+    conversations, total = conv_logger.get_conversations(limit=limit, offset=(page - 1) * limit, search=search if search else None)
+    total_pages = (total + limit - 1) // limit if total > 0 else 1
+    return JSONResponse({
+        "success": True, "conversations": conversations, "total": total,
+        "page": page, "limit": limit, "total_pages": total_pages
+    })
 
-# --- Health Check ---
+# --- Health & Debug Routes ---
 @app.get("/health")
 async def health_check():
     return {"status": "ok", "message": "Unified Gateway is running"}
+
+@app.get("/routes")
+async def get_all_routes():
+    routes = []
+    for route in app.routes:
+        methods = list(route.methods) if hasattr(route, 'methods') else []
+        routes.append({"path": route.path, "name": getattr(route, 'name', 'N/A'), "methods": methods})
+    return JSONResponse(routes)
 
 # --- Entrypoint ---
 if __name__ == "__main__":
