@@ -1675,28 +1675,44 @@ class OptimizedVectorSystem:
     """🚀 完整優化版向量系統"""
     
     def __init__(self, data_dir: str = None, model_type: str = None):
+        """✅ 修正版初始化方法 - 正確的執行順序"""
+        
+        # 🔧 1. 基本變數設置
         self.data_dir = Path(data_dir or SYSTEM_CONFIG["data_dir"])
         self.model_type = model_type or "openai"
-
         self.persist_dir = Path(SYSTEM_CONFIG["persist_dir"])  # Chroma備用
 
         # 建立目錄
         self.data_dir.mkdir(exist_ok=True)
         
-        # --- REFACTORED DATABASE CONNECTION ---
+        # 🔧 2. 資料庫連接設置（但不測試）
         self.db_adapter = None
         self.connection_string = None
         self.use_postgres = False
 
-        # --- NEW: Simplified and Forced PostgreSQL Connection Logic ---
         database_url = os.getenv("DATABASE_URL")
         if PGVECTOR_AVAILABLE and database_url:
+            self.connection_string = database_url
+            print("🔍 發現 DATABASE_URL，準備測試 PostgreSQL 連接...")
+        else:
+            print("⚠️ DATABASE_URL 未設置或 PGVector 不可用，將使用 Chroma")
+
+        if not PGVECTOR_AVAILABLE:
+            print("⚠️ PGVector 依賴未安裝，使用 Chroma 作為備用")
+            self.persist_dir.mkdir(exist_ok=True)
+
+        # ✅ 3. 先初始化 Embedding 模型（關鍵！）
+        self._setup_embedding_model()
+        print("✅ Embedding 模型初始化完成")
+
+        # ✅ 4. 現在可以測試 PostgreSQL 連接了（embeddings 已存在）
+        if PGVECTOR_AVAILABLE and database_url and hasattr(self, 'embeddings'):
             try:
-                self.connection_string = database_url
-                # Test connection by trying to get a client
+                print("🔍 測試 PostgreSQL + PGVector 連接...")
+                # 測試連接
                 PGVector.from_existing_index(
                     collection_name="_test_connection",
-                    embedding=self.embeddings,
+                    embedding=self.embeddings,  # ✅ 現在安全了
                     connection_string=self.connection_string
                 )
                 self.use_postgres = True
@@ -1704,20 +1720,21 @@ class OptimizedVectorSystem:
             except Exception as e:
                 print(f"⚠️ PostgreSQL (pgvector) 連接測試失敗: {e}")
                 self.use_postgres = False
+                print("🔄 回退到 Chroma 本地存儲")
+                self.persist_dir.mkdir(exist_ok=True)
         
         if not self.use_postgres:
-            print("⚠️ PostgreSQL 不可用，將使用 Chroma 作為備用")
+            print("📁 使用 Chroma 作為向量存儲")
             self.persist_dir.mkdir(exist_ok=True)
         
-        # 初始化組件
-        self._setup_embedding_model()
+        # 🔧 5. 初始化文本處理組件
         self._setup_text_processing()
         
-        # 初始化處理器
+        # 🔧 6. 初始化處理器
         self.batch_processor = AdaptiveBatchProcessor()
         self.text_splitter = OptimizedTextSplitter()
         
-        # 向量存儲和記錄
+        # 🔧 7. 初始化存儲和記錄
         self._vector_stores = {}
         self.file_records = self._load_file_records()
         self.processing_lock = threading.Lock()
@@ -1725,7 +1742,7 @@ class OptimizedVectorSystem:
         print(f"🚀 完整優化版向量系統初始化完成")
         print(f"   🤖 嵌入模型: {self.model_type}")
         print(f"   📁 數據目錄: {self.data_dir}")
-        print(f"   🗄️ 向量庫: {self.persist_dir}")
+        print(f"   🗄️ 向量庫: {'PostgreSQL + PGVector' if self.use_postgres else 'Chroma (本地)'}")
         print(f"   🧠 智能文本處理: ✅")
         print(f"   🔧 自適應批次: ✅")
 
