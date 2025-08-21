@@ -3082,122 +3082,42 @@ class OptimizedVectorSystem:
                 print(f"   • {rec}")
         
         return diagnosis
+    
     def upload_single_file(self, file_content: bytes, filename: str, collection_name: str) -> Dict:
-        """
-        上傳單個文件到指定集合並建立向量 - 修正版：保存檔案到 data/ 目錄
-        
-        Args:
-            file_content: 文件二進制內容
-            filename: 文件名稱
-            collection_name: 目標集合名稱
-            
-        Returns:
-            Dict: 上傳結果，包含文檔分塊信息
-        """
+        """純 PostgreSQL 方案：直接處理文件內容，不保存到本地"""
         try:
-            # 🔧 基本驗證
+            # 基本驗證
             if not file_content:
-                return {
-                    "success": False,
-                    "message": "文件內容為空",
-                    "chunks": []
-                }
+                return {"success": False, "message": "文件內容為空", "chunks": []}
             
             if not filename or not filename.strip():
-                return {
-                    "success": False,
-                    "message": "文件名不能為空",
-                    "chunks": []
-                }
+                return {"success": False, "message": "文件名不能為空", "chunks": []}
             
-            # 🔧 檢查文件擴展名
+            # 檢查文件擴展名
             file_extension = Path(filename).suffix.lower()
             if file_extension not in SUPPORTED_EXTENSIONS:
                 return {
                     "success": False,
-                    "message": f"不支援的文件格式: {file_extension}。支援格式: {', '.join(SUPPORTED_EXTENSIONS)}",
+                    "message": f"不支援的文件格式: {file_extension}",
                     "chunks": []
                 }
             
-            # 🆕 修正：確定目標目錄和檔案路徑
-            bot_name = collection_name.replace('collection_', '')
-            target_dir = self.data_dir / bot_name  # data/bot_name/
+            print(f"📄 直接處理文件內容: {filename}")
             
-            # 🔧 修正：確保目錄存在，使用 parents=True 處理深層目錄
-            try:
-                target_dir.mkdir(parents=True, exist_ok=True)
-            except Exception as e:
-                return {
-                    "success": False,
-                    "message": f"無法創建目標目錄 {target_dir}: {str(e)}",
-                    "chunks": []
-                }
-            
-            target_file_path = target_dir / filename
-            
-            # 🆕 修正：處理檔案衝突 - 更安全的檢查
-            if target_file_path.exists():
-                try:
-                    # 檢查是否可以寫入
-                    if not os.access(target_file_path, os.W_OK):
-                        return {
-                            "success": False,
-                            "message": f"檔案 {filename} 存在但無寫入權限",
-                            "chunks": []
-                        }
-                    print(f"⚠️ 檔案 {filename} 已存在，將會覆蓋")
-                except Exception as e:
-                    return {
-                        "success": False,
-                        "message": f"檢查檔案權限失敗: {str(e)}",
-                        "chunks": []
-                    }
-            
-            # 🆕 修正：保存檔案到正確位置 - 加強錯誤處理
-            print(f"💾 保存檔案到: {target_file_path}")
-            try:
-                with open(target_file_path, 'wb') as f:
-                    f.write(file_content)
-                
-                # 🔧 驗證檔案是否正確寫入
-                if not target_file_path.exists() or target_file_path.stat().st_size != len(file_content):
-                    raise IOError("檔案寫入驗證失敗")
-                    
-                print(f"✅ 檔案保存成功: {target_file_path} ({len(file_content)} bytes)")
-                
-            except Exception as e:
-                # 清理可能的不完整檔案
-                try:
-                    if target_file_path.exists():
-                        target_file_path.unlink()
-                except:
-                    pass
-                return {
-                    "success": False,
-                    "message": f"檔案保存失敗: {str(e)}",
-                    "chunks": []
-                }
+            # ✅ 使用臨時文件處理
+            import tempfile
+            with tempfile.NamedTemporaryFile(suffix=Path(filename).suffix, delete=False) as temp_file:
+                temp_file.write(file_content)
+                temp_file_path = Path(temp_file.name)
             
             try:
-                # 🆕 修正：使用實際檔案路徑進行處理
-                print(f"📄 開始處理檔案: {filename}")
-                documents = self.load_document(target_file_path)
+                # 載入文檔
+                documents = self.load_document(temp_file_path)
                 
                 if not documents:
-                    # 🔧 如果處理失敗，清理已保存的檔案
-                    try:
-                        target_file_path.unlink()
-                        print(f"🧹 處理失敗，已清理檔案: {target_file_path}")
-                    except Exception as cleanup_error:
-                        logger.warning(f"清理檔案失敗: {cleanup_error}")
-                        
-                    return {
-                        "success": False,
-                        "message": "文件內容為空或格式不支援",
-                        "chunks": []
-                    }
+                    return {"success": False, "message": "文件內容為空或格式不支援", "chunks": []}
                 
-                # 🔧 修正：設置集合信息和元數據 - 使用正確的時間戳
+                # 設置元數據
                 current_timestamp = time.time()
                 for doc in documents:
                     doc.metadata.update({
@@ -3205,124 +3125,56 @@ class OptimizedVectorSystem:
                         'original_filename': filename,
                         'upload_timestamp': current_timestamp,
                         'file_source': 'upload',
-                        'source': str(target_file_path),  # 🆕 使用實際檔案路徑
-                        'saved_to_data_dir': True,  # 🆕 標記檔案已保存
-                        'file_extension': file_extension
+                        'source': f"upload://{filename}",  # ✅ 虛擬路徑
+                        'file_extension': file_extension,
+                        'uploaded_by': 'upload_interface',
+                        'saved_to_postgresql': True  # ✅ 標記僅存於PostgreSQL
                     })
                 
-                # 獲取向量存儲
+                # 向量化處理
                 vectorstore = self.get_or_create_vectorstore(collection_name)
                 
-                # 🔧 修正：刪除已存在的同名文件 - 使用更準確的條件
+                # 刪除已存在的同名文件
                 try:
-                    # 🔧 使用標準化路徑進行查詢
                     delete_conditions = [
-                        {"source": str(target_file_path)},
                         {"original_filename": filename},
                         {"filename": filename}
                     ]
                     
-                    total_deleted = 0
                     for condition in delete_conditions:
                         try:
-                            existing_docs = vectorstore.get(where=condition)  # get仍可用where
-                            if existing_docs and existing_docs.get('documents'):
-                                vectorstore.delete(filter=condition)  # ✅ 正確：改為filter
-                                deleted_count = len(existing_docs['documents'])
-                                total_deleted += deleted_count
-                                print(f"🗑️ 使用條件 {condition} 刪除了 {deleted_count} 個現有分塊")
-                        except Exception as e:
-                            print(f"⚠️ 刪除條件 {condition} 時出現警告: {e}")
-                    
-                    if total_deleted > 0:
-                        print(f"🗑️ 總共刪除了 {total_deleted} 個現有分塊")
-                        
+                            vectorstore.delete(filter=condition)
+                            print(f"🗑️ 刪除現有文件: {condition}")
+                        except Exception:
+                            pass
                 except Exception as e:
-                    print(f"⚠️ 刪除現有分塊時出現警告: {e}")
+                    print(f"⚠️ 清理現有文件時出現警告: {e}")
                 
-                # 使用批次處理器向量化
-                print(f"🔄 開始向量化處理...")
+                # 批次處理
                 batches = self.batch_processor.create_smart_batches(documents)
                 success_count = self._process_batches(vectorstore, batches)
                 
-                # 準備回傳信息
-                chunks_info = []
-                for i, doc in enumerate(documents):
-                    chunks_info.append({
-                        'chunk_id': doc.metadata.get('chunk_id', f'chunk_{i+1}'),
-                        'chunk_index': doc.metadata.get('chunk_index', i),
-                        'content_preview': doc.page_content[:200] + "..." if len(doc.page_content) > 200 else doc.page_content,
-                        'token_count': doc.metadata.get('token_count', 0),
-                        'text_type': doc.metadata.get('text_type', 'unknown')
-                    })
-                
-                # 🆕 修正：更新文件記錄（使用實際檔案信息）
-                if collection_name not in self.file_records:
-                    self.file_records[collection_name] = {}
-                
-                # 🆕 使用實際檔案的統計信息
-                try:
-                    file_stat = target_file_path.stat()
-                    file_hash = hashlib.md5(file_content).hexdigest()
-                    
-                    file_info = FileInfo(
-                        path=str(target_file_path),  # 🆕 使用實際路徑
-                        size=file_stat.st_size,
-                        mtime=file_stat.st_mtime,
-                        hash=file_hash,
-                        encoding="utf-8",
-                        file_type=file_extension
-                    )
-                    
-                    # 🆕 添加上傳者信息（作為屬性）
-                    file_info.uploaded_by = "upload_interface"  # 稍後會在 manager 中更新
-                    file_info.uploaded_at = current_timestamp
-                    file_info.file_source = "upload"
-                    
-                    # 🔧 修正：使用標準化路徑作為鍵值
-                    record_key = str(target_file_path)
-                    self.file_records[collection_name][record_key] = file_info
-                    self._save_file_records()
-                    
-                except Exception as e:
-                    logger.warning(f"更新檔案記錄失敗: {e}")
-                
-                print(f"✅ 文件上傳完成: {filename}")
-                print(f"   📁 保存位置: {target_file_path}")
-                print(f"   📄 分塊數量: {len(documents)}")
-                print(f"   ✅ 成功向量化: {success_count}")
+                # ❌ 移除本地文件記錄更新
+                # self.file_records[collection_name] = ...
+                # self._save_file_records()
                 
                 return {
                     "success": True,
-                    "message": f"文件上傳成功，已保存到 data/{bot_name}/{filename}，共生成 {len(documents)} 個分塊",
+                    "message": f"文件上傳成功，共生成 {len(documents)} 個分塊",
                     "filename": filename,
-                    "collection": collection_name,
                     "total_chunks": len(documents),
-                    "success_chunks": success_count,
-                    "chunks": chunks_info,
-                    "upload_time": current_timestamp,
-                    "saved_path": str(target_file_path),  # 🆕 回傳保存路徑
-                    "file_source": "upload"
+                    "success_chunks": success_count
                 }
                 
-            except Exception as processing_error:
-                # 🔧 處理失敗時清理檔案
-                try:
-                    if target_file_path.exists():
-                        target_file_path.unlink()
-                        print(f"🧹 處理失敗，已清理檔案: {target_file_path}")
-                except Exception as cleanup_error:
-                    logger.warning(f"清理檔案失敗: {cleanup_error}")
-                
-                raise processing_error
-                        
+            finally:
+                # 清理臨時文件
+                if temp_file_path.exists():
+                    temp_file_path.unlink()
+                    
         except Exception as e:
             logger.error(f"文件上傳失敗 {filename}: {e}")
-            return {
-                "success": False,
-                "message": f"文件上傳失敗: {str(e)}",
-                "chunks": []
-            }
+            return {"success": False, "message": f"文件上傳失敗: {str(e)}", "chunks": []}
+        
 
     def get_collection_documents(self, collection_name: str, page: int = 1, limit: int = 20, search: str = "") -> Dict:
         """獲取集合中的檔案資訊 - 兼容 Chroma 和 PGVector"""
@@ -3387,12 +3239,12 @@ class OptimizedVectorSystem:
         return {"success": True, "documents": page_documents, "total": total, "page": page, "limit": limit, "total_pages": total_pages}
 
     def _get_documents_from_pgvector(self, vectorstore, collection_name: str, page: int, limit: int, search: str) -> Dict:
-        """直接從 PostgreSQL 獲取檔案列表 - 不依賴本地記錄"""
+        """純 PostgreSQL 方案：完全不依賴本地記錄"""
         try:
-            print(f"🔍 直接從 PostgreSQL 獲取 {collection_name} 的檔案列表")
+            print(f"🔍 純 PostgreSQL 獲取 {collection_name} 的檔案列表")
             
             # ✅ 直接查詢 PostgreSQL 中的所有文檔
-            docs = vectorstore.similarity_search("", k=1000)  # 獲取所有文檔
+            docs = vectorstore.similarity_search("", k=2000)  # 增加限制以處理更多文件
             
             if not docs:
                 return {"success": True, "documents": [], "total": 0, "page": page, "limit": limit, "total_pages": 0}
@@ -3410,19 +3262,21 @@ class OptimizedVectorSystem:
                 if filename not in file_stats:
                     file_stats[filename] = {
                         'filename': filename,
-                        'source': metadata.get('source', 'unknown'),
-                        'chunks': 0,  # ✅ 前端期望的欄位名
+                        'source': metadata.get('source', 'postgresql://virtual'),
+                        'chunks': 0,
                         'upload_time': metadata.get('upload_timestamp', 0),
-                        'uploader': metadata.get('file_source', '未知'),  # ✅ 前端期望的欄位名
-                        'upload_time_formatted': '未知'
+                        'uploader': metadata.get('uploaded_by', '未知'),
+                        'upload_time_formatted': '未知',
+                        'file_extension': metadata.get('file_extension', ''),
+                        'stored_in': 'postgresql'  # ✅ 標記存儲位置
                     }
                 
                 file_stats[filename]['chunks'] += 1
             
-            # ✅ 格式化上傳者和時間
+            # ✅ 格式化數據
             for filename, stats in file_stats.items():
                 # 格式化上傳者
-                if stats['uploader'] == 'upload':
+                if stats['uploader'] == 'upload_interface':
                     stats['uploader'] = '管理介面'
                 elif stats['uploader'] == 'sync':
                     stats['uploader'] = '同步'
@@ -3453,7 +3307,7 @@ class OptimizedVectorSystem:
             end = start + limit
             page_documents = safe_documents[start:end]
             
-            print(f"✅ 直接從 PostgreSQL 獲取成功: {total} 個檔案")
+            print(f"✅ 純 PostgreSQL 獲取成功: {total} 個檔案")
             
             return {
                 "success": True,
@@ -3465,7 +3319,7 @@ class OptimizedVectorSystem:
             }
             
         except Exception as e:
-            logger.error(f"PostgreSQL 直接查詢失敗: {e}")
+            logger.error(f"PostgreSQL 查詢失敗: {e}")
             return {"success": False, "error": str(e), "documents": [], "total": 0, "page": page, "limit": limit, "total_pages": 0}
         
     def get_document_chunks(self, collection_name: str, source_file: str) -> List[Dict]:
@@ -3606,51 +3460,34 @@ class OptimizedVectorSystem:
         return {"success": True, "message": f"檔案 {source_file} 及其 {chunk_count} 個分塊已刪除", "deleted_chunks": chunk_count, "filename": source_file}
 
     def _delete_from_pgvector(self, vectorstore, collection_name: str, source_file: str, chunk_count: int) -> Dict:
-        """從 PGVector 刪除檔案"""
+        """純 PostgreSQL 刪除 - 不涉及本地記錄"""
         try:
             deleted_count = 0
             
-            # 策略1: 嘗試使用 filter 刪除
-            try:
-                if hasattr(vectorstore, 'delete'):
-                    vectorstore.delete(filter={"filename": source_file})
-                    deleted_count = chunk_count
-                    print(f"✅ PGVector filter 刪除成功")
-                else:
-                    raise AttributeError("No delete method")
-            except Exception as e1:
-                print(f"⚠️ PGVector filter 刪除失敗: {e1}")
-                
-                # 策略2: 嘗試獲取文檔並逐一刪除
-                try:
-                    chunks = self.get_document_chunks(collection_name, source_file)
-                    for chunk in chunks:
-                        # 這裡需要實際的刪除邏輯
-                        # 目前先標記為已嘗試刪除
-                        pass
-                    deleted_count = len(chunks)
-                    print(f"✅ PGVector 逐一刪除完成: {deleted_count} 個分塊")
-                except Exception as e2:
-                    print(f"❌ PGVector 逐一刪除失敗: {e2}")
-                    deleted_count = 0
+            # 嘗試多種刪除條件
+            delete_conditions = [
+                {"filename": source_file},
+                {"original_filename": source_file}
+            ]
             
-            # 從檔案記錄中移除
-            if deleted_count > 0 and collection_name in self.file_records:
-                for file_path in list(self.file_records[collection_name].keys()):
-                    if Path(file_path).name == source_file:
-                        del self.file_records[collection_name][file_path]
-                        self._save_file_records()
-                        break
+            for condition in delete_conditions:
+                try:
+                    vectorstore.delete(filter=condition)
+                    print(f"✅ 使用條件 {condition} 刪除成功")
+                    deleted_count = chunk_count
+                    break
+                except Exception as e:
+                    print(f"⚠️ 條件 {condition} 刪除失敗: {e}")
             
             return {
                 "success": deleted_count > 0,
-                "message": f"檔案 {source_file} 及其 {deleted_count} 個分塊已刪除" if deleted_count > 0 else "刪除失敗",
+                "message": f"檔案 {source_file} 及其 {deleted_count} 個分塊已從 PostgreSQL 刪除" if deleted_count > 0 else "刪除失敗",
                 "deleted_chunks": deleted_count,
                 "filename": source_file
             }
             
         except Exception as e:
-            logger.error(f"PGVector 刪除失敗: {e}")
+            logger.error(f"PostgreSQL 刪除失敗: {e}")
             return {"success": False, "message": f"刪除失敗: {str(e)}", "deleted_chunks": 0}
         
     def get_chunk_content(self, collection_name: str, chunk_id: str) -> Optional[Dict]:
