@@ -825,6 +825,7 @@
                 const techNameInfo = (bot.display_name && bot.display_name !== bot.name) ? 
                     `<div class="bot-tech-name">技術名稱: ${bot.name}</div>` : '';
                 
+                const publicUrl = `${window.location.origin}/${bot.name}`;
                 row.innerHTML = `
                     <td>
                         <div class="bot-name-display">
@@ -833,7 +834,7 @@
                         </div>
                     </td>
                     <td><span class="status-badge ${statusClass}">${statusText}</span></td>
-                    <td>${isRunning ? `<a href="http://localhost:8000/${bot.name}" target="_blank" style="color:#007bff;" title="通過 Gateway 訪問">${bot.port} 🔗</a>` : bot.port}</td>
+                    <td>${isRunning ? `<a href="${publicUrl}" target="_blank" style="color:#007bff;" title="在新分頁中打開聊天介面">${bot.port} 🔗</a>` : bot.port}</td>
                     <td style="max-width:200px; overflow:hidden; text-overflow:ellipsis;">${bot.system_role || '未設定'}</td>
                     <td>
                         <div class="btn-group">
