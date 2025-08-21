@@ -1987,6 +1987,7 @@ class OptimizedVectorSystem:
             logger.error(f"載入檔案記錄失敗: {e}")
             print(f"❌ 嚴重錯誤，載入檔案記錄失敗: {e}")
             return self._handle_corrupted_records(record_file, "")
+        
     def _handle_corrupted_records(self, record_file: Path, content: str) -> Dict:
         """處理損壞的檔案記錄"""
         try:
@@ -2302,6 +2303,43 @@ class OptimizedVectorSystem:
             cleanup_result['errors'].append(f"整體清理失敗: {str(e)}")
         
         return cleanup_result
+
+    def debug_collection_content(self, collection_name: str, filename: str = None):
+        """調試集合內容"""
+        try:
+            vectorstore = self.get_or_create_vectorstore(collection_name)
+            docs = vectorstore.similarity_search("", k=100)
+            
+            print(f"\n🔍 調試集合 {collection_name}:")
+            print(f"   總文檔數: {len(docs)}")
+            
+            if filename:
+                matching = [doc for doc in docs 
+                        if (doc.metadata.get('original_filename') == filename or 
+                            doc.metadata.get('filename') == filename)]
+                print(f"   匹配 '{filename}' 的文檔: {len(matching)}")
+                
+                for i, doc in enumerate(matching[:3]):
+                    print(f"   文檔 {i+1}:")
+                    print(f"     chunk_id: {doc.metadata.get('chunk_id')}")
+                    print(f"     filename: {doc.metadata.get('filename')}")
+                    print(f"     original_filename: {doc.metadata.get('original_filename')}")
+                    print(f"     source: {doc.metadata.get('source')}")
+            
+            else:
+                # 顯示所有文件
+                files = {}
+                for doc in docs:
+                    fname = (doc.metadata.get('original_filename') or 
+                            doc.metadata.get('filename', 'unknown'))
+                    files[fname] = files.get(fname, 0) + 1
+                
+                print(f"   文件分布:")
+                for fname, count in files.items():
+                    print(f"     {fname}: {count} 個分塊")
+            
+        except Exception as e:
+            print(f"❌ 調試失敗: {e}")
 
 
     
@@ -3442,77 +3480,94 @@ class OptimizedVectorSystem:
         return {"success": True, "message": f"檔案 {source_file} 及其 {chunk_count} 個分塊已刪除", "deleted_chunks": chunk_count, "filename": source_file}
 
     def _postgresql_delete_file_completely(self, vectorstore, filename: str) -> int:
-        """完全修復版本的文件刪除函數"""
+        """修復版：使用多種方法確保文件完全刪除"""
         print(f"🗑️ 開始徹底刪除: {filename}")
         
         try:
-            # 1. 獲取所有文檔
+            # 1. 獲取所有文檔並找到匹配的
             all_docs = vectorstore.similarity_search("", k=5000)
             matching_docs = []
             
             for doc in all_docs:
                 metadata = doc.metadata
-                if (metadata.get('original_filename') == filename or 
-                    metadata.get('filename') == filename or
+                doc_filename = (metadata.get('original_filename') or 
+                            metadata.get('filename', ''))
+                
+                if (doc_filename == filename or 
                     filename in str(metadata.get('source', ''))):
                     matching_docs.append(doc)
             
             if not matching_docs:
+                print(f"   ⚠️ 沒有找到匹配的文檔")
                 return 0
             
-            print(f"   找到 {len(matching_docs)} 個匹配文檔")
+            print(f"   🎯 找到 {len(matching_docs)} 個匹配文檔")
             
-            # 2. 收集所有標識符
-            chunk_ids = [doc.metadata.get('chunk_id') for doc in matching_docs if doc.metadata.get('chunk_id')]
+            deleted_count = 0
             
-            # 3. 批量刪除
-            if chunk_ids:
-                # 分批刪除
-                batch_size = 20
-                for i in range(0, len(chunk_ids), batch_size):
-                    batch = chunk_ids[i:i+batch_size]
-                    try:
-                        vectorstore.delete(ids=batch)
-                        print(f"   批次 {i//batch_size + 1}: 刪除 {len(batch)} 個")
-                    except Exception as e:
-                        print(f"   批次失敗，逐個刪除: {e}")
-                        for chunk_id in batch:
-                            try:
-                                vectorstore.delete(ids=[chunk_id])
-                            except:
-                                pass
-            
-            # 4. 使用過濾器刪除
+            # 方法 1: 嘗試使用原生 PGVector 刪除
             try:
-                vectorstore.delete(filter={"original_filename": filename})
-                vectorstore.delete(filter={"filename": filename})
+                print(f"   🔄 方法 1: PGVector 原生刪除...")
+                
+                # 收集所有 chunk_id
+                chunk_ids = []
+                for doc in matching_docs:
+                    chunk_id = doc.metadata.get('chunk_id')
+                    if chunk_id:
+                        chunk_ids.append(str(chunk_id))
+                
+                if chunk_ids:
+                    # 分批刪除，每批 10 個
+                    batch_size = 10
+                    for i in range(0, len(chunk_ids), batch_size):
+                        batch = chunk_ids[i:i+batch_size]
+                        try:
+                            # 嘗試直接 ID 刪除
+                            vectorstore.delete(ids=batch)
+                            print(f"      ✅ 批次 {i//batch_size + 1}: 刪除 {len(batch)} 個")
+                        except Exception as e:
+                            print(f"      ❌ 批次 {i//batch_size + 1} 失敗: {e}")
+                            
+                            # 逐個嘗試
+                            for chunk_id in batch:
+                                try:
+                                    vectorstore.delete(ids=[chunk_id])
+                                except:
+                                    pass
+                    
+                    # 驗證第一種方法的效果
+                    time.sleep(2)
+                    verification_docs = vectorstore.similarity_search("", k=5000)
+                    remaining = sum(1 for doc in verification_docs 
+                                if (doc.metadata.get('original_filename') == filename or 
+                                    doc.metadata.get('filename') == filename))
+                    
+                    deleted_count = len(matching_docs) - remaining
+                    print(f"   📊 方法 1 結果: 刪除 {deleted_count}/{len(matching_docs)}")
+            
             except Exception as e:
-                print(f"   過濾器刪除失敗: {e}")
+                print(f"   ❌ 方法 1 失敗: {e}")
             
-            # 5. 等待生效
-            import time
-            time.sleep(5)
+            # 方法 2: 如果還有剩餘，使用 SQL 直接刪除
+            if deleted_count < len(matching_docs):
+                print(f"   🔄 方法 2: SQL 直接刪除...")
+                sql_deleted = self._direct_sql_delete_enhanced(filename)
+                deleted_count += sql_deleted
             
-            # 6. 驗證結果
-            verification_docs = vectorstore.similarity_search("", k=5000)
-            remaining = sum(1 for doc in verification_docs 
-                        if (doc.metadata.get('original_filename') == filename or 
-                            doc.metadata.get('filename') == filename or
-                            filename in str(doc.metadata.get('source', ''))))
+            # 最終驗證
+            time.sleep(3)
+            final_docs = vectorstore.similarity_search("", k=5000)
+            final_remaining = sum(1 for doc in final_docs 
+                                if (doc.metadata.get('original_filename') == filename or 
+                                    doc.metadata.get('filename') == filename))
             
-            deleted = len(matching_docs) - remaining
-            print(f"   刪除結果: {deleted}/{len(matching_docs)} (剩餘: {remaining})")
+            final_deleted = len(matching_docs) - final_remaining
+            print(f"   📊 最終結果: {final_deleted}/{len(matching_docs)} (剩餘: {final_remaining})")
             
-            # 7. 如果還有剩餘，使用 SQL 直接刪除
-            if remaining > 0:
-                sql_deleted = self._emergency_sql_cleanup(filename)
-                if sql_deleted > 0:
-                    print(f"   SQL 清理: {sql_deleted} 條記錄")
-            
-            return deleted
+            return final_deleted
             
         except Exception as e:
-            print(f"   刪除失敗: {e}")
+            print(f"   ❌ 刪除失敗: {e}")
             return 0
 
     def _emergency_sql_cleanup(self, filename: str) -> int:
@@ -3555,7 +3610,70 @@ class OptimizedVectorSystem:
         except Exception as e:
             print(f"   SQL 清理失敗: {e}")
             return 0
-
+    def _direct_sql_delete_enhanced(self, filename: str) -> int:
+        """增強版 SQL 直接刪除"""
+        try:
+            import psycopg2
+            conn = psycopg2.connect(self.connection_string)
+            cursor = conn.cursor()
+            
+            print(f"      🗂️ 開始增強版 SQL 刪除...")
+            
+            # 查找所有 langchain 相關表
+            cursor.execute("""
+                SELECT table_name FROM information_schema.tables 
+                WHERE table_schema = 'public' 
+                AND table_name LIKE '%langchain%';
+            """)
+            
+            tables = [row[0] for row in cursor.fetchall()]
+            total_deleted = 0
+            
+            for table_name in tables:
+                try:
+                    # 檢查表是否有 cmetadata 列
+                    cursor.execute(f"""
+                        SELECT column_name FROM information_schema.columns 
+                        WHERE table_name = '{table_name}' 
+                        AND column_name = 'cmetadata';
+                    """)
+                    
+                    if not cursor.fetchone():
+                        continue
+                    
+                    # 使用多種模式匹配
+                    patterns = [
+                        f'%"filename": "{filename}"%',
+                        f'%"original_filename": "{filename}"%',
+                        f'%{filename}%'
+                    ]
+                    
+                    for pattern in patterns:
+                        cursor.execute(f"""
+                            DELETE FROM {table_name} 
+                            WHERE cmetadata::text LIKE %s;
+                        """, (pattern,))
+                        
+                        deleted = cursor.rowcount
+                        if deleted > 0:
+                            total_deleted += deleted
+                            print(f"         ✅ 表 {table_name}: 刪除 {deleted} 條")
+                            break
+                    
+                except Exception as table_error:
+                    print(f"         ⚠️ 表 {table_name} 處理失敗: {table_error}")
+                    continue
+            
+            conn.commit()
+            cursor.close()
+            conn.close()
+            
+            print(f"      📊 SQL 總計刪除: {total_deleted} 條記錄")
+            return total_deleted
+            
+        except Exception as e:
+            print(f"      ❌ SQL 刪除失敗: {e}")
+            return 0
 
 
     def _direct_sql_delete(self, filename: str) -> int:
@@ -3606,19 +3724,20 @@ class OptimizedVectorSystem:
 
 
     def _delete_from_pgvector(self, vectorstore, collection_name: str, source_file: str, chunk_count: int) -> Dict:
-        """純 PostgreSQL 刪除 - 確保徹底刪除"""
+        """修復版本的 PGVector 刪除方法"""
         try:
             print(f"🗑️ 開始從 PostgreSQL 刪除文件: {source_file}")
             
-            # ✅ 使用加強版刪除方法
+            # 使用修復版本的刪除方法
             deleted_count = self._postgresql_delete_file_completely(vectorstore, source_file)
             
-            # ✅ 驗證刪除結果
+            # 驗證刪除結果
             remaining_docs = vectorstore.similarity_search("", k=1000)
             remaining_count = 0
             
             for doc in remaining_docs:
-                doc_filename = doc.metadata.get('original_filename') or doc.metadata.get('filename', '')
+                doc_filename = (doc.metadata.get('original_filename') or 
+                            doc.metadata.get('filename', ''))
                 if doc_filename == source_file:
                     remaining_count += 1
             
@@ -3628,11 +3747,12 @@ class OptimizedVectorSystem:
             if success:
                 print(f"✅ 文件完全刪除成功: {source_file}")
             else:
-                print(f"⚠️ 部分刪除，還剩 {remaining_count} 個分塊")
+                print(f"⚠️ 部分刪除失敗，還剩 {remaining_count} 個分塊")
             
             return {
                 "success": success,
-                "message": f"檔案 {source_file} 刪除完成，移除了 {actual_deleted} 個分塊" if success else f"部分刪除失敗，還剩 {remaining_count} 個分塊",
+                "message": f"文件 {source_file} 刪除完成，移除了 {actual_deleted} 個分塊" if success 
+                        else f"部分刪除失敗，還剩 {remaining_count} 個分塊",
                 "deleted_chunks": actual_deleted,
                 "remaining_chunks": remaining_count,
                 "filename": source_file
@@ -3640,7 +3760,13 @@ class OptimizedVectorSystem:
             
         except Exception as e:
             logger.error(f"PostgreSQL 刪除失敗: {e}")
-            return {"success": False, "message": f"刪除失敗: {str(e)}", "deleted_chunks": 0}
+            return {
+                "success": False, 
+                "message": f"刪除失敗: {str(e)}", 
+                "deleted_chunks": 0
+            }
+
+
     def get_chunk_content(self, collection_name: str, chunk_id: str) -> Optional[Dict]:
         """
         獲取指定分塊的詳細內容
