@@ -1886,15 +1886,44 @@ class OptimizedVectorSystem:
         print("✅ 文本處理組件初始化完成")
     
     def _load_file_records(self) -> Dict[str, Dict[str, FileInfo]]:
-        """載入文件記錄 - 修正：使用data_dir而不是persist_dir"""
-        record_file = self.data_dir / "file_records.json"  # 🔧 修正：改為data_dir
+        """載入檔案記錄 - 加強錯誤處理和恢復機制"""
+        record_file = self.data_dir / "file_records.json"
+        
+        # 🔧 檢查檔案是否存在
         if not record_file.exists():
+            print("📁 檔案記錄不存在，將建立新的記錄")
             return {}
         
         try:
+            # 🔧 讀取並檢查檔案內容
             with open(record_file, 'r', encoding='utf-8') as f:
-                data = json.load(f)
+                content = f.read().strip()
             
+            # 🔧 檢查檔案是否為空
+            if not content:
+                print("⚠️ 檔案記錄為空，將建立新的記錄")
+                return {}
+            
+            # 🔧 檢查是否以 { 開頭（基本 JSON 格式檢查）
+            if not content.startswith('{'):
+                print(f"⚠️ 檔案記錄格式錯誤，內容開頭: {repr(content[:50])}")
+                return self._handle_corrupted_records(record_file, content)
+            
+            # 🔧 嘗試解析 JSON
+            try:
+                data = json.loads(content)
+            except json.JSONDecodeError as json_error:
+                print(f"❌ JSON 解析失敗: {json_error}")
+                print(f"   錯誤位置: line {json_error.lineno}, column {json_error.colno}")
+                print(f"   檔案前 100 字符: {repr(content[:100])}")
+                return self._handle_corrupted_records(record_file, content)
+            
+            # 🔧 驗證資料格式
+            if not isinstance(data, dict):
+                print(f"⚠️ 檔案記錄格式錯誤，應為字典但得到: {type(data)}")
+                return {}
+            
+            # 🔧 轉換為 FileInfo 物件
             records = {}
             for collection, files in data.items():
                 records[collection] = {}
@@ -1912,17 +1941,21 @@ class OptimizedVectorSystem:
                             
                             file_info_obj = FileInfo(**fileinfo_fields)
                             
+                            # 🔧 恢復額外屬性
                             if 'uploaded_by' in info:
                                 file_info_obj.uploaded_by = info['uploaded_by']
                             if 'uploaded_at' in info:
                                 file_info_obj.uploaded_at = info['uploaded_at']
+                            if 'file_source' in info:
+                                file_info_obj.file_source = info['file_source']
                             
                             records[collection][file_path] = file_info_obj
                         else:
                             records[collection][file_path] = info
                             
                     except Exception as e:
-                        logger.warning(f"載入文件記錄失敗 {file_path}: {e}")
+                        logger.warning(f"載入檔案記錄失敗 {file_path}: {e}")
+                        # 🔧 建立預設記錄
                         try:
                             default_info = FileInfo(
                                 path=file_path,
@@ -1934,14 +1967,82 @@ class OptimizedVectorSystem:
                             )
                             records[collection][file_path] = default_info
                         except Exception:
-                            logger.error(f"無法創建默認 FileInfo for {file_path}")
+                            logger.error(f"無法建立預設 FileInfo for {file_path}")
                             continue
             
+            print(f"✅ 檔案記錄載入成功: {len(records)} 個集合")
             return records
             
         except Exception as e:
-            logger.error(f"載入文件記錄失敗: {e}")
+            logger.error(f"載入檔案記錄失敗: {e}")
+            print(f"❌ 嚴重錯誤，載入檔案記錄失敗: {e}")
+            return self._handle_corrupted_records(record_file, "")
+    def _handle_corrupted_records(self, record_file: Path, content: str) -> Dict:
+        """處理損壞的檔案記錄"""
+        try:
+            # 🔧 建立備份
+            backup_file = record_file.with_suffix('.json.corrupted')
+            backup_counter = 1
+            while backup_file.exists():
+                backup_file = record_file.with_suffix(f'.json.corrupted.{backup_counter}')
+                backup_counter += 1
+            
+            if content:
+                with open(backup_file, 'w', encoding='utf-8') as f:
+                    f.write(content)
+                print(f"📁 損壞的檔案已備份至: {backup_file}")
+            
+            # 🔧 嘗試從實際檔案重建記錄
+            print("🔄 嘗試從實際檔案重建記錄...")
+            return self._rebuild_file_records()
+            
+        except Exception as e:
+            logger.error(f"處理損壞記錄失敗: {e}")
             return {}
+
+    def _rebuild_file_records(self) -> Dict:
+        """從實際檔案重建記錄"""
+        try:
+            rebuilt_records = {}
+            
+            # 🔧 掃描 data 目錄
+            for collection_dir in self.data_dir.iterdir():
+                if collection_dir.is_dir():
+                    collection_name = f"collection_{collection_dir.name}"
+                    rebuilt_records[collection_name] = {}
+                    
+                    print(f"🔍 重建集合: {collection_name}")
+                    
+                    # 掃描目錄中的檔案
+                    for file_path in collection_dir.rglob('*'):
+                        if (file_path.is_file() and 
+                            file_path.suffix.lower() in SUPPORTED_EXTENSIONS and
+                            not file_path.name.startswith('.')):
+                            
+                            try:
+                                file_info = self.get_file_info(file_path)
+                                if file_info:
+                                    # 設定為重建的檔案
+                                    file_info.file_source = "rebuilt"
+                                    file_info.uploaded_by = "系統重建"
+                                    rebuilt_records[collection_name][str(file_path)] = file_info
+                                    print(f"   📄 重建: {file_path.name}")
+                            except Exception as e:
+                                logger.warning(f"重建檔案記錄失敗 {file_path}: {e}")
+            
+            # 🔧 保存重建的記錄
+            if rebuilt_records:
+                print(f"💾 保存重建的記錄...")
+                self.file_records = rebuilt_records
+                self._save_file_records()
+                print(f"✅ 記錄重建完成: {len(rebuilt_records)} 個集合")
+            
+            return rebuilt_records
+            
+        except Exception as e:
+            logger.error(f"重建檔案記錄失敗: {e}")
+            return {}    
+
         
     def _save_file_records(self):
         """儲存文件記錄 - 修正：使用data_dir而不是persist_dir"""
