@@ -791,7 +791,12 @@
         // 獲取機器人列表
         async function fetchBots() {
             try {
-                const response = await fetch('/api/bots');
+                const response = await fetch(`${window.location.origin}/api/bots`, {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin'
+                });
+                
                 if (response.status === 401) {
                     window.location.href = '/login';
                     return;
@@ -799,6 +804,7 @@
                 const bots = await response.json();
                 renderBotTable(bots);
             } catch (error) {
+                console.error('獲取機器人列表失敗:', error);
                 showMessage('無法獲取機器人列表: ' + error.message, true);
             }
         }

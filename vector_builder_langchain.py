@@ -3442,131 +3442,121 @@ class OptimizedVectorSystem:
         return {"success": True, "message": f"檔案 {source_file} 及其 {chunk_count} 個分塊已刪除", "deleted_chunks": chunk_count, "filename": source_file}
 
     def _postgresql_delete_file_completely(self, vectorstore, filename: str) -> int:
-        """
-        🔧 修復版：確保真正刪除文件的所有分塊
-        """
-        print(f"🗑️ 強化刪除開始: {filename}")
+        """完全修復版本的文件刪除函數"""
+        print(f"🗑️ 開始徹底刪除: {filename}")
         
         try:
-            # 🔍 1. 精確查找所有匹配文檔
-            all_docs = vectorstore.similarity_search("", k=2000)
+            # 1. 獲取所有文檔
+            all_docs = vectorstore.similarity_search("", k=5000)
             matching_docs = []
-            chunk_ids = []
             
             for doc in all_docs:
                 metadata = doc.metadata
-                
-                # 多種匹配策略
-                filename_fields = [
-                    metadata.get('original_filename'),
-                    metadata.get('filename'),
-                    metadata.get('source', '').split('/')[-1] if metadata.get('source') else None
-                ]
-                
-                if filename in filename_fields or any(filename == field for field in filename_fields if field):
+                if (metadata.get('original_filename') == filename or 
+                    metadata.get('filename') == filename or
+                    filename in str(metadata.get('source', ''))):
                     matching_docs.append(doc)
-                    chunk_id = metadata.get('chunk_id')
-                    if chunk_id:
-                        chunk_ids.append(chunk_id)
             
             if not matching_docs:
-                print(f"   ❌ 未找到匹配文檔: {filename}")
                 return 0
             
-            print(f"   📊 找到 {len(matching_docs)} 個匹配文檔")
-            print(f"   🆔 收集到 {len(chunk_ids)} 個 chunk_id")
+            print(f"   找到 {len(matching_docs)} 個匹配文檔")
             
-            # 🗑️ 2. 多策略刪除
-            deleted_count = 0
+            # 2. 收集所有標識符
+            chunk_ids = [doc.metadata.get('chunk_id') for doc in matching_docs if doc.metadata.get('chunk_id')]
             
-            # 策略A: ID批次刪除 (新版本)
+            # 3. 批量刪除
             if chunk_ids:
-                try:
-                    print(f"   🔄 策略A: ID批次刪除")
-                    vectorstore.delete(ids=chunk_ids)
-                    print(f"   ✅ ID批次刪除執行完成")
-                    deleted_count += len(chunk_ids)
-                except Exception as e:
-                    print(f"   ⚠️ ID批次刪除失敗: {e}")
-                    
-                    # 策略A2: 逐個ID刪除
-                    print(f"   🔄 策略A2: 逐個ID刪除")
-                    individual_success = 0
-                    for chunk_id in chunk_ids:
-                        try:
-                            vectorstore.delete(ids=[chunk_id])
-                            individual_success += 1
-                        except:
-                            pass
-                    print(f"   ✅ 逐個刪除成功: {individual_success}/{len(chunk_ids)}")
-                    deleted_count += individual_success
+                # 分批刪除
+                batch_size = 20
+                for i in range(0, len(chunk_ids), batch_size):
+                    batch = chunk_ids[i:i+batch_size]
+                    try:
+                        vectorstore.delete(ids=batch)
+                        print(f"   批次 {i//batch_size + 1}: 刪除 {len(batch)} 個")
+                    except Exception as e:
+                        print(f"   批次失敗，逐個刪除: {e}")
+                        for chunk_id in batch:
+                            try:
+                                vectorstore.delete(ids=[chunk_id])
+                            except:
+                                pass
             
-            # 策略B: 過濾器刪除 (舊版本兼容)
-            filter_strategies = [
-                {"original_filename": filename},
-                {"filename": filename}
-            ]
+            # 4. 使用過濾器刪除
+            try:
+                vectorstore.delete(filter={"original_filename": filename})
+                vectorstore.delete(filter={"filename": filename})
+            except Exception as e:
+                print(f"   過濾器刪除失敗: {e}")
             
-            for i, filter_dict in enumerate(filter_strategies):
-                try:
-                    print(f"   🔄 策略B{i+1}: 過濾器刪除 {filter_dict}")
-                    vectorstore.delete(filter=filter_dict)
-                    print(f"   ✅ 過濾器B{i+1}執行完成")
-                except Exception as e:
-                    print(f"   ⚠️ 過濾器B{i+1}失敗: {e}")
-            
-            # 🕐 3. 等待生效
-            print(f"   ⏳ 等待刪除生效...")
+            # 5. 等待生效
             import time
-            time.sleep(3)
+            time.sleep(5)
             
-            # 🔍 4. 驗證結果
-            print(f"   🔍 驗證刪除結果...")
-            verification_docs = vectorstore.similarity_search("", k=2000)
-            remaining_docs = []
+            # 6. 驗證結果
+            verification_docs = vectorstore.similarity_search("", k=5000)
+            remaining = sum(1 for doc in verification_docs 
+                        if (doc.metadata.get('original_filename') == filename or 
+                            doc.metadata.get('filename') == filename or
+                            filename in str(doc.metadata.get('source', ''))))
             
-            for doc in verification_docs:
-                metadata = doc.metadata
-                filename_fields = [
-                    metadata.get('original_filename'),
-                    metadata.get('filename'),
-                    metadata.get('source', '').split('/')[-1] if metadata.get('source') else None
-                ]
-                
-                if filename in filename_fields or any(filename == field for field in filename_fields if field):
-                    remaining_docs.append(doc)
+            deleted = len(matching_docs) - remaining
+            print(f"   刪除結果: {deleted}/{len(matching_docs)} (剩餘: {remaining})")
             
-            remaining_count = len(remaining_docs)
-            actual_deleted = len(matching_docs) - remaining_count
+            # 7. 如果還有剩餘，使用 SQL 直接刪除
+            if remaining > 0:
+                sql_deleted = self._emergency_sql_cleanup(filename)
+                if sql_deleted > 0:
+                    print(f"   SQL 清理: {sql_deleted} 條記錄")
             
-            print(f"   📊 刪除結果: {actual_deleted}/{len(matching_docs)} (剩餘: {remaining_count})")
-            
-            # 🔧 5. 終極方案 (如果還有剩餘)
-            if remaining_count > 0 and remaining_count <= 10:
-                print(f"   🔧 執行終極刪除方案...")
-                try:
-                    # 使用直接SQL刪除 (如果可能)
-                    if hasattr(self, 'connection_string'):
-                        sql_deleted = self._direct_sql_delete(filename)
-                        if sql_deleted > 0:
-                            print(f"   ✅ SQL直接刪除: {sql_deleted} 條記錄")
-                            remaining_count = max(0, remaining_count - sql_deleted)
-                except Exception as e:
-                    print(f"   ⚠️ 終極方案失敗: {e}")
-            
-            final_remaining = remaining_count
-            final_deleted = len(matching_docs) - final_remaining
-            
-            if final_remaining == 0:
-                print(f"   🎉 完全刪除成功! 移除 {final_deleted} 個分塊")
-            else:
-                print(f"   ⚠️ 部分刪除，還剩 {final_remaining} 個分塊")
-            
-            return final_deleted
+            return deleted
             
         except Exception as e:
-            print(f"   ❌ 強化刪除失敗: {e}")
+            print(f"   刪除失敗: {e}")
             return 0
+
+    def _emergency_sql_cleanup(self, filename: str) -> int:
+        """緊急 SQL 清理"""
+        try:
+            import psycopg2
+            conn = psycopg2.connect(self.connection_string)
+            cursor = conn.cursor()
+            
+            # 查找表
+            cursor.execute("""
+                SELECT table_name FROM information_schema.tables 
+                WHERE table_schema = 'public' 
+                AND table_name LIKE '%langchain%';
+            """)
+            
+            tables = [row[0] for row in cursor.fetchall()]
+            total_deleted = 0
+            
+            for table in tables:
+                try:
+                    cursor.execute(f"""
+                        DELETE FROM {table} 
+                        WHERE cmetadata::text LIKE %s 
+                        OR cmetadata::text LIKE %s;
+                    """, (f'%"filename": "{filename}"%', f'%"original_filename": "{filename}"%'))
+                    
+                    deleted = cursor.rowcount
+                    total_deleted += deleted
+                    print(f"     表 {table}: 刪除 {deleted} 條")
+                except Exception as e:
+                    print(f"     表 {table} 失敗: {e}")
+            
+            conn.commit()
+            cursor.close()
+            conn.close()
+            
+            return total_deleted
+            
+        except Exception as e:
+            print(f"   SQL 清理失敗: {e}")
+            return 0
+
+
 
     def _direct_sql_delete(self, filename: str) -> int:
         """直接SQL刪除方案"""
