@@ -3816,7 +3816,7 @@ class OptimizedVectorSystem:
                     # 🔧 修正：使用正確的 PGVector delete 語法
                     try:
                         # 嘗試使用 filter 方式
-                        vectorstore.delete(filter={"doc_id": doc_id_str})
+                        vectorstore.delete(ids=chunk_ids_list)
                     except Exception as filter_error:
                         logger.warning(f"Filter delete failed: {filter_error}, trying alternative method")
                         # 🔧 修正：備用刪除方法
