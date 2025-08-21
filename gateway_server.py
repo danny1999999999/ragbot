@@ -314,19 +314,25 @@ async def reset_knowledge_collection(
 
 @app.delete("/api/bots/{bot_name}/knowledge/files/{filename}")
 async def delete_file(bot_name: str, filename: str, current_user: User = Depends(AdminAuth)):
-    """刪除指定檔案及其向量"""
+    """刪除指定檔案 - 基於ID的精確刪除"""
     try:
+        # URL decode for Chinese filename
+        decoded_filename = urllib.parse.unquote(filename, encoding='utf-8')
+        logger.info(f"🗑️ Delete request: {decoded_filename}")
+        
         collection_name = f"collection_{bot_name}"
-        result = vector_system.delete_document(collection_name, filename)
+        
+        # 🎯 使用修正後的刪除方法
+        result = vector_system.delete_by_file_ids(collection_name, decoded_filename)
         
         if result["success"]:
             return JSONResponse(result)
         else:
-            status_code = 404 if "不存在" in result["message"] else 500
+            status_code = 404 if "not found" in result["message"].lower() else 500
             return JSONResponse(result, status_code=status_code)
-            
+        
     except Exception as e:
-        logger.error(f"刪除檔案失敗: {e}")
+        logger.error(f"Delete failed: {e}", exc_info=True)
         return JSONResponse({"success": False, "message": str(e)}, status_code=500)
 
 # --- Health & Debug Routes ---

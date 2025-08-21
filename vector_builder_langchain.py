@@ -3445,6 +3445,309 @@ class OptimizedVectorSystem:
         except Exception as e:
             logger.error(f"PGVector 分塊獲取失敗: {e}")
             return []
+        
+
+    def delete_by_file_ids(self, collection_name: str, filename: str) -> Dict:
+        """Direct deletion using doc_id and chunk_id - 修正版"""
+        try:
+            vectorstore = self.get_or_create_vectorstore(collection_name)
+            
+            # Step 1: 修正 - 使用更可靠的方法獲取所有文檔
+            file_ids = self._find_file_ids_corrected(vectorstore, filename)
+            
+            if not file_ids["doc_ids"] and not file_ids["chunk_ids"]:
+                return {
+                    "success": False, 
+                    "message": f"File '{filename}' not found",
+                    "deleted_chunks": 0
+                }
+            
+            logger.info(f"🔍 Found file IDs: {len(file_ids['doc_ids'])} doc_ids, {len(file_ids['chunk_ids'])} chunk_ids")
+            
+            # Step 2: 使用最可靠的刪除方法
+            if file_ids["doc_ids"]:
+                # Method 1: Delete by doc_id (preferred)
+                return self._delete_by_doc_ids_corrected(vectorstore, file_ids["doc_ids"], filename)
+            elif file_ids["chunk_ids"]:
+                # Method 2: Delete by chunk_ids (fallback)
+                return self._delete_by_chunk_ids_corrected(vectorstore, file_ids["chunk_ids"], filename)
+            else:
+                return {
+                    "success": False,
+                    "message": "No valid IDs found for deletion",
+                    "deleted_chunks": 0
+                }
+                
+        except Exception as e:
+            logger.error(f"Delete by IDs failed: {e}")
+            return {"success": False, "message": f"Delete failed: {str(e)}", "deleted_chunks": 0}
+
+    def _find_file_ids_corrected(self, vectorstore, filename: str) -> Dict[str, List[str]]:
+        """修正版：找出檔案的所有 doc_id 和 chunk_id"""
+        try:
+            # 🔧 修正：使用更可靠的方法獲取文檔
+            # 方法1：如果是PGVector，嘗試使用 get() 方法
+            if hasattr(vectorstore, 'get'):
+                try:
+                    # 使用 where 條件查詢
+                    result = vectorstore.get(
+                        where={"original_filename": filename}
+                    )
+                    all_docs = []
+                    if result and result.get('documents') and result.get('metadatas'):
+                        for i, (doc_content, metadata) in enumerate(zip(result['documents'], result['metadatas'])):
+                            # 創建 Document 物件
+                            from langchain_core.documents import Document
+                            doc = Document(page_content=doc_content, metadata=metadata)
+                            all_docs.append(doc)
+                except Exception as get_error:
+                    logger.warning(f"vectorstore.get() failed: {get_error}, trying similarity_search")
+                    all_docs = None
+            else:
+                all_docs = None
+            
+            # 方法2：備用方法 - 使用 similarity_search
+            if all_docs is None:
+                try:
+                    # 🔧 修正：使用更大的k值，並處理可能的限制
+                    all_docs = vectorstore.similarity_search("", k=10000)
+                    if not all_docs:
+                        # 再次嘗試使用一個通用查詢
+                        all_docs = vectorstore.similarity_search("the", k=10000)
+                except Exception as search_error:
+                    logger.error(f"similarity_search failed: {search_error}")
+                    all_docs = []
+            
+            if not all_docs:
+                logger.warning("No documents found in collection")
+                return {"doc_ids": [], "chunk_ids": [], "total_chunks": 0}
+            
+            doc_ids = set()
+            chunk_ids = []
+            matching_count = 0
+            
+            logger.info(f"📊 Scanning {len(all_docs)} documents for filename: {filename}")
+            
+            for doc in all_docs:
+                metadata = doc.metadata
+                
+                # 🔧 修正：更嚴格的匹配條件
+                is_match = (
+                    metadata.get('original_filename') == filename or
+                    metadata.get('filename') == filename
+                )
+                
+                if is_match:
+                    matching_count += 1
+                    
+                    # Collect doc_id
+                    doc_id = metadata.get('doc_id')
+                    if doc_id:
+                        doc_ids.add(str(doc_id))  # 確保是字串
+                    
+                    # Collect chunk_id  
+                    chunk_id = metadata.get('chunk_id')
+                    if chunk_id:
+                        chunk_ids.append(str(chunk_id))  # 確保是字串
+            
+            result = {
+                "doc_ids": list(doc_ids),
+                "chunk_ids": chunk_ids,
+                "total_chunks": matching_count
+            }
+            
+            logger.info(f"📊 File '{filename}': {matching_count} chunks, {len(doc_ids)} doc_ids, {len(chunk_ids)} chunk_ids")
+            
+            return result
+            
+        except Exception as e:
+            logger.error(f"Find file IDs failed: {e}")
+            return {"doc_ids": [], "chunk_ids": [], "total_chunks": 0}
+
+    def _delete_by_doc_ids_corrected(self, vectorstore, doc_ids: List[str], filename: str) -> Dict:
+        """修正版：使用 doc_id 刪除"""
+        try:
+            total_deleted = 0
+            successful_doc_ids = []
+            failed_doc_ids = []
+            
+            for doc_id in doc_ids:
+                try:
+                    logger.info(f"🗑️ Deleting doc_id: {doc_id}")
+                    
+                    # 🔧 修正：確保 doc_id 是字串格式
+                    doc_id_str = str(doc_id)
+                    
+                    # Count chunks before deletion (使用更安全的方法)
+                    before_count = self._count_docs_by_doc_id(vectorstore, doc_id_str)
+                    
+                    if before_count == 0:
+                        logger.warning(f"⚠️ doc_id {doc_id_str} not found, skipping")
+                        continue
+                    
+                    # 🔧 修正：使用正確的 PGVector delete 語法
+                    try:
+                        # 嘗試使用 filter 方式
+                        vectorstore.delete(filter={"doc_id": doc_id_str})
+                    except Exception as filter_error:
+                        logger.warning(f"Filter delete failed: {filter_error}, trying alternative method")
+                        # 🔧 修正：備用刪除方法
+                        try:
+                            # 如果 filter 不支援，嘗試使用 where 條件
+                            if hasattr(vectorstore, 'delete') and hasattr(vectorstore, 'get'):
+                                # 先獲取要刪除的文檔IDs
+                                result = vectorstore.get(where={"doc_id": doc_id_str})
+                                if result and result.get('ids'):
+                                    vectorstore.delete(ids=result['ids'])
+                            else:
+                                raise Exception("No suitable delete method available")
+                        except Exception as alt_error:
+                            logger.error(f"Alternative delete method failed: {alt_error}")
+                            failed_doc_ids.append(doc_id_str)
+                            continue
+                    
+                    # Verify deletion
+                    after_count = self._count_docs_by_doc_id(vectorstore, doc_id_str)
+                    deleted_count = before_count - after_count
+                    total_deleted += deleted_count
+                    
+                    if after_count == 0:
+                        successful_doc_ids.append(doc_id_str)
+                        logger.info(f"✅ doc_id {doc_id_str}: deleted {deleted_count} chunks")
+                    else:
+                        failed_doc_ids.append(doc_id_str)
+                        logger.warning(f"⚠️ doc_id {doc_id_str}: {after_count} chunks remaining")
+                        
+                except Exception as e:
+                    logger.error(f"Failed to delete doc_id {doc_id}: {e}")
+                    failed_doc_ids.append(str(doc_id))
+                    continue
+            
+            success = len(failed_doc_ids) == 0 and total_deleted > 0
+            
+            return {
+                "success": success,
+                "message": f"Deleted {total_deleted} chunks using doc_id method. Success: {len(successful_doc_ids)}, Failed: {len(failed_doc_ids)}",
+                "deleted_chunks": total_deleted,
+                "filename": filename,
+                "method": "doc_id",
+                "successful_doc_ids": successful_doc_ids,
+                "failed_doc_ids": failed_doc_ids
+            }
+            
+        except Exception as e:
+            logger.error(f"Delete by doc_ids failed: {e}")
+            return {"success": False, "message": f"doc_id deletion failed: {str(e)}", "deleted_chunks": 0}
+
+    def _delete_by_chunk_ids_corrected(self, vectorstore, chunk_ids: List[str], filename: str) -> Dict:
+        """修正版：使用 chunk_id 刪除"""
+        try:
+            if not chunk_ids:
+                return {"success": False, "message": "No chunk_ids found", "deleted_chunks": 0}
+            
+            logger.info(f"🗑️ Deleting {len(chunk_ids)} chunks by chunk_id")
+            
+            # 🔧 修正：確保所有 chunk_id 都是字串
+            chunk_ids_str = [str(cid) for cid in chunk_ids]
+            
+            # Count before deletion
+            before_count = len(chunk_ids_str)
+            
+            # 🔧 修正：嘗試不同的刪除方法
+            deleted_count = 0
+            deletion_method = "unknown"
+            
+            try:
+                # Method 1: Batch deletion by IDs
+                vectorstore.delete(ids=chunk_ids_str)
+                deletion_method = "batch_ids"
+                
+                # Verify deletion
+                after_count = self._count_docs_by_chunk_ids(vectorstore, chunk_ids_str)
+                deleted_count = before_count - after_count
+                
+            except Exception as batch_error:
+                logger.warning(f"Batch deletion by IDs failed: {batch_error}")
+                
+                try:
+                    # Method 2: Individual deletion
+                    deleted_count = 0
+                    for chunk_id in chunk_ids_str:
+                        try:
+                            vectorstore.delete(ids=[chunk_id])
+                            deleted_count += 1
+                        except Exception as individual_error:
+                            logger.error(f"Failed to delete chunk_id {chunk_id}: {individual_error}")
+                    deletion_method = "individual_ids"
+                    
+                except Exception as individual_error:
+                    logger.error(f"Individual deletion failed: {individual_error}")
+                    
+                    try:
+                        # Method 3: Filter-based deletion (if supported)
+                        for chunk_id in chunk_ids_str:
+                            try:
+                                vectorstore.delete(filter={"chunk_id": chunk_id})
+                                deleted_count += 1
+                            except Exception as filter_error:
+                                logger.error(f"Filter delete for chunk_id {chunk_id} failed: {filter_error}")
+                        deletion_method = "filter_based"
+                        
+                    except Exception as filter_error:
+                        logger.error(f"Filter-based deletion failed: {filter_error}")
+                        return {"success": False, "message": "All deletion methods failed", "deleted_chunks": 0}
+            
+            success = deleted_count > 0
+            remaining_chunks = before_count - deleted_count
+            
+            return {
+                "success": success,
+                "message": f"Deleted {deleted_count}/{before_count} chunks using chunk_id method ({deletion_method})",
+                "deleted_chunks": deleted_count,
+                "filename": filename,
+                "method": "chunk_id",
+                "total_chunk_ids": len(chunk_ids_str),
+                "remaining_chunks": remaining_chunks
+            }
+            
+        except Exception as e:
+            logger.error(f"Delete by chunk_ids failed: {e}")
+            return {"success": False, "message": f"chunk_id deletion failed: {str(e)}", "deleted_chunks": 0}
+
+    def _count_docs_by_doc_id(self, vectorstore, doc_id: str) -> int:
+        """輔助方法：計算特定 doc_id 的文檔數量"""
+        try:
+            if hasattr(vectorstore, 'get'):
+                result = vectorstore.get(where={"doc_id": doc_id})
+                return len(result.get('documents', [])) if result else 0
+            else:
+                # 備用方法
+                all_docs = vectorstore.similarity_search("", k=10000)
+                return len([doc for doc in all_docs if doc.metadata.get('doc_id') == doc_id])
+        except Exception as e:
+            logger.error(f"Count docs by doc_id failed: {e}")
+            return 0
+
+    def _count_docs_by_chunk_ids(self, vectorstore, chunk_ids: List[str]) -> int:
+        """輔助方法：計算特定 chunk_id 列表的文檔數量"""
+        try:
+            if hasattr(vectorstore, 'get'):
+                # 檢查每個 chunk_id 是否還存在
+                count = 0
+                for chunk_id in chunk_ids:
+                    result = vectorstore.get(where={"chunk_id": chunk_id})
+                    if result and result.get('documents'):
+                        count += len(result['documents'])
+                return count
+            else:
+                # 備用方法
+                all_docs = vectorstore.similarity_search("", k=10000)
+                return len([doc for doc in all_docs if doc.metadata.get('chunk_id') in chunk_ids])
+        except Exception as e:
+            logger.error(f"Count docs by chunk_ids failed: {e}")
+            return 0
+
+        
 
     def delete_document(self, collection_name: str, source_file: str) -> Dict:
         """刪除指定檔案及其所有向量 - 兼容 Chroma 和 PGVector"""
