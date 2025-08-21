@@ -548,6 +548,37 @@
                     </button>
                     <span id="uploadStatus" style="margin-left: 15px; color: #007bff; font-weight: bold;"></span>
                 </div>
+
+                <!-- 🚨 緊急操作區域 -->
+<div style="margin-top: 30px; padding: 15px; border: 2px solid #dc3545; border-radius: 8px; background-color: #fff5f5;">
+    <h4 style="color: #dc3545; margin-top: 0;">🚨 緊急操作區域</h4>
+    <p style="color: #6c757d; margin-bottom: 15px;">
+        <strong>警告：</strong>以下操作將永久刪除數據，請謹慎使用！
+    </p>
+    
+    <!-- 集合狀態查看 -->
+    <div style="margin-bottom: 15px;">
+        <button onclick="checkCollectionsStatus()" class="btn-config" style="background-color: #17a2b8;">
+            📊 查看集合狀態
+        </button>
+        <div id="collectionsStatus" style="margin-top: 10px; display: none;"></div>
+    </div>
+    
+    <!-- test_01 緊急清空 -->
+    <div style="margin-bottom: 15px;">
+        <button onclick="emergencyClearTest01()" class="btn-delete" style="background-color: #dc3545;">
+            🗑️ 緊急清空 test_01
+        </button>
+        <span style="margin-left: 10px; color: #dc3545; font-size: 0.9em;">
+            此操作將刪除 test_01 的所有向量數據
+        </span>
+    </div>
+    
+    <!-- 操作結果顯示 -->
+    <div id="emergencyResults" style="display: none; margin-top: 15px; padding: 10px; border-radius: 4px;"></div>
+</div>
+
+
             </div>
 
             <!-- 對話記錄標籤 -->
@@ -1720,6 +1751,113 @@
             history.pushState({page: 'main'}, '', '#main');
             showMainPage();
         }
+
+        // 檢查集合狀態
+async function checkCollectionsStatus() {
+    try {
+        const response = await fetch(`${window.location.origin}/api/emergency/collections-status`, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin'
+        });
+        
+        const data = await response.json();
+        const statusDiv = document.getElementById('collectionsStatus');
+        
+        if (data.success) {
+            let html = '<div style="background: #f8f9fa; padding: 10px; border-radius: 4px; margin-top: 10px;">';
+            html += '<h5>📊 數據庫集合狀態：</h5>';
+            
+            if (Object.keys(data.collections_status).length === 0) {
+                html += '<p style="color: #28a745;">✅ 數據庫中沒有向量數據</p>';
+            } else {
+                for (const [table, collections] of Object.entries(data.collections_status)) {
+                    html += `<h6>表: ${table}</h6><ul>`;
+                    for (const [collection, count] of Object.entries(collections)) {
+                        const color = collection === 'test_01' ? '#dc3545' : '#007bff';
+                        html += `<li style="color: ${color};">${collection}: ${count} 條記錄</li>`;
+                    }
+                    html += '</ul>';
+                }
+            }
+            
+            html += '</div>';
+            statusDiv.innerHTML = html;
+            statusDiv.style.display = 'block';
+        } else {
+            statusDiv.innerHTML = `<div style="color: #dc3545;">❌ 獲取狀態失敗: ${data.message}</div>`;
+            statusDiv.style.display = 'block';
+        }
+        
+    } catch (error) {
+        console.error('獲取集合狀態失敗:', error);
+        document.getElementById('collectionsStatus').innerHTML = 
+            `<div style="color: #dc3545;">❌ 請求失敗: ${error.message}</div>`;
+        document.getElementById('collectionsStatus').style.display = 'block';
+    }
+}
+
+// 緊急清空 test_01
+async function emergencyClearTest01() {
+    // 雙重確認
+    const confirm1 = confirm('⚠️ 警告：即將刪除 test_01 的所有向量數據！\n\n此操作無法撤銷，確定要繼續嗎？');
+    if (!confirm1) return;
+    
+    const confirm2 = confirm('🚨 最後確認：\n\n您確定要永久刪除 test_01 集合的所有數據嗎？\n\n點擊"確定"將立即執行刪除操作。');
+    if (!confirm2) return;
+    
+    const resultsDiv = document.getElementById('emergencyResults');
+    resultsDiv.innerHTML = '<div style="color: #007bff;">🔄 正在執行緊急清空操作，請稍候...</div>';
+    resultsDiv.style.display = 'block';
+    
+    try {
+        const response = await fetch(`${window.location.origin}/api/emergency/clear-test01`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin'
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            let html = '<div style="background: #d4edda; color: #155724; padding: 15px; border-radius: 4px;">';
+            html += `<h5>✅ 清空成功！</h5>`;
+            html += `<p><strong>總計刪除：</strong>${data.total_deleted} 條記錄</p>`;
+            html += '<h6>詳細結果：</h6><ul>';
+            
+            data.details.forEach(detail => {
+                html += `<li>${detail}</li>`;
+            });
+            
+            html += '</ul></div>';
+            resultsDiv.innerHTML = html;
+            
+            // 刷新知識庫文件列表
+            if (currentBotName === 'test_01') {
+                setTimeout(() => {
+                    loadKnowledgeFiles(currentBotName);
+                }, 2000);
+            }
+            
+        } else {
+            resultsDiv.innerHTML = `
+                <div style="background: #f8d7da; color: #721c24; padding: 15px; border-radius: 4px;">
+                    <h5>❌ 清空失敗</h5>
+                    <p>${data.message}</p>
+                </div>
+            `;
+        }
+        
+    } catch (error) {
+        console.error('緊急清空失敗:', error);
+        resultsDiv.innerHTML = `
+            <div style="background: #f8d7da; color: #721c24; padding: 15px; border-radius: 4px;">
+                <h5>❌ 請求失敗</h5>
+                <p>${error.message}</p>
+            </div>
+        `;
+    }
+}
     </script>
 </body>
 </html>

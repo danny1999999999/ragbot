@@ -432,6 +432,184 @@ def perform_emergency_sql_cleanup(collection_name: str) -> Dict:
     
     return result
 
+@app.post("/api/emergency/clear-test01")
+async def emergency_clear_test01(current_user: User = Depends(AdminAuth)):
+    """
+    🚨 緊急清空 test_01 集合
+    """
+    try:
+        import psycopg2
+        import os
+        import time
+        
+        logger.info(f"緊急清空 test_01 - 用戶: {current_user.username}")
+        
+        # 連接數據庫
+        database_url = os.getenv("DATABASE_URL")
+        if not database_url:
+            return JSONResponse({
+                "success": False,
+                "message": "DATABASE_URL 未設置"
+            }, status_code=500)
+        
+        conn = psycopg2.connect(database_url)
+        cursor = conn.cursor()
+        
+        results = []
+        total_deleted = 0
+        
+        # 查找相關表
+        cursor.execute("""
+            SELECT table_name FROM information_schema.tables 
+            WHERE table_schema = 'public' 
+            AND table_name LIKE '%langchain%';
+        """)
+        
+        tables = [row[0] for row in cursor.fetchall()]
+        results.append(f"找到 {len(tables)} 個相關表: {', '.join(tables)}")
+        
+        # 清空每個表中的 test_01 數據
+        for table in tables:
+            try:
+                # 先查看有多少條記錄
+                cursor.execute(f"""
+                    SELECT COUNT(*) FROM {table} 
+                    WHERE cmetadata::text LIKE '%test_01%' 
+                    OR cmetadata::text LIKE '%collection_test_01%';
+                """)
+                
+                count_before = cursor.fetchone()[0]
+                
+                if count_before > 0:
+                    # 執行刪除
+                    cursor.execute(f"""
+                        DELETE FROM {table} 
+                        WHERE cmetadata::text LIKE '%test_01%' 
+                        OR cmetadata::text LIKE '%collection_test_01%';
+                    """)
+                    
+                    deleted = cursor.rowcount
+                    total_deleted += deleted
+                    results.append(f"表 {table}: 清空前 {count_before} 條，刪除 {deleted} 條")
+                else:
+                    results.append(f"表 {table}: 沒有 test_01 相關數據")
+                    
+            except Exception as e:
+                results.append(f"表 {table} 處理失敗: {str(e)}")
+        
+        # 提交事務
+        conn.commit()
+        cursor.close()
+        conn.close()
+        
+        # 等待一下讓數據庫操作生效
+        time.sleep(2)
+        
+        # 驗證清空結果
+        try:
+            from vector_builder_langchain import OptimizedVectorSystem
+            system = OptimizedVectorSystem()
+            vectorstore = system.get_or_create_vectorstore("collection_test_01")
+            remaining_docs = vectorstore.similarity_search("", k=100)
+            remaining_count = len(remaining_docs)
+            
+            results.append(f"驗證結果: 剩餘 {remaining_count} 個文檔")
+            
+        except Exception as e:
+            results.append(f"驗證失敗: {str(e)}")
+        
+        success = total_deleted > 0
+        message = f"清空完成，總計刪除 {total_deleted} 條記錄" if success else "沒有找到需要刪除的數據"
+        
+        return JSONResponse({
+            "success": success,
+            "message": message,
+            "total_deleted": total_deleted,
+            "details": results
+        })
+        
+    except Exception as e:
+        logger.error(f"緊急清空失敗: {e}")
+        return JSONResponse({
+            "success": False,
+            "message": f"清空失敗: {str(e)}"
+        }, status_code=500)
+
+# 📍 步驟2：添加獲取所有集合狀態的 API
+@app.get("/api/emergency/collections-status")
+async def get_collections_status(current_user: User = Depends(AdminAuth)):
+    """
+    📊 獲取所有集合的狀態
+    """
+    try:
+        import psycopg2
+        import os
+        
+        database_url = os.getenv("DATABASE_URL")
+        conn = psycopg2.connect(database_url)
+        cursor = conn.cursor()
+        
+        # 查找相關表
+        cursor.execute("""
+            SELECT table_name FROM information_schema.tables 
+            WHERE table_schema = 'public' 
+            AND table_name LIKE '%langchain%';
+        """)
+        
+        tables = [row[0] for row in cursor.fetchall()]
+        collections_status = {}
+        
+        for table in tables:
+            try:
+                # 統計每個集合的文檔數量
+                cursor.execute(f"""
+                    SELECT 
+                        cmetadata::text,
+                        COUNT(*) as count
+                    FROM {table} 
+                    GROUP BY cmetadata::text
+                    HAVING COUNT(*) > 0;
+                """)
+                
+                rows = cursor.fetchall()
+                table_stats = {}
+                
+                for row in rows:
+                    metadata_text = row[0]
+                    count = row[1]
+                    
+                    # 嘗試提取集合名稱
+                    if 'test_01' in metadata_text:
+                        table_stats['test_01'] = table_stats.get('test_01', 0) + count
+                    elif 'collection_' in metadata_text:
+                        # 簡單的正則提取
+                        import re
+                        match = re.search(r'collection_(\w+)', metadata_text)
+                        if match:
+                            collection = match.group(1)
+                            table_stats[collection] = table_stats.get(collection, 0) + count
+                
+                if table_stats:
+                    collections_status[table] = table_stats
+                    
+            except Exception as e:
+                collections_status[table] = {"error": str(e)}
+        
+        cursor.close()
+        conn.close()
+        
+        return JSONResponse({
+            "success": True,
+            "collections_status": collections_status
+        })
+        
+    except Exception as e:
+        return JSONResponse({
+            "success": False,
+            "message": f"獲取狀態失敗: {str(e)}"
+        }, status_code=500)
+
+
 
 # --- Entrypoint ---
 if __name__ == "__main__":
