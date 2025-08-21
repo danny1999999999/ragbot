@@ -185,7 +185,7 @@ class ChatbotInstance:
 
     def _get_db_config(self) -> dict:
         """Gets the database configuration, forcing PostgreSQL on Railway."""
-         database_url = os.getenv("DATABASE_URL")
+        database_url = os.getenv("DATABASE_URL")
 
         if not database_url:
             error_msg = "環境變數 DATABASE_URL 未設定。對話紀錄功能需要 PostgreSQL資料庫。"
