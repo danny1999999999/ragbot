@@ -4399,6 +4399,12 @@ class OptimizedVectorSystem:
             logger.error(f"獲取分塊內容失敗 {collection_name}/{chunk_id}: {e}")
             return None
 
+    def get_chunk_by_id(self, collection_name: str, chunk_id: str) -> Optional[Dict]:
+        """
+        Gets a specific chunk by its ID. This is an alias for get_chunk_content.
+        """
+        return self.get_chunk_content(collection_name, chunk_id)
+
     def get_available_collections(self) -> List[Dict]:
         """獲取所有可用的集合列表 - 純 PostgreSQL 版本"""
         try:

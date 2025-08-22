@@ -334,6 +334,11 @@ class PostgreSQLConversationLogger:
             for row in rows:
                 conv = dict(row)
                 
+                # 修正：處理 datetime 對象
+                for key, value in conv.items():
+                    if isinstance(value, datetime):
+                        conv[key] = value.isoformat()
+
                 # 修復：正確解析 JSON 字段並提取 chunk_ids
                 try:
                     conv['retrieved_docs'] = json.loads(conv.get('retrieved_docs') or '[]')
