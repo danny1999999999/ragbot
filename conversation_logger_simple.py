@@ -11,6 +11,7 @@ from datetime import datetime
 from typing import List, Dict, Optional, Tuple
 from pathlib import Path
 import logging
+import pytz
 
 # 導入數據庫抽象層
 from database_adapter import DatabaseFactory, SQLDialect
@@ -331,12 +332,20 @@ class PostgreSQLConversationLogger:
             
             # 轉為字典並解析 JSON 字段
             conversations = []
+            try:
+                taipei_tz = pytz.timezone('Asia/Taipei')
+            except pytz.UnknownTimeZoneError:
+                taipei_tz = None
+
             for row in rows:
                 conv = dict(row)
                 
                 # 修正：處理 datetime 對象
                 for key, value in conv.items():
                     if isinstance(value, datetime):
+                        if taipei_tz:
+                            # Assuming the datetime from DB is naive (UTC)
+                            value = value.replace(tzinfo=pytz.utc).astimezone(taipei_tz)
                         conv[key] = value.isoformat()
 
                 # 修復：正確解析 JSON 字段並提取 chunk_ids

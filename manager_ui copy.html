@@ -1558,7 +1558,7 @@
                     </div>
                     <div class="info-row">
                         <span class="info-label">會話ID:</span>
-                        <span class="info-value">${conversation.session_id}</span>
+                        <span class="info-value">${conversation.user_id}</span>
                     </div>
                     <div class="info-row">
                         <span class="info-label">時間:</span>
@@ -1566,7 +1566,7 @@
                     </div>
                     <div class="info-row">
                         <span class="info-label">處理時間:</span>
-                        <span class="info-value">${conversation.processing_time || 0}ms</span>
+                        <span class="info-value">${conversation.processing_time_ms || 0}ms</span>
                     </div>
                     <div class="info-row">
                         <span class="info-label">使用集合:</span>
@@ -1581,14 +1581,14 @@
                 <div style="margin-bottom: 20px;">
                     <h4>❓ 用戶問題</h4>
                     <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; border-left: 4px solid #007bff;">
-                        ${conversation.full_user_message || conversation.user_message}
+                        ${conversation.full_user_query || conversation.user_query}
                     </div>
                 </div>
 
                 <div style="margin-bottom: 20px;">
                     <h4>🤖 機器人回答</h4>
                     <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; border-left: 4px solid #28a745;">
-                        ${conversation.full_bot_response || conversation.bot_response}
+                        ${conversation.full_ai_response || conversation.ai_response}
                     </div>
                 </div>
 
