@@ -1,3 +1,4 @@
+<!-- Version: 3 -->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -1361,9 +1362,9 @@
                 `;
                 
                 conversations.forEach(conv => {
-                    console.log(conv);
+                    console.log("Processing conversation object:", conv);
                     const timestamp = conv.timestamp || conv.created_at;
-                    const timeStr = timestamp ? new Date(timestamp).toLocaleString('zh-TW') : '未知';
+                    const timeStr = timestamp ? timestamp.substring(0, 19).replace("T", " ") : '未知';
                     
                     // 生成 chunk 按鈕
                     let chunkButtons = '';
