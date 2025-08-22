@@ -213,6 +213,9 @@ class PostgreSQLConversationLogger:
                     chunk_references: Optional[List[Dict]] = None,
                     chunk_indices: Optional[List[int]] = None) -> str:
         """記錄對話 - 修正版，正確處理 chunk 索引"""
+        logger.info(f"Logging conversation for user_id: {user_id}")
+        logger.info(f"user_query: {user_query}")
+        logger.info(f"ai_response: {ai_response}")
         try:
             # 修正：使用正確的事務處理
             with self.db_adapter.transaction():
@@ -329,6 +332,7 @@ class PostgreSQLConversationLogger:
             params.extend([limit, offset])
             
             rows = self.db_adapter.execute_query(query, params)
+            logger.info(f"Raw rows from DB: {rows}")
             
             # 轉為字典並解析 JSON 字段
             conversations = []

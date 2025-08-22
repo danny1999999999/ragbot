@@ -344,6 +344,7 @@ class PostgreSQLAdapter(DatabaseAdapter):
     
     def execute_query(self, sql: str, params: Union[tuple, list] = None) -> List[Dict[str, Any]]:
         """執行查詢 - PostgreSQL 正確實現"""
+        logger.info(f"Executing QUERY: {sql} with params: {params}")
         with self.lock:
             try:
                 conn = self.get_connection()
@@ -354,6 +355,7 @@ class PostgreSQLAdapter(DatabaseAdapter):
                 with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cursor:
                     cursor.execute(sql, params or ())
                     rows = cursor.fetchall()
+                    logger.info(f"QUERY successful, returned {len(rows)} rows.")
                     return [dict(row) for row in rows]
                     
             except Exception as e:
@@ -389,6 +391,7 @@ class PostgreSQLAdapter(DatabaseAdapter):
     
     def execute_insert(self, sql: str, params: Union[tuple, list] = None) -> Optional[int]:
         """執行插入 - PostgreSQL 正確實現"""
+        logger.info(f"Executing INSERT: {sql} with params: {params}")
         with self.lock:
             conn = None
             try:
@@ -414,12 +417,14 @@ class PostgreSQLAdapter(DatabaseAdapter):
                         result = cursor.fetchone()
                         conn.commit()
                         if result:
+                            logger.info(f"INSERT successful, returned ID: {result[0]}")
                             return result[0] if isinstance(result, (tuple, list)) else result
                         return None
                     else:
                         # 沒有 RETURNING 的情況，提交並返回影響的行數
                         rowcount = cursor.rowcount
                         conn.commit()
+                        logger.info(f"INSERT successful, affected rows: {rowcount}")
                         return rowcount if rowcount > 0 else None
             except Exception as e:
                 logger.error(f"❌ PostgreSQL 插入失敗: {e}")
