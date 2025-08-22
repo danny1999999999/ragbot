@@ -3495,7 +3495,7 @@ class OptimizedVectorSystem:
             vectorstore = self.get_or_create_vectorstore(collection_name)
             
             # Step 1: 找到所有相關的 chunk_ids（最可靠的方法）
-            chunk_ids = self._find_chunk_ids_reliable(vectorstore, filename)
+            chunk_ids = self._find_file_ids_corrected(vectorstore, filename).get("chunk_ids", [])
             
             if not chunk_ids:
                 return {
