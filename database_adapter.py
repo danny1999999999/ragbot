@@ -390,7 +390,7 @@ class PostgreSQLAdapter(DatabaseAdapter):
                 raise
     
     def execute_insert(self, sql: str, params: Union[tuple, list] = None) -> Optional[int]:
-        """執行插入 - PostgreSQL 正確實現"""
+        """執行插入 - 修復版本，移除自動添加 RETURNING id 的邏輯"""
         logger.info(f"Executing INSERT: {sql} with params: {params}")
         with self.lock:
             conn = None
@@ -399,15 +399,7 @@ class PostgreSQLAdapter(DatabaseAdapter):
                 original_sql = sql
                 
                 with conn.cursor() as cursor:
-                    # 智能處理 RETURNING 子句
-                    sql_upper = sql.upper().strip()
-                    
-                    # 只有在 INSERT 語句且沒有 RETURNING 時才添加
-                    if (sql_upper.startswith('INSERT') and 
-                        'RETURNING' not in sql_upper):
-                        sql += " RETURNING id"
-                    
-                    # 轉換 SQL 語法
+                    # 轉換 SQL 語法（將 ? 轉為 %s）
                     sql, params = self._convert_sql_params(sql, params)
                     
                     cursor.execute(sql, params or ())
@@ -417,8 +409,9 @@ class PostgreSQLAdapter(DatabaseAdapter):
                         result = cursor.fetchone()
                         conn.commit()
                         if result:
-                            logger.info(f"INSERT successful, returned ID: {result[0]}")
-                            return result[0] if isinstance(result, (tuple, list)) else result
+                            returned_id = result[0] if isinstance(result, (tuple, list)) else result
+                            logger.info(f"INSERT successful, returned ID: {returned_id}")
+                            return returned_id
                         return None
                     else:
                         # 沒有 RETURNING 的情況，提交並返回影響的行數
@@ -426,15 +419,12 @@ class PostgreSQLAdapter(DatabaseAdapter):
                         conn.commit()
                         logger.info(f"INSERT successful, affected rows: {rowcount}")
                         return rowcount if rowcount > 0 else None
+                        
             except Exception as e:
                 logger.error(f"❌ PostgreSQL 插入失敗: {e}")
                 logger.error(f"   原始SQL: {original_sql}")
                 logger.error(f"   執行SQL: {sql}")
                 logger.error(f"   參數: {params}")
-                
-                # 處理特定錯誤類型
-                if "column" in str(e).lower() and "does not exist" in str(e).lower():
-                    logger.error("   可能原因：表格沒有 'id' 欄位，請考慮在 SQL 中明確指定 RETURNING 欄位")
                 
                 # 安全的回滾處理
                 if conn:

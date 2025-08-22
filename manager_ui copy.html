@@ -1,4 +1,4 @@
-<!-- Version: 3 -->
+<!-- Version: 4 -->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -1362,7 +1362,7 @@
                 `;
                 
                 conversations.forEach(conv => {
-                    console.log("Processing conversation object:", conv);
+                    console.log("Processing conversation object:", JSON.stringify(conv, null, 2));
                     const timestamp = conv.timestamp || conv.created_at;
                     const timeStr = timestamp ? timestamp.substring(0, 19).replace("T", " ") : '未知';
                     
@@ -1545,11 +1545,13 @@
             const conversation = allConversationsOnPage.find(conv => conv.id === conversationId);
             if (!conversation) return;
 
+            console.log("Showing details for conversation:", JSON.stringify(conversation, null, 2));
+
             const modal = document.getElementById('conversationDetailModal');
             const content = document.getElementById('conversationDetailContent');
 
             const timestamp = conversation.timestamp || conversation.created_at;
-            const timeStr = timestamp ? new Date(timestamp).toLocaleString('zh-TW') : '未知';
+            const timeStr = timestamp ? timestamp.substring(0, 19).replace("T", " ") : '未知';
             
             content.innerHTML = `
                 <div class="info-card">
