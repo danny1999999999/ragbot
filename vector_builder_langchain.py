@@ -4358,42 +4358,73 @@ class OptimizedVectorSystem:
         try:
             vectorstore = self.get_or_create_vectorstore(collection_name)
             
-            # 🔧 查詢指定分塊
-            results = vectorstore.get(where={"chunk_id": chunk_id})
-            
-            if not results or not results.get('documents') or len(results['documents']) == 0:
-                return None
-            
-            # 取第一個結果（chunk_id應該是唯一的）
-            doc = results['documents'][0]
-            metadata = results['metadatas'][0]
-            
-            # 🔧 計算字符和行數統計
-            content_stats = {
-                'total_chars': len(doc),
-                'total_lines': len(doc.split('\n')),
-                'total_words': len(doc.split()),
-                'total_sentences': len([s for s in doc.split('。') if s.strip()]) + len([s for s in doc.split('.') if s.strip()])
-            }
-            
-            chunk_detail = {
-                'chunk_id': chunk_id,
-                'chunk_index': metadata.get('chunk_index', 0),
-                'content': doc,
-                'content_stats': content_stats,
-                'token_count': metadata.get('token_count', 0),
-                'text_type': metadata.get('text_type', 'unknown'),
-                'quality_score': metadata.get('quality_score', 0.5),
-                'language': metadata.get('language', 'unknown'),
-                'source_file': metadata.get('source', 'unknown'),
-                'original_filename': metadata.get('original_filename', metadata.get('filename', 'unknown')),
-                'processing_strategy': metadata.get('processing_strategy', 'unknown'),
-                'split_method': metadata.get('split_method', 'unknown'),
-                'has_overlap': metadata.get('has_overlap', False),
-                'metadata': metadata
-            }
-            
-            return chunk_detail
+            # PGVector does not have a 'get' method, so we need to iterate
+            if self.use_postgres:
+                # This is not efficient, but it's a workaround for now.
+                docs = vectorstore.similarity_search("", k=5000)
+                for doc in docs:
+                    if doc.metadata.get("chunk_id") == chunk_id:
+                        # Found the chunk
+                        content_stats = {
+                            'total_chars': len(doc.page_content),
+                            'total_lines': len(doc.page_content.split('\n')),
+                            'total_words': len(doc.page_content.split()),
+                            'total_sentences': len([s for s in doc.page_content.split('。') if s.strip()]) + len([s for s in doc.page_content.split('.') if s.strip()])
+                        }
+                        chunk_detail = {
+                            'chunk_id': chunk_id,
+                            'chunk_index': doc.metadata.get('chunk_index', 0),
+                            'content': doc.page_content,
+                            'content_stats': content_stats,
+                            'token_count': doc.metadata.get('token_count', 0),
+                            'text_type': doc.metadata.get('text_type', 'unknown'),
+                            'quality_score': doc.metadata.get('quality_score', 0.5),
+                            'language': doc.metadata.get('language', 'unknown'),
+                            'source_file': doc.metadata.get('source', 'unknown'),
+                            'original_filename': doc.metadata.get('original_filename', doc.metadata.get('filename', 'unknown')),
+                            'processing_strategy': doc.metadata.get('processing_strategy', 'unknown'),
+                            'split_method': doc.metadata.get('split_method', 'unknown'),
+                            'has_overlap': doc.metadata.get('has_overlap', False),
+                            'metadata': doc.metadata
+                        }
+                        return chunk_detail
+                return None # Chunk not found
+            else: # ChromaDB
+                results = vectorstore.get(where={"chunk_id": chunk_id})
+                
+                if not results or not results.get('documents') or len(results['documents']) == 0:
+                    return None
+                
+                # 取第一個結果（chunk_id應該是唯一的）
+                doc = results['documents'][0]
+                metadata = results['metadatas'][0]
+                
+                # 🔧 計算字符和行數統計
+                content_stats = {
+                    'total_chars': len(doc),
+                    'total_lines': len(doc.split('\n')),
+                    'total_words': len(doc.split()),
+                    'total_sentences': len([s for s in doc.split('。') if s.strip()]) + len([s for s in doc.split('.') if s.strip()])
+                }
+                
+                chunk_detail = {
+                    'chunk_id': chunk_id,
+                    'chunk_index': metadata.get('chunk_index', 0),
+                    'content': doc,
+                    'content_stats': content_stats,
+                    'token_count': metadata.get('token_count', 0),
+                    'text_type': metadata.get('text_type', 'unknown'),
+                    'quality_score': metadata.get('quality_score', 0.5),
+                    'language': metadata.get('language', 'unknown'),
+                    'source_file': metadata.get('source', 'unknown'),
+                    'original_filename': metadata.get('original_filename', metadata.get('filename', 'unknown')),
+                    'processing_strategy': metadata.get('processing_strategy', 'unknown'),
+                    'split_method': metadata.get('split_method', 'unknown'),
+                    'has_overlap': metadata.get('has_overlap', False),
+                    'metadata': metadata
+                }
+                
+                return chunk_detail
             
         except Exception as e:
             logger.error(f"獲取分塊內容失敗 {collection_name}/{chunk_id}: {e}")
