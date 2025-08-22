@@ -296,8 +296,12 @@ class PostgreSQLAdapter(DatabaseAdapter):
             
             # 設置搜索路徑和時區
             with self.connection.cursor() as cursor:
-                cursor.execute(f"SET search_path TO {self.schema}")
-                cursor.execute("SET timezone = 'Asia/Taipei'")
+                try:
+                    cursor.execute(f"SET search_path TO {self.schema}")
+                    cursor.execute("SET timezone = 'Asia/Taipei'")
+                    logger.info("✅ Timezone set to Asia/Taipei")
+                except Exception as e:
+                    logger.error(f"❌ Failed to set timezone: {e}")
             
             self._is_connected = True
             logger.info(f"✅ PostgreSQL 連接成功")
