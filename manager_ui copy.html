@@ -1361,6 +1361,7 @@
                 `;
                 
                 conversations.forEach(conv => {
+                    console.log(conv);
                     const timestamp = conv.timestamp || conv.created_at;
                     const timeStr = timestamp ? new Date(timestamp).toLocaleString('zh-TW') : '未知';
                     
