@@ -1,0 +1,1863 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>聊天機器人服務管理器</title>
+    <style>
+        body { font-family: sans-serif; margin: 0; background-color: #f4f4f9; }
+        h1, h2 { color: #333; }
+        .container { max-width: 1200px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .bot-list, .create-bot { margin-top: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #e9ecef; }
+        button { cursor: pointer; padding: 8px 12px; border-radius: 4px; border: none; color: white; margin: 2px; }
+        .btn-start { background-color: #28a745; }
+        .btn-stop { background-color: #dc3545; }
+        .btn-config { background-color: #007bff; }
+        .btn-edit { background-color: #17a2b8; }
+        .btn-delete { background-color: #dc3545; }
+        .btn-save { background-color: #28a745; }
+        .btn-cancel { background-color: #6c757d; }
+        .btn-logout { background-color: #6c757d; }
+        .btn-back { background-color: #6c757d; padding: 10px 20px; text-decoration: none; color: white; border-radius: 4px; display: inline-block; margin-bottom: 20px; }
+        .status-running { color: #28a745; font-weight: bold; }
+        .status-stopped { color: #6c757d; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+        .form-group input, .form-group textarea, .form-group select { width: 95%; padding: 8px; border-radius: 4px; border: 1px solid #ccc; }
+        .form-group textarea { height: 100px; resize: vertical; }
+        #message { margin-top: 15px; padding: 10px; border-radius: 4px; display: none; }
+        .msg-success { background-color: #d4edda; color: #155724; }
+        .msg-error { background-color: #f8d7da; color: #721c24; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        
+        /* 頁面切換樣式 */
+        .page { display: none; }
+        .page.active { display: block; }
+        
+        /* 標籤頁樣式 */
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid #e9ecef;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            background: #f8f9fa;
+            border: none;
+            border-bottom: 3px solid transparent;
+            margin-right: 2px;
+            color: #495057;
+        }
+        .tab.active {
+            background: white;
+            border-bottom-color: #007bff;
+            color: #007bff;
+        }
+        .tab:hover {
+            background: #e9ecef;
+            color: #007bff;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        
+        /* 詳細信息卡片 */
+        .info-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+        .info-card h4 {
+            margin-top: 0;
+            color: #495057;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        .info-label {
+            font-weight: bold;
+            color: #6c757d;
+        }
+        .info-value {
+            color: #495057;
+        }
+        
+        /* 表格操作按鈕組 */
+        .btn-group {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+        
+        /* 狀態徽章 */
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+        .status-running {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .status-stopped {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        /* 對話記錄專用樣式 */
+        .conversation-table {
+            font-size: 0.9em;
+        }
+        .conversation-table th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+            text-align: center;
+        }
+        .conversation-table td {
+            vertical-align: top;
+        }
+        .chunk-btn {
+            padding: 2px 6px;
+            margin: 1px;
+            font-size: 0.8em;
+            background-color: #17a2b8;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        .chunk-btn:hover {
+            background-color: #138496;
+        }
+        .conversation-meta {
+            font-size: 0.8em;
+            color: #6c757d;
+            margin-top: 4px;
+        }
+        .error-row {
+            background-color: #fff5f5 !important;
+        }
+        .success-row {
+            background-color: #f8fff8;
+        }
+
+        /* 顯示名稱相關樣式 */
+        .display-name-group {
+            background: linear-gradient(135deg, #e3f2fd 0%, #f8f9fa 100%);
+            border: 1px solid #e1f5fe;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .display-name-group h4 {
+            margin: 0 0 15px 0;
+            color: #1976d2;
+            font-size: 1.1em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .field-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.8em;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-weight: 500;
+        }
+
+        .field-indicator.user-visible {
+            background-color: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .field-indicator.system-internal {
+            background-color: #f5f5f5;
+            color: #6c757d;
+        }
+
+        /* 機器人名稱顯示樣式 */
+        .bot-name-display {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .bot-display-name {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .bot-tech-name {
+            font-size: 0.85em;
+            color: #6c757d;
+            font-weight: normal;
+        }
+
+        .bot-tech-name::before {
+            content: "⚙️";
+            margin-right: 4px;
+        }
+
+        /* 字符計數器 */
+        .char-counter {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.8em;
+            color: #6c757d;
+            background: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+
+        .char-counter.warning {
+            color: #fd7e14;
+        }
+
+        .char-counter.danger {
+            color: #dc3545;
+        }
+
+        /* 表單驗證樣式 */
+        .form-group.has-validation .form-control:invalid {
+            border-color: #dc3545;
+            box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+        }
+
+        .form-group.has-validation .form-control:valid {
+            border-color: #28a745;
+            box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+        }
+
+        .validation-message {
+            font-size: 0.875em;
+            margin-top: 5px;
+            padding: 4px 0;
+        }
+
+        .validation-message.error {
+            color: #dc3545;
+        }
+
+        .validation-message.success {
+            color: #28a745;
+        }
+
+        /* Modal 樣式（僅用於 Chunk 詳情等輔助功能） */
+        .modal { 
+            display: none; 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            background: rgba(0,0,0,0.5); 
+            justify-content: center; 
+            align-items: center; 
+            z-index: 1000;
+        }
+        .modal-content { 
+            background: white; 
+            padding: 30px; 
+            border-radius: 8px; 
+            width: 90%; 
+            max-width: 800px; 
+            max-height: 90vh; 
+            overflow-y: auto;
+        }
+
+        /* 大型 Modal 樣式 */
+        .large-modal .modal-content {
+            max-width: 1000px;
+            width: 95%;
+        }
+
+        /* 🆕 知識庫統計信息樣式 */
+        .knowledge-stats {
+            background: linear-gradient(135deg, #e8f5e8 0%, #f0f8f0 100%);
+            border: 1px solid #c3e6c3;
+            border-radius: 8px;
+            padding: 12px 15px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .knowledge-stats .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.9em;
+        }
+
+        .knowledge-stats .stat-label {
+            color: #2d5a2d;
+            font-weight: 600;
+        }
+
+        .knowledge-stats .stat-value {
+            color: #1a4d1a;
+            font-weight: bold;
+        }
+        
+        /* 響應式設計 */
+        @media (max-width: 768px) {
+            .container { margin: 1em; padding: 15px; }
+            table { font-size: 0.9em; }
+            .btn-group { flex-direction: column; }
+            .conversation-table { font-size: 0.8em; }
+            .tabs { flex-wrap: wrap; }
+            .tab { font-size: 0.9em; padding: 8px 12px; }
+
+            .display-name-group {
+                padding: 12px;
+                margin-bottom: 12px;
+            }
+            
+            .bot-display-name {
+                font-size: 1em;
+            }
+            
+            .bot-tech-name {
+                font-size: 0.8em;
+            }
+            
+            .field-indicator {
+                font-size: 0.75em;
+                padding: 1px 6px;
+            }
+
+            .knowledge-stats {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 主列表頁面 -->
+    <div id="mainPage" class="page active">
+        <div class="container">
+            <!-- 標題和登出 -->
+            <div class="header">
+                <h1>🤖 聊天機器人服務管理器</h1>
+                <button onclick="logout()" class="btn-logout">登出</button>
+            </div>
+            
+            <!-- 創建新機器人 -->
+            <div class="create-bot">
+                <h2>創建新機器人</h2>
+                <div class="display-name-group">
+                    <h4>🎯 機器人命名設定</h4>
+                    <form id="createBotForm">
+                        <!-- 顯示名稱欄位 -->
+                        <div class="form-group">
+                            <label for="botDisplayName">
+                                機器人顯示名稱 
+                                <span class="field-indicator user-visible">👀 用戶可見</span>
+                            </label>
+                            <input type="text" id="botDisplayName" required maxlength="50" placeholder="例如: 智能財務顧問">
+                            <small style="color: #6c757d;">這個名稱會顯示在聊天界面頂部，讓用戶更容易理解機器人的功能</small>
+                        </div>
+                        
+                        <!-- 技術名稱欄位 -->
+                        <div class="form-group">
+                            <label for="botName">
+                                機器人技術名稱 
+                                <span class="field-indicator system-internal">⚙️ 系統內部</span>
+                            </label>
+                            <input type="text" id="botName" required pattern="[a-z0-9-_]+" placeholder="例如: finance-bot">
+                            <small style="color: #6c757d;">英文、數字、連字符，用於系統內部識別，創建後不可修改</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="botPort">服務端口 (例如: 8002)</label>
+                            <input type="number" id="botPort" required min="1025" max="65535" placeholder="8002">
+                        </div>
+                        <div class="form-group">
+                            <label for="systemRole">系統角色</label>
+                            <textarea id="systemRole" rows="3" placeholder="描述這個機器人的角色和功能..."></textarea>
+                        </div>
+                        <button type="submit" class="btn-config">🚀 創建機器人</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 機器人列表 -->
+            <div class="bot-list">
+                <h2>機器人實例列表</h2>
+                <table id="botTable">
+                    <thead>
+                        <tr>
+                            <th>機器人名稱</th>
+                            <th>狀態</th>
+                            <th>端口</th>
+                            <th>系統角色</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="botTableBody">
+                        <!-- JS 動態填入 -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="message"></div>
+        </div>
+    </div>
+
+    <!-- 機器人管理頁面 -->
+    <div id="managePage" class="page">
+        <div class="container">
+            <!-- 頂部導航 -->
+            <div class="header">
+                <div>
+                    <a href="#" onclick="showMainPage()" class="btn-back">← 返回列表</a>
+                    <h1 id="managePageTitle">管理機器人</h1>
+                </div>
+                <button onclick="logout()" class="btn-logout">登出</button>
+            </div>
+            
+            <!-- 標籤頁 -->
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('info')">📊 基本信息</button>
+                <button class="tab" onclick="switchTab('config')">⚙️ 配置設定</button>
+                <button class="tab" onclick="switchTab('knowledge')">📚 知識庫</button>
+                <button class="tab" onclick="switchTab('conversations')">💬 對話記錄</button>
+            </div>
+
+            <!-- 基本信息標籤 -->
+            <div id="infoTab" class="tab-content active">
+                <div class="info-card">
+                    <h4>📋 機器人基本信息</h4>
+                    <div id="botInfoDetails">
+                        <!-- JS 動態填入 -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 配置設定標籤 -->
+            <div id="configTab" class="tab-content">
+                <form id="editBotForm">
+                    <!-- 顯示名稱編輯欄位 -->
+                    <div class="form-group">
+                        <label for="editDisplayName">
+                            機器人顯示名稱
+                            <span class="field-indicator user-visible">👀 用戶可見</span>
+                        </label>
+                        <input type="text" class="form-control" id="editDisplayName" maxlength="50" placeholder="用戶看到的機器人名稱">
+                        <small style="color: #6c757d;">最多50個字符，這個名稱會顯示在聊天界面頂部</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editSystemRole">系統角色 (System Role)</label>
+                        <textarea class="form-control" id="editSystemRole" rows="4"></textarea>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label for="editTemperature">溫度 (Temperature)</label>
+                            <input type="number" class="form-control" id="editTemperature" step="0.1" min="0" max="1">
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label for="editMaxTokens">最大權杖 (Max Tokens)</label>
+                            <input type="number" class="form-control" id="editMaxTokens" step="100" min="100">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="custom-control custom-switch">
+                            <input type="checkbox" class="custom-control-input" id="editDynamicRecommendations">
+                            <label class="custom-control-label" for="editDynamicRecommendations">啟用 LLM 動態推薦問題</label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="editDynamicRecommendationsCount">推薦問題生效次數 (0為無限)</label>
+                        <input type="number" class="form-control" id="editDynamicRecommendationsCount" min="0">
+                    </div>
+                    <div class="form-group">
+                        <div class="custom-control custom-switch">
+                            <input type="checkbox" class="custom-control-input" id="editCiteSources">
+                            <label class="custom-control-label" for="editCiteSources">啟用引用資料來源網址</label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="editPort">服務端口</label>
+                        <input type="number" id="editPort" min="1025" max="65535" placeholder="8002">
+                        <small style="color: #6c757d;">⚠️ 修改端口需要重啟機器人</small>
+                    </div>
+                    <div class="btn-group">
+                        <button type="submit" class="btn-save">💾 保存配置</button>
+                        <button type="button" class="btn-cancel" onclick="loadBotConfig()">🔄 重置</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- 知識庫標籤 -->
+            <div id="knowledgeTab" class="tab-content">
+                <h4>📁 知識庫文件管理</h4>
+                
+                <!-- 🆕 知識庫統計信息 -->
+                <div id="knowledgeStats" class="knowledge-stats" style="display: none;">
+                    <div class="stat-item">
+                        <span class="stat-label">📄 文件總數:</span>
+                        <span class="stat-value" id="totalFilesCount">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">🧩 總 Chunks:</span>
+                        <span class="stat-value" id="totalChunksCount">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">📊 狀態:</span>
+                        <span class="stat-value" id="knowledgeStatus">就緒</span>
+                    </div>
+                </div>
+                
+                <!-- 文件列表表格 -->
+                <div id="knowledgeFilesList" style="max-height: 400px; overflow-y: auto; margin-bottom: 20px;">
+                    <!-- JS 動態填入 -->
+                </div>
+
+                <!-- 上傳區塊 -->
+                <div class="form-group">
+                    <label for="fileUpload">上傳新文件 (支援 .txt, .pdf, .docx, .md)</label>
+                    <input type="file" id="fileUpload" accept=".txt,.pdf,.docx,.md">
+                    <button id="uploadBtn" onclick="uploadFile()" class="btn-config" style="margin-top:10px;">
+                        <span id="uploadIcon">📤</span> 上傳文件
+                    </button>
+                    <span id="uploadStatus" style="margin-left: 15px; color: #007bff; font-weight: bold;"></span>
+                </div>
+
+                <!-- 🚨 緊急操作區域 -->
+<div style="margin-top: 30px; padding: 15px; border: 2px solid #dc3545; border-radius: 8px; background-color: #fff5f5;">
+    <h4 style="color: #dc3545; margin-top: 0;">🚨 緊急操作區域</h4>
+    <p style="color: #6c757d; margin-bottom: 15px;">
+        <strong>警告：</strong>以下操作將永久刪除數據，請謹慎使用！
+    </p>
+    
+    <!-- 集合狀態查看 -->
+    <div style="margin-bottom: 15px;">
+        <button onclick="checkCollectionsStatus()" class="btn-config" style="background-color: #17a2b8;">
+            📊 查看集合狀態
+        </button>
+        <div id="collectionsStatus" style="margin-top: 10px; display: none;"></div>
+    </div>
+    
+    <!-- test_01 緊急清空 -->
+    <div style="margin-bottom: 15px;">
+        <button onclick="emergencyClearTest01()" class="btn-delete" style="background-color: #dc3545;">
+            🗑️ 緊急清空 test_01
+        </button>
+        <span style="margin-left: 10px; color: #dc3545; font-size: 0.9em;">
+            此操作將刪除 test_01 的所有向量數據
+        </span>
+    </div>
+    
+    <!-- 操作結果顯示 -->
+    <div id="emergencyResults" style="display: none; margin-top: 15px; padding: 10px; border-radius: 4px;"></div>
+</div>
+
+
+            </div>
+
+            <!-- 對話記錄標籤 -->
+            <div id="conversationsTab" class="tab-content">
+                <h4>💬 對話記錄管理</h4>
+                
+                <!-- 搜索和控制區域 -->
+                <div style="margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <input type="text" id="conversationSearch" placeholder="搜索對話內容..." style="padding: 8px; border: 1px solid #ccc; border-radius: 4px; width: 200px;">
+                        <button onclick="searchConversations()" class="btn-config">🔍 搜索</button>
+                        <button onclick="loadConversations(1)" class="btn-config">🔄 重置</button>
+                    </div>
+                    <div>
+                        <span id="conversationStats">載入中...</span>
+                    </div>
+                </div>
+                
+                <!-- 批量操作區域 -->
+                <div style="margin-bottom: 15px; display: flex; gap: 10px; align-items: center;">
+                    <button onclick="toggleSelectAll()" class="btn-config" id="selectAllBtn">☑️ 全選</button>
+                    <button onclick="deleteSelectedConversations()" class="btn-delete" id="deleteSelectedBtn" disabled>🗑️ 刪除選中</button>
+                    <span id="selectedCount" style="color: #6c757d; margin-left: 10px;">已選中 0 項</span>
+                </div>
+                
+                <!-- 分頁控制 -->
+                <div style="margin-bottom: 15px; display: flex; justify-content: center; align-items: center; gap: 10px;">
+                    <button id="prevPageBtn" onclick="loadConversations(currentPage - 1)" class="btn-config" disabled>⬅️ 上一頁</button>
+                    <span id="pageInfo" style="margin: 0 15px;">頁面 1</span>
+                    <button id="nextPageBtn" onclick="loadConversations(currentPage + 1)" class="btn-config" disabled>下一頁 ➡️</button>
+                </div>
+                
+                <!-- 對話記錄列表 -->
+                <div id="conversationsList" style="max-height: 600px; overflow-y: auto;">
+                    <!-- JS 動態填入 -->
+                </div>
+            </div>
+
+            <!-- 頁面底部操作按鈕 -->
+            <hr style="margin-top: 30px;">
+            
+            <!-- 頁面內訊息顯示區域 -->
+            <div id="pageMessage" style="margin: 15px 0; padding: 10px; border-radius: 4px; display: none;"></div>
+            
+            <div class="btn-group">
+                <button onclick="showMainPage()" class="btn-cancel">← 返回列表</button>
+                <button onclick="deleteBotConfirm()" class="btn-delete">🗑️ 刪除機器人</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chunk 內容 Modal -->
+    <div id="chunkModal" class="modal large-modal">
+        <div class="modal-content">
+            <h3 id="chunkModalTitle">Chunk 內容詳情</h3>
+            
+            <!-- Chunk 元數據 -->
+            <div id="chunkMetadata" style="margin-bottom: 20px; background: #f8f9fa; padding: 15px; border-radius: 5px;"></div>
+            
+            <!-- Chunk 內容 -->
+            <div style="margin-bottom: 15px;">
+                <h4>📄 內容</h4>
+                <div id="chunkContent" style="background: white; padding: 15px; border: 1px solid #ddd; border-radius: 5px; max-height: 400px; overflow-y: auto; white-space: pre-wrap; font-family: 'Courier New', monospace; font-size: 14px; line-height: 1.4;"></div>
+            </div>
+            
+            <div style="margin-top: 20px; text-align: right;">
+                <button onclick="closeChunkModal()" class="btn-cancel">關閉</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 對話詳情 Modal -->
+    <div id="conversationDetailModal" class="modal large-modal">
+        <div class="modal-content">
+            <h3>💬 對話詳情</h3>
+            
+            <div id="conversationDetailContent">
+                <!-- JS 動態填入 -->
+            </div>
+            
+            <div style="margin-top: 20px; text-align: right;">
+                <button onclick="closeConversationDetailModal()" class="btn-cancel">關閉</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const createBotForm = document.getElementById('createBotForm');
+        const editBotForm = document.getElementById('editBotForm');
+        const botTableBody = document.getElementById('botTableBody');
+        const messageDiv = document.getElementById('message');
+        const pageMessageDiv = document.getElementById('pageMessage');
+        let currentBotName = null;
+        let currentBotConfig = null;
+
+        // 對話記錄相關變數
+        let currentPage = 1;
+        let totalPages = 1;
+        let selectedConversations = new Set();
+        let allConversationsOnPage = [];
+
+        // 頁面切換功能
+        function showMainPage() {
+            document.getElementById('mainPage').classList.add('active');
+            document.getElementById('managePage').classList.remove('active');
+            currentBotName = null;
+            currentBotConfig = null;
+            fetchBots(); // 刷新列表
+        }
+
+        function showManagePage(botName) {
+            currentBotName = botName;
+            document.getElementById('mainPage').classList.remove('active');
+            document.getElementById('managePage').classList.add('active');
+            document.getElementById('managePageTitle').textContent = `管理機器人: ${botName}`;
+            
+            // 切換到第一個標籤並載入配置
+            switchTab('info');
+            loadBotConfig();
+        }
+
+        // 顯示訊息函數
+        function showMessage(message, isError = false, inPage = false) {
+            const targetDiv = inPage ? pageMessageDiv : messageDiv;
+            targetDiv.textContent = message;
+            targetDiv.className = isError ? 'msg-error' : 'msg-success';
+            targetDiv.style.display = 'block';
+            setTimeout(() => { targetDiv.style.display = 'none'; }, 5000);
+        }
+
+        // 顯示名稱驗證和字符計數功能
+        function setupDisplayNameValidation() {
+            const displayNameInputs = ['botDisplayName', 'editDisplayName'];
+            
+            displayNameInputs.forEach(inputId => {
+                const input = document.getElementById(inputId);
+                if (!input) return;
+                
+                // 創建字符計數器
+                const counter = document.createElement('span');
+                counter.className = 'char-counter';
+                input.parentElement.style.position = 'relative';
+                input.parentElement.appendChild(counter);
+                
+                // 添加驗證消息容器
+                const validationMsg = document.createElement('div');
+                validationMsg.className = 'validation-message';
+                input.parentElement.appendChild(validationMsg);
+                
+                // 實時驗證
+                input.addEventListener('input', function() {
+                    const length = this.value.length;
+                    const maxLength = 50;
+                    
+                    // 更新計數器
+                    counter.textContent = `${length}/${maxLength}`;
+                    counter.className = 'char-counter';
+                    
+                    if (length > maxLength * 0.8) {
+                        counter.classList.add('warning');
+                    }
+                    if (length >= maxLength) {
+                        counter.classList.add('danger');
+                    }
+                    
+                    // 驗證消息
+                    if (length === 0) {
+                        validationMsg.textContent = '請輸入顯示名稱';
+                        validationMsg.className = 'validation-message error';
+                        this.parentElement.classList.add('has-validation');
+                    } else if (length > maxLength) {
+                        validationMsg.textContent = '顯示名稱過長';
+                        validationMsg.className = 'validation-message error';
+                        this.parentElement.classList.add('has-validation');
+                    } else {
+                        validationMsg.textContent = '顯示名稱格式正確';
+                        validationMsg.className = 'validation-message success';
+                        this.parentElement.classList.add('has-validation');
+                    }
+                });
+                
+                // 初始化計數器
+                input.dispatchEvent(new Event('input'));
+            });
+        }
+
+        // 表單提交前的最終驗證
+        function validateDisplayName(displayName) {
+            if (!displayName || displayName.trim().length === 0) {
+                return { valid: false, message: '顯示名稱不能為空' };
+            }
+            
+            if (displayName.length > 50) {
+                return { valid: false, message: '顯示名稱不能超過50個字符' };
+            }
+            
+            // 檢查特殊字符（可選）
+            const invalidChars = /[<>"\\'&]/;
+            if (invalidChars.test(displayName)) {
+                return { valid: false, message: '顯示名稱包含無效字符' };
+            }
+            
+            return { valid: true, message: '顯示名稱有效' };
+        }
+
+        // 登出功能
+        async function logout() {
+            try {
+                await fetch('/api/logout', { method: 'POST' });
+                window.location.href = '/login';
+            } catch (error) {
+                window.location.href = '/login';
+            }
+        }
+
+        // 標籤頁切換
+        function switchTab(tabName) {
+            // 隱藏所有標籤內容
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // 顯示選中的標籤
+            document.getElementById(tabName + 'Tab').classList.add('active');
+            event.target.classList.add('active');
+            
+            // 根據標籤載入相應內容
+            if (tabName === 'knowledge' && currentBotName) {
+                loadKnowledgeFiles(currentBotName);
+            } else if (tabName === 'conversations' && currentBotName) {
+                currentPage = 1;
+                selectedConversations.clear();
+                updateSelectedUI();
+                loadConversations(currentPage);
+            }
+        }
+
+        // 獲取機器人列表
+        async function fetchBots() {
+            try {
+                const response = await fetch(`${window.location.origin}/api/bots`, {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin'
+                });
+                
+                if (response.status === 401) {
+                    window.location.href = '/login';
+                    return;
+                }
+                const bots = await response.json();
+                renderBotTable(bots);
+            } catch (error) {
+                console.error('獲取機器人列表失敗:', error);
+                showMessage('無法獲取機器人列表: ' + error.message, true);
+            }
+        }
+
+        // 渲染機器人表格 - 支援顯示名稱
+        function renderBotTable(bots) {
+            botTableBody.innerHTML = '';
+            if (bots.length === 0) {
+                botTableBody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#6c757d;">尚未創建任何機器人</td></tr>';
+                return;
+            }
+
+            bots.forEach(bot => {
+                const row = document.createElement('tr');
+                const isRunning = bot.status === 'running';
+                const statusClass = isRunning ? 'status-running' : 'status-stopped';
+                const statusText = isRunning ? '運行中' : '已停止';
+                const toggleAction = isRunning ? 'stop' : 'start';
+                const toggleText = isRunning ? '⏹️ 停止' : '▶️ 啟動';
+                const toggleClass = isRunning ? 'btn-stop' : 'btn-start';
+                
+                // 顯示名稱優先，技術名稱作為副資訊
+                const displayName = bot.display_name || bot.name;
+                const techNameInfo = (bot.display_name && bot.display_name !== bot.name) ? 
+                    `<div class="bot-tech-name">技術名稱: ${bot.name}</div>` : '';
+                
+                const publicUrl = `${window.location.origin}/${bot.name}`;
+                row.innerHTML = `
+                    <td>
+                        <div class="bot-name-display">
+                            <div class="bot-display-name">${displayName}</div>
+                            ${techNameInfo}
+                        </div>
+                    </td>
+                    <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                    <td>${isRunning ? `<a href="${publicUrl}" target="_blank" style="color:#007bff;" title="在新分頁中打開聊天介面">${bot.port} 🔗</a>` : bot.port}</td>
+                    <td style="max-width:200px; overflow:hidden; text-overflow:ellipsis;">${bot.system_role || '未設定'}</td>
+                    <td>
+                        <div class="btn-group">
+                            <button class="${toggleClass}" onclick="toggleBot('${bot.name}', '${toggleAction}')">${toggleText}</button>
+                            <button class="btn-edit" onclick="showManagePage('${bot.name}')">⚙️ 管理</button>
+                        </div>
+                    </td>
+                `;
+                botTableBody.appendChild(row);
+            });
+        }
+
+        // 啟動/停止機器人
+        async function toggleBot(botName, action) {
+            try {
+                const response = await fetch(`/api/bots/${botName}/${action}`, { method: 'POST' });
+                const data = await response.json();
+                if (response.ok) {
+                    showMessage(data.message);
+                    fetchBots();
+                } else {
+                    throw new Error(data.detail || data.message);
+                }
+            } catch (error) {
+                showMessage(`${action === 'start' ? '啟動' : '停止'} ${botName} 失敗: ` + error.message, true);
+            }
+        }
+
+        // 創建新機器人 - 包含顯示名稱
+        createBotForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const botName = document.getElementById('botName').value;
+            const displayName = document.getElementById('botDisplayName').value.trim();
+            const port = document.getElementById('botPort').value;
+            const systemRole = document.getElementById('systemRole').value;
+
+            // 驗證顯示名稱
+            const validation = validateDisplayName(displayName);
+            if (!validation.valid) {
+                showMessage(validation.message, true);
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/bots/create', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        bot_name: botName, 
+                        display_name: displayName,
+                        port: parseInt(port),
+                        system_role: systemRole
+                    })
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    showMessage(data.message);
+                    createBotForm.reset();
+                    // 重置字符計數器
+                    setupDisplayNameValidation();
+                    fetchBots();
+                } else {
+                    throw new Error(data.detail || data.message);
+                }
+            } catch (error) {
+                showMessage('創建失敗: ' + error.message, true);
+            }
+        });
+
+        // 載入機器人配置 - 包含顯示名稱
+        async function loadBotConfig() {
+            if (!currentBotName) return;
+            
+            try {
+                const response = await fetch(`/api/bots/${currentBotName}/config`);
+                if (response.ok) {
+                    const data = await response.json();
+                    currentBotConfig = data.config;
+                    
+                    // 填充基本信息
+                    displayBotInfo(currentBotConfig);
+                    
+                    // 填充編輯表單，包括顯示名稱
+                    document.getElementById('editDisplayName').value = currentBotConfig.display_name || currentBotConfig.bot_name || '';
+                    document.getElementById('editSystemRole').value = currentBotConfig.system_role || '';
+                    document.getElementById('editTemperature').value = currentBotConfig.temperature || 0.7;
+                    document.getElementById('editMaxTokens').value = currentBotConfig.max_tokens || 2000;
+                    document.getElementById('editPort').value = currentBotConfig.port || '';
+                    
+                    // 正確設置 checkbox 狀態
+                    document.getElementById('editDynamicRecommendations').checked = currentBotConfig.dynamic_recommendations_enabled === true;
+                    document.getElementById('editDynamicRecommendationsCount').value = currentBotConfig.dynamic_recommendations_count || 0;
+                    document.getElementById('editCiteSources').checked = currentBotConfig.cite_sources_enabled === true;
+                    
+                    // 重新初始化顯示名稱驗證
+                    setupDisplayNameValidation();
+                    
+                } else {
+                    throw new Error('無法載入機器人配置');
+                }
+            } catch (error) {
+                showMessage('載入配置失敗: ' + error.message, true, true);
+            }
+        }
+
+        // 顯示機器人基本信息 - 包含顯示名稱
+        function displayBotInfo(config) {
+            const infoDiv = document.getElementById('botInfoDetails');
+            const createdAt = config.created_at ? new Date(config.created_at).toLocaleString('zh-TW') : '未知';
+            const updatedAt = config.updated_at ? new Date(config.updated_at).toLocaleString('zh-TW') : '未更新';
+            
+            // 顯示名稱處理
+            const displayName = config.display_name || config.bot_name || '未設定';
+            const techName = config.bot_name || '未知';
+            
+            infoDiv.innerHTML = `
+                <div class="info-row">
+                    <span class="info-label">顯示名稱:</span>
+                    <span class="info-value">${displayName}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">技術名稱:</span>
+                    <span class="info-value">${techName}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">服務端口:</span>
+                    <span class="info-value">${config.port || '未設定'}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">溫度參數:</span>
+                    <span class="info-value">${config.temperature || 0.7}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">最大 Token:</span>
+                    <span class="info-value">${config.max_tokens || 2000}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">動態推薦問題:</span>
+                    <span class="info-value">${config.dynamic_recommendations_enabled ? '✅ 已啟用' : '❌ 未啟用'}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">引用來源:</span>
+                    <span class="info-value">${config.cite_sources_enabled ? '✅ 已啟用' : '❌ 未啟用'}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">創建者:</span>
+                    <span class="info-value">${config.created_by || '未知'}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">創建時間:</span>
+                    <span class="info-value">${createdAt}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">最後更新:</span>
+                    <span class="info-value">${updatedAt}</span>
+                </div>
+                <div style="margin-top: 15px;">
+                    <div class="info-label">系統角色:</div>
+                    <div style="background: white; padding: 10px; border-radius: 4px; margin-top: 5px; white-space: pre-wrap;">${config.system_role || '未設定'}</div>
+                </div>
+            `;
+        }
+
+        // 保存機器人配置 - 包含顯示名稱
+        editBotForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!currentBotName) return;
+
+            const displayName = document.getElementById('editDisplayName').value.trim();
+            const systemRole = document.getElementById('editSystemRole').value;
+            const temperature = parseFloat(document.getElementById('editTemperature').value);
+            const maxTokens = parseInt(document.getElementById('editMaxTokens').value);
+            const port = parseInt(document.getElementById('editPort').value);
+            
+            // 驗證顯示名稱
+            const validation = validateDisplayName(displayName);
+            if (!validation.valid) {
+                showMessage(validation.message, true, true);
+                return;
+            }
+            
+            // 正確讀取 checkbox 值
+            const dynamicRecommendationsEnabled = document.getElementById('editDynamicRecommendations').checked;
+            const dynamicRecommendationsCount = parseInt(document.getElementById('editDynamicRecommendationsCount').value) || 0;
+            const citeSourcesEnabled = document.getElementById('editCiteSources').checked;
+
+            try {
+                const response = await fetch(`/api/bots/${currentBotName}/config`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        display_name: displayName,
+                        system_role: systemRole,
+                        temperature: temperature,
+                        max_tokens: maxTokens,
+                        port: port,
+                        dynamic_recommendations_enabled: dynamicRecommendationsEnabled,
+                        dynamic_recommendations_count: dynamicRecommendationsCount,
+                        cite_sources_enabled: citeSourcesEnabled
+                    })
+                });
+                
+                const data = await response.json();
+                if (response.ok) {
+                    showMessage('配置已保存成功！', false, true);
+                    await loadBotConfig(); // 重新載入配置
+                } else {
+                    throw new Error(data.error || data.message);
+                }
+            } catch (error) {
+                showMessage('保存配置失敗: ' + error.message, true, true);
+            }
+        });
+
+        // 🆕 修正後的載入知識庫文件函數
+        async function loadKnowledgeFiles(botName) {
+            const listDiv = document.getElementById('knowledgeFilesList');
+            const statsDiv = document.getElementById('knowledgeStats');
+            const totalFilesEl = document.getElementById('totalFilesCount');
+            const totalChunksEl = document.getElementById('totalChunksCount');
+            const statusEl = document.getElementById('knowledgeStatus');
+            
+            listDiv.innerHTML = '<p>正在獲取文件列表...</p>';
+            statsDiv.style.display = 'none';
+
+            try {
+                const response = await fetch(`/api/bots/${botName}/knowledge/files`);
+                if (!response.ok) throw new Error(`伺服器錯誤: ${response.status}`);
+                
+                // 🔧 修正：正確處理後端返回的對象格式
+                const responseData = await response.json();
+                console.log('API 回應:', responseData); // 調試用
+
+                let documents = [];
+                let totalFiles = 0;
+                let apiMessage = '';
+
+                // 處理不同的響應格式
+                if (responseData.success === false) {
+                    // 錯誤情況
+                    throw new Error(responseData.message || '獲取文件列表失敗');
+                } else if (responseData.documents && Array.isArray(responseData.documents)) {
+                    // 標準對象格式
+                    documents = responseData.documents;
+                    totalFiles = responseData.total || documents.length;
+                    apiMessage = responseData.message || '';
+                } else if (Array.isArray(responseData)) {
+                    // 舊的數組格式（備用相容）
+                    documents = responseData;
+                    totalFiles = documents.length;
+                } else {
+                    throw new Error("API 返回的資料格式不正確");
+                }
+
+                // 顯示統計信息
+                totalFilesEl.textContent = totalFiles;
+                statusEl.textContent = apiMessage || (totalFiles > 0 ? '就緒' : '空');
+                statsDiv.style.display = 'flex';
+
+                if (documents.length === 0) {
+                    totalChunksEl.textContent = '0';
+                    listDiv.innerHTML = '<p style="color:#6c757d; text-align:center; padding: 20px;">此知識庫中沒有文件。</p>';
+                    return;
+                }
+
+                // 建立文件列表表格
+                let tableHtml = `
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="background-color: #f8f9fa;">
+                                <th style="padding: 12px; text-align: left;">文件名</th>
+                                <th style="padding: 12px; text-align: center;">Chunks</th>
+                                <th style="padding: 12px; text-align: left;">上傳者</th>
+                                <th style="padding: 12px; text-align: left;">上傳時間</th>
+                                <th style="padding: 12px; text-align: center;">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                
+                let totalChunks = 0;
+                documents.forEach(doc => {
+                    const filename = doc.filename || doc.name || 'unknown';
+                    const safeFilename = filename.replace(/\./g, '-');
+                    
+                    tableHtml += `
+                        <tr id="file-row-${safeFilename}" style="border-bottom: 1px solid #eee;">
+                            <td style="padding: 10px; word-break: break-all;">📄 ${filename}</td>
+                            <td id="chunk-count-${safeFilename}" style="padding: 10px; text-align: center;">${doc.chunk_count || '...'}</td>
+                            <td id="uploader-${safeFilename}" style="padding: 10px;">${doc.uploaded_by || '...'}</td>
+                            <td id="upload-time-${safeFilename}" style="padding: 10px;">${doc.uploaded_at ? new Date(doc.uploaded_at).toLocaleString('zh-TW') : '...'}</td>
+                            <td style="padding: 10px; text-align: center;">
+                                <button onclick="deleteFile('${botName}', '${filename}')" class="btn-delete" style="padding: 5px 10px; font-size: 0.9em; background-color: #dc3545; color: white;">🗑️ 刪除</button>
+                            </td>
+                        </tr>
+                    `;
+                    
+                    // 累計 chunks
+                    if (doc.chunk_count && typeof doc.chunk_count === 'number') {
+                        totalChunks += doc.chunk_count;
+                    }
+                });
+                
+                tableHtml += '</tbody></table>';
+                listDiv.innerHTML = tableHtml;
+
+                // 更新總 chunks 數
+                totalChunksEl.textContent = totalChunks;
+
+                // 對於沒有詳細信息的文件，異步獲取
+                documents.forEach(doc => {
+                    const filename = doc.filename || doc.name;
+                    if (!doc.chunk_count || !doc.uploaded_by) {
+                        fetchFileDetails(botName, filename);
+                    }
+                });
+
+            } catch (error) {
+                console.error('載入知識庫文件失敗:', error);
+                listDiv.innerHTML = `<p style="color:red; text-align:center; padding: 20px;">載入文件列表失敗: ${error.message}</p>`;
+                statusEl.textContent = '錯誤';
+                totalFilesEl.textContent = '0';
+                totalChunksEl.textContent = '0';
+                statsDiv.style.display = 'flex';
+            }
+        }
+
+        // 獲取單個文件的詳細資訊
+        async function fetchFileDetails(botName, filename) {
+            try {
+                const safeFilename = filename.replace(/\./g, '-');
+                const response = await fetch(`/api/bots/${botName}/knowledge/files/${filename}/details`);
+                if (!response.ok) throw new Error('獲取失敗');
+                
+                const details = await response.json();
+
+                const chunkCountEl = document.getElementById(`chunk-count-${safeFilename}`);
+                const uploaderEl = document.getElementById(`uploader-${safeFilename}`);
+                const uploadTimeEl = document.getElementById(`upload-time-${safeFilename}`);
+
+                if (chunkCountEl) chunkCountEl.textContent = details.chunk_count || 'N/A';
+                if (uploaderEl) uploaderEl.textContent = details.uploaded_by || '未知';
+                if (uploadTimeEl) uploadTimeEl.textContent = details.uploaded_at ? new Date(details.uploaded_at).toLocaleString('zh-TW') : '未知';
+
+                // 更新總 chunks 計數
+                if (details.chunk_count && typeof details.chunk_count === 'number') {
+                    const currentTotal = parseInt(document.getElementById('totalChunksCount').textContent) || 0;
+                    document.getElementById('totalChunksCount').textContent = currentTotal + details.chunk_count;
+                }
+
+            } catch (error) {
+                console.warn(`獲取文件 ${filename} 的詳細信息失敗:`, error);
+                const safeFilename = filename.replace(/\./g, '-');
+                const chunkCountEl = document.getElementById(`chunk-count-${safeFilename}`);
+                const uploaderEl = document.getElementById(`uploader-${safeFilename}`);
+                const uploadTimeEl = document.getElementById(`upload-time-${safeFilename}`);
+                
+                if (chunkCountEl) chunkCountEl.textContent = '錯誤';
+                if (uploaderEl) uploaderEl.textContent = '-';
+                if (uploadTimeEl) uploadTimeEl.textContent = '-';
+            }
+        }
+
+        // 上傳文件
+        async function uploadFile() {
+            if (!currentBotName) return;
+            const fileInput = document.getElementById('fileUpload');
+            const file = fileInput.files[0];
+            if (!file) {
+                showMessage('請先選擇一個文件再上傳。', true, true);
+                return;
+            }
+
+            const uploadBtn = document.getElementById('uploadBtn');
+            const uploadStatus = document.getElementById('uploadStatus');
+
+            uploadBtn.disabled = true;
+            uploadBtn.style.backgroundColor = '#6c757d';
+            uploadStatus.textContent = '上傳與向量化處理中，請稍候...';
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const response = await fetch(`/api/bots/${currentBotName}/knowledge/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    showMessage(`文件 ${file.name} 已成功上傳並索引。`, false, true);
+                    fileInput.value = '';
+                    loadKnowledgeFiles(currentBotName);
+                } else {
+                    throw new Error(data.message || '上傳失敗，請檢查伺服器日誌。');
+                }
+            } catch (error) {
+                showMessage('上傳失敗: ' + error.message, true, true);
+            } finally {
+                uploadBtn.disabled = false;
+                uploadBtn.style.backgroundColor = '#007bff';
+                uploadStatus.textContent = '';
+            }
+        }
+
+        // 刪除文件
+        async function deleteFile(botName, filename) {
+            if (!confirm(`您確定要永久刪除知識庫中的文件 "${filename}" 嗎？\n\n此操作將會：\n1. 從伺服器刪除原始文件。\n2. 從向量資料庫中移除相關的數據。\n\n這個操作無法復原！`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/bots/${botName}/knowledge/files/${filename}`, {
+                    method: 'DELETE' 
+                });
+                const data = await response.json();
+                if (response.ok && data.success) {
+                    showMessage(`文件 ${filename} 已成功刪除。`, false, true);
+                    loadKnowledgeFiles(botName);
+                } else {
+                    throw new Error(data.message || '刪除失敗');
+                }
+            } catch (error) {
+                showMessage('刪除失敗: ' + error.message, true, true);
+            }
+        }
+
+        // ================= 對話記錄管理功能 =================
+
+        // 載入對話記錄
+        async function loadConversations(page = 1, search = '') {
+            if (!currentBotName) return;
+            
+            const listDiv = document.getElementById('conversationsList');
+            const statsDiv = document.getElementById('conversationStats');
+            const pageInfo = document.getElementById('pageInfo');
+            
+            listDiv.innerHTML = '<p>正在載入對話記錄...</p>';
+            
+            try {
+                const searchParam = search ? `&search=${encodeURIComponent(search)}` : '';
+                const response = await fetch(`/api/bots/${currentBotName}/conversations?page=${page}&limit=10${searchParam}`);
+                if (!response.ok) throw new Error(`載入失敗: ${response.status}`);
+                
+                const data = await response.json();
+                
+                if (!data.success) {
+                    throw new Error(data.message || '載入失敗');
+                }
+                
+                const conversations = data.conversations;
+                allConversationsOnPage = conversations;
+                currentPage = data.page;
+                totalPages = data.total_pages;
+                
+                // 更新統計信息
+                statsDiv.textContent = `共 ${data.total} 條對話記錄`;
+                pageInfo.textContent = `頁面 ${currentPage} / ${totalPages}`;
+                
+                // 更新分頁按鈕狀態
+                document.getElementById('prevPageBtn').disabled = currentPage <= 1;
+                document.getElementById('nextPageBtn').disabled = currentPage >= totalPages;
+                
+                if (conversations.length === 0) {
+                    listDiv.innerHTML = '<p style="color:#6c757d; text-align:center; padding: 20px;">此機器人還沒有對話記錄。</p>';
+                    return;
+                }
+                
+                // 建立對話記錄表格
+                let tableHtml = `
+                    <table class="conversation-table" style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="background-color: #f8f9fa;">
+                                <th style="padding: 8px; text-align: center; width: 50px;">
+                                    <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll()">
+                                </th>
+                                <th style="padding: 8px; text-align: left; width: 25%;">用戶問題</th>
+                                <th style="padding: 8px; text-align: left; width: 30%;">機器人回答</th>
+                                <th style="padding: 8px; text-align: center; width: 15%;">Chunks</th>
+                                <th style="padding: 8px; text-align: center; width: 12%;">時間</th>
+                                <th style="padding: 8px; text-align: center; width: 13%;">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                
+                conversations.forEach(conv => {
+                    const timestamp = conv.timestamp || conv.created_at;
+                    const timeStr = timestamp ? new Date(timestamp).toLocaleString('zh-TW') : '未知';
+                    
+                    // 生成 chunk 按鈕
+                    let chunkButtons = '';
+                    if (conv.chunk_ids && conv.chunk_ids.length > 0) {
+                        chunkButtons = conv.chunk_ids.map((chunkIndex, idx) => 
+                            `<button onclick="showChunkContent(${chunkIndex})" class="chunk-btn" title="查看 Chunk ${chunkIndex}">${idx + 1}</button>`
+                        ).join('');
+                    } else {
+                        chunkButtons = '<span style="color: #6c757d;">無</span>';
+                    }
+                    
+                    // 添加狀態指示器
+                    const statusIcon = conv.error_occurred ? '❌' : '✅';
+                    const statusTitle = conv.error_occurred ? '處理失敗' : '處理成功';
+                    const rowClass = conv.error_occurred ? 'error-row' : 'success-row';
+                    
+                    tableHtml += `
+                        <tr class="${rowClass}" style="border-bottom: 1px solid #eee;">
+                            <td style="padding: 8px; text-align: center;">
+                                <input type="checkbox" value="${conv.id}" onchange="toggleConversationSelection(${conv.id})">
+                            </td>
+                            <td style="padding: 8px; word-break: break-word; max-width: 200px;">
+                                <span title="${conv.full_user_query || conv.user_query}">${conv.user_query}</span>
+                                <div class="conversation-meta">
+                                    會話: ${conv.user_id}
+                                </div>
+                            </td>
+                            <td style="padding: 8px; word-break: break-word; max-width: 250px;">
+                                <span title="${conv.full_ai_response || conv.ai_response}">${conv.ai_response}</span>
+                                ${conv.collection_used ? `<div class="conversation-meta" style="color: #007bff;">📚 ${conv.collection_used}</div>` : ''}
+                            </td>
+                            <td style="padding: 8px; text-align: center;">${chunkButtons}</td>
+                            <td style="padding: 8px; text-align: center; font-size: 0.9em;">
+                                <div>${timeStr}</div>
+                                ${conv.processing_time_ms ? `<div class="conversation-meta">${conv.processing_time_ms}ms</div>` : ''}
+                            </td>
+                            <td style="padding: 8px; text-align: center;">
+                                <div style="display: flex; flex-direction: column; gap: 2px;">
+                                    <button onclick="showConversationDetail(${conv.id})" class="btn-config" style="padding: 3px 6px; font-size: 0.8em;" title="${statusTitle}">
+                                        ${statusIcon} 詳情
+                                    </button>
+                                    <button onclick="deleteConversation(${conv.id})" class="btn-delete" style="padding: 3px 6px; font-size: 0.8em;">🗑️</button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                tableHtml += '</tbody></table>';
+                listDiv.innerHTML = tableHtml;
+                
+                // 重置選擇狀態
+                selectedConversations.clear();
+                updateSelectedUI();
+                
+            } catch (error) {
+                listDiv.innerHTML = `<p style="color:red; text-align:center; padding: 20px;">載入對話記錄失敗: ${error.message}</p>`;
+                statsDiv.textContent = '載入失敗';
+            }
+        }
+
+        // 搜索對話
+        function searchConversations() {
+            const searchInput = document.getElementById('conversationSearch');
+            const searchTerm = searchInput.value.trim();
+            currentPage = 1;
+            selectedConversations.clear();
+            updateSelectedUI();
+            loadConversations(currentPage, searchTerm);
+        }
+
+        // 切換單個對話選擇
+        function toggleConversationSelection(conversationId) {
+            if (selectedConversations.has(conversationId)) {
+                selectedConversations.delete(conversationId);
+            } else {
+                selectedConversations.add(conversationId);
+            }
+            updateSelectedUI();
+        }
+
+        // 切換全選
+        function toggleSelectAll() {
+            const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+            const checkboxes = document.querySelectorAll('input[type="checkbox"][value]');
+            
+            if (selectAllCheckbox.checked) {
+                // 全選當前頁面
+                checkboxes.forEach(cb => {
+                    cb.checked = true;
+                    selectedConversations.add(parseInt(cb.value));
+                });
+            } else {
+                // 取消全選
+                checkboxes.forEach(cb => {
+                    cb.checked = false;
+                    selectedConversations.delete(parseInt(cb.value));
+                });
+            }
+            updateSelectedUI();
+        }
+
+        // 更新選擇狀態UI
+        function updateSelectedUI() {
+            const selectedCount = selectedConversations.size;
+            const deleteBtn = document.getElementById('deleteSelectedBtn');
+            const countSpan = document.getElementById('selectedCount');
+            const selectAllBtn = document.getElementById('selectAllBtn');
+            
+            countSpan.textContent = `已選中 ${selectedCount} 項`;
+            deleteBtn.disabled = selectedCount === 0;
+            
+            // 更新全選按鈕文字
+            if (selectedCount === 0) {
+                selectAllBtn.textContent = '☑️ 全選';
+            } else if (selectedCount === allConversationsOnPage.length) {
+                selectAllBtn.textContent = '⬜ 取消全選';
+            } else {
+                selectAllBtn.textContent = '☑️ 全選';
+            }
+        }
+
+        // 顯示 Chunk 內容
+        async function showChunkContent(chunkIndex) {
+            if (!currentBotName || chunkIndex === undefined) return;
+            
+            const modal = document.getElementById('chunkModal');
+            const title = document.getElementById('chunkModalTitle');
+            const content = document.getElementById('chunkContent');
+            const metadata = document.getElementById('chunkMetadata');
+            
+            title.textContent = `Chunk 內容: #${chunkIndex}`;
+            content.textContent = '載入中...';
+            metadata.innerHTML = '';
+            modal.style.display = 'flex';
+            
+            try {
+                const response = await fetch(`/api/bots/${currentBotName}/conversations/chunk/${chunkIndex}`);
+                if (!response.ok) throw new Error('載入失敗');
+                
+                const data = await response.json();
+                
+                if (!data.success) {
+                    throw new Error(data.message || '載入失敗');
+                }
+                
+                const chunk = data.chunk;
+                content.textContent = chunk.content;
+                
+                // 顯示元數據
+                const stats = chunk.content_stats || {};
+                metadata.innerHTML = `
+                    <h4>📊 Chunk 詳細信息</h4>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+                        <div><strong>Chunk 索引:</strong> ${chunk.chunk_index}</div>
+                        <div><strong>Token 數量:</strong> ${chunk.token_count || 'N/A'}</div>
+                        <div><strong>文字類型:</strong> ${chunk.text_type || 'N/A'}</div>
+                        <div><strong>品質分數:</strong> ${chunk.quality_score || 'N/A'}</div>
+                        <div><strong>字符數:</strong> ${stats.total_chars || 'N/A'}</div>
+                        <div><strong>行數:</strong> ${stats.total_lines || 'N/A'}</div>
+                        <div><strong>詞數:</strong> ${stats.total_words || 'N/A'}</div>
+                        <div><strong>句數:</strong> ${stats.total_sentences || 'N/A'}</div>
+                        <div><strong>來源文件:</strong> ${chunk.original_filename || chunk.source_file || 'N/A'}</div>
+                        <div><strong>語言:</strong> ${chunk.language || 'N/A'}</div>
+                        <div><strong>處理策略:</strong> ${chunk.processing_strategy || 'N/A'}</div>
+                        <div><strong>分割方法:</strong> ${chunk.split_method || 'N/A'}</div>
+                    </div>
+                `;
+                
+            } catch (error) {
+                content.textContent = `載入 Chunk 內容失敗: ${error.message}`;
+                metadata.innerHTML = '';
+            }
+        }
+
+        // 顯示對話詳情
+        function showConversationDetail(conversationId) {
+            const conversation = allConversationsOnPage.find(conv => conv.id === conversationId);
+            if (!conversation) return;
+
+            const modal = document.getElementById('conversationDetailModal');
+            const content = document.getElementById('conversationDetailContent');
+
+            const timestamp = conversation.timestamp || conversation.created_at;
+            const timeStr = timestamp ? new Date(timestamp).toLocaleString('zh-TW') : '未知';
+            
+            content.innerHTML = `
+                <div class="info-card">
+                    <h4>📊 對話基本信息</h4>
+                    <div class="info-row">
+                        <span class="info-label">對話ID:</span>
+                        <span class="info-value">${conversation.id}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">會話ID:</span>
+                        <span class="info-value">${conversation.session_id}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">時間:</span>
+                        <span class="info-value">${timeStr}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">處理時間:</span>
+                        <span class="info-value">${conversation.processing_time || 0}ms</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">使用集合:</span>
+                        <span class="info-value">${conversation.collection_used || '無'}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">狀態:</span>
+                        <span class="info-value">${conversation.error_occurred ? '❌ 處理失敗' : '✅ 處理成功'}</span>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <h4>❓ 用戶問題</h4>
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; border-left: 4px solid #007bff;">
+                        ${conversation.full_user_message || conversation.user_message}
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <h4>🤖 機器人回答</h4>
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; border-left: 4px solid #28a745;">
+                        ${conversation.full_bot_response || conversation.bot_response}
+                    </div>
+                </div>
+
+                ${conversation.chunk_ids && conversation.chunk_ids.length > 0 ? `
+                <div>
+                    <h4>📚 相關 Chunks</h4>
+                    <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                        ${conversation.chunk_ids.map((chunkIndex, idx) => 
+                            `<button onclick="showChunkContent(${chunkIndex})" class="chunk-btn">Chunk ${idx + 1}</button>`
+                        ).join('')}
+                    </div>
+                </div>
+                ` : ''}
+            `;
+
+            modal.style.display = 'flex';
+        }
+
+        // 刪除單條對話記錄
+        async function deleteConversation(conversationId) {
+            if (!currentBotName || !conversationId) return;
+            
+            if (!confirm('確定要刪除這條對話記錄嗎？此操作無法撤銷。')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/bots/${currentBotName}/conversations/${conversationId}`, {
+                    method: 'DELETE'
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    showMessage('對話記錄已刪除', false, true);
+                    loadConversations(currentPage);
+                } else {
+                    throw new Error(data.message || '刪除失敗');
+                }
+            } catch (error) {
+                showMessage('刪除對話記錄失敗: ' + error.message, true, true);
+            }
+        }
+
+        // 批量刪除對話記錄
+        async function deleteSelectedConversations() {
+            if (selectedConversations.size === 0) return;
+            
+            if (!confirm(`確定要刪除選中的 ${selectedConversations.size} 條對話記錄嗎？此操作無法撤銷。`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/bots/${currentBotName}/conversations`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        conversation_ids: Array.from(selectedConversations) 
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    showMessage(data.message, false, true);
+                    selectedConversations.clear();
+                    updateSelectedUI();
+                    loadConversations(currentPage);
+                } else {
+                    throw new Error(data.message || '批量刪除失敗');
+                }
+            } catch (error) {
+                showMessage('批量刪除失敗: ' + error.message, true, true);
+            }
+        }
+
+        // 關閉各種 Modal
+        function closeChunkModal() {
+            document.getElementById('chunkModal').style.display = 'none';
+        }
+
+        function closeConversationDetailModal() {
+            document.getElementById('conversationDetailModal').style.display = 'none';
+        }
+
+        // 刪除機器人確認
+        async function deleteBotConfirm() {
+            if (!currentBotName) return;
+            
+            if (!confirm(`⚠️ 確定要完全刪除機器人 "${currentBotName}" 嗎？\n\n這將會刪除：\n• 機器人配置\n• 所有知識庫文件\n• 對話記錄\n\n此操作無法撤銷！`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/bots/${currentBotName}`, { method: 'DELETE' });
+                const data = await response.json();
+                if (response.ok) {
+                    showMessage(`機器人 ${currentBotName} 已完全刪除`);
+                    showMainPage();
+                } else {
+                    throw new Error(data.detail || data.message);
+                }
+            } catch (error) {
+                showMessage('刪除失敗: ' + error.message, true);
+            }
+        }
+
+        // 頁面載入和定期刷新
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchBots();
+            setupDisplayNameValidation(); // 初始化顯示名稱驗證
+            // 每10秒刷新一次列表（僅在主頁面時）
+            setInterval(() => {
+                if (document.getElementById('mainPage').classList.contains('active')) {
+                    fetchBots();
+                }
+            }, 10000);
+        });
+
+        // 點擊 Modal 外部關閉
+        document.getElementById('chunkModal').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('chunkModal')) {
+                closeChunkModal();
+            }
+        });
+
+        document.getElementById('conversationDetailModal').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('conversationDetailModal')) {
+                closeConversationDetailModal();
+            }
+        });
+
+        // 搜索框 Enter 鍵支援
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                const activeElement = document.activeElement;
+                if (activeElement && activeElement.id === 'conversationSearch') {
+                    searchConversations();
+                }
+            }
+        });
+
+        // 瀏覽器前進後退按鍵支援
+        window.addEventListener('popstate', (e) => {
+            if (e.state && e.state.page === 'manage') {
+                showManagePage(e.state.botName);
+            } else {
+                showMainPage();
+            }
+        });
+
+        // 更新 showManagePage 函數以支援瀏覽器歷史
+        function showManagePageWithHistory(botName) {
+            history.pushState({page: 'manage', botName: botName}, '', `#manage-${botName}`);
+            showManagePage(botName);
+        }
+
+        // 更新 showMainPage 函數以支援瀏覽器歷史
+        function showMainPageWithHistory() {
+            history.pushState({page: 'main'}, '', '#main');
+            showMainPage();
+        }
+
+        // 檢查集合狀態
+async function checkCollectionsStatus() {
+    try {
+        const response = await fetch(`${window.location.origin}/api/emergency/collections-status`, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin'
+        });
+        
+        const data = await response.json();
+        const statusDiv = document.getElementById('collectionsStatus');
+        
+        if (data.success) {
+            let html = '<div style="background: #f8f9fa; padding: 10px; border-radius: 4px; margin-top: 10px;">';
+            html += '<h5>📊 數據庫集合狀態：</h5>';
+            
+            if (Object.keys(data.collections_status).length === 0) {
+                html += '<p style="color: #28a745;">✅ 數據庫中沒有向量數據</p>';
+            } else {
+                for (const [table, collections] of Object.entries(data.collections_status)) {
+                    html += `<h6>表: ${table}</h6><ul>`;
+                    for (const [collection, count] of Object.entries(collections)) {
+                        const color = collection === 'test_01' ? '#dc3545' : '#007bff';
+                        html += `<li style="color: ${color};">${collection}: ${count} 條記錄</li>`;
+                    }
+                    html += '</ul>';
+                }
+            }
+            
+            html += '</div>';
+            statusDiv.innerHTML = html;
+            statusDiv.style.display = 'block';
+        } else {
+            statusDiv.innerHTML = `<div style="color: #dc3545;">❌ 獲取狀態失敗: ${data.message}</div>`;
+            statusDiv.style.display = 'block';
+        }
+        
+    } catch (error) {
+        console.error('獲取集合狀態失敗:', error);
+        document.getElementById('collectionsStatus').innerHTML = 
+            `<div style="color: #dc3545;">❌ 請求失敗: ${error.message}</div>`;
+        document.getElementById('collectionsStatus').style.display = 'block';
+    }
+}
+
+// 緊急清空 test_01
+async function emergencyClearTest01() {
+    // 雙重確認
+    const confirm1 = confirm('⚠️ 警告：即將刪除 test_01 的所有向量數據！\n\n此操作無法撤銷，確定要繼續嗎？');
+    if (!confirm1) return;
+    
+    const confirm2 = confirm('🚨 最後確認：\n\n您確定要永久刪除 test_01 集合的所有數據嗎？\n\n點擊"確定"將立即執行刪除操作。');
+    if (!confirm2) return;
+    
+    const resultsDiv = document.getElementById('emergencyResults');
+    resultsDiv.innerHTML = '<div style="color: #007bff;">🔄 正在執行緊急清空操作，請稍候...</div>';
+    resultsDiv.style.display = 'block';
+    
+    try {
+        const response = await fetch(`${window.location.origin}/api/emergency/clear-test01`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin'
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            let html = '<div style="background: #d4edda; color: #155724; padding: 15px; border-radius: 4px;">';
+            html += `<h5>✅ 清空成功！</h5>`;
+            html += `<p><strong>總計刪除：</strong>${data.total_deleted} 條記錄</p>`;
+            html += '<h6>詳細結果：</h6><ul>';
+            
+            data.details.forEach(detail => {
+                html += `<li>${detail}</li>`;
+            });
+            
+            html += '</ul></div>';
+            resultsDiv.innerHTML = html;
+            
+            // 刷新知識庫文件列表
+            if (currentBotName === 'test_01') {
+                setTimeout(() => {
+                    loadKnowledgeFiles(currentBotName);
+                }, 2000);
+            }
+            
+        } else {
+            resultsDiv.innerHTML = `
+                <div style="background: #f8d7da; color: #721c24; padding: 15px; border-radius: 4px;">
+                    <h5>❌ 清空失敗</h5>
+                    <p>${data.message}</p>
+                </div>
+            `;
+        }
+        
+    } catch (error) {
+        console.error('緊急清空失敗:', error);
+        resultsDiv.innerHTML = `
+            <div style="background: #f8d7da; color: #721c24; padding: 15px; border-radius: 4px;">
+                <h5>❌ 請求失敗</h5>
+                <p>${error.message}</p>
+            </div>
+        `;
+    }
+}
+    </script>
+</body>
+</html>

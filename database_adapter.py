@@ -294,9 +294,10 @@ class PostgreSQLAdapter(DatabaseAdapter):
             )
             self.connection.autocommit = False
             
-            # 設置搜索路徑
+            # 設置搜索路徑和時區
             with self.connection.cursor() as cursor:
                 cursor.execute(f"SET search_path TO {self.schema}")
+                cursor.execute("SET timezone = 'Asia/Taipei'")
             
             self._is_connected = True
             logger.info(f"✅ PostgreSQL 連接成功")
