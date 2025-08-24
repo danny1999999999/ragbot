@@ -20,7 +20,7 @@ from pydantic import BaseModel
 
 # 导入向量系统
 try:
-    from vector_builder_langchain import OptimizedVectorSystem
+    from vector_builder_langchain_huge import OptimizedVectorSystem
     VECTOR_SYSTEM_AVAILABLE = True
     print("✅ 向量系统导入成功")
 except ImportError as e:

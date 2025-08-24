@@ -48,7 +48,7 @@ except ImportError:
 
 # 🔧 检查向量系统
 try:
-    from vector_builder_langchain import OptimizedVectorSystem
+    from vector_builder_langchain_huge import OptimizedVectorSystem
     VECTOR_SYSTEM_AVAILABLE = True
     print("✅ 向量系统可用")
 except ImportError:

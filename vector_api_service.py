@@ -89,7 +89,7 @@ class OpenAIVectorAPIService:
             Path("./chroma_langchain_db").mkdir(exist_ok=True)
             
             # 嘗試導入和初始化
-            from vector_builder_langchain import OptimizedVectorSystem
+            from vector_builder_langchain_huge import OptimizedVectorSystem
             
             # OpenAI API 版本的初始化應該很快，因為不需要下載本地模型
             self.vector_system = OptimizedVectorSystem()
