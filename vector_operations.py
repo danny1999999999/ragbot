@@ -331,10 +331,10 @@ class AdvancedTokenEstimator:
     
     def analyze_text_composition(self, text: str) -> Dict[str, int]:
         """分析文本組成"""
-        chinese_chars = len(re.findall(r'[\\u4e00-\\u9fff]', text))
+        chinese_chars = len(re.findall(r'[\u4e00-\u9fff]', text))
         english_chars = len(re.findall(r'[a-zA-Z]', text))
-        numbers = len(re.findall(r'\\d', text))
-        punctuation = len(re.findall(r'[^\\w\\s\\u4e00-\\u9fff]', text))
+        numbers = len(re.findall(r'\d', text))
+        punctuation = len(re.findall(r'[^\w\s\u4e00-\u9fff]', text))
         other_chars = len(text) - chinese_chars - english_chars - numbers - punctuation
         
         return {
@@ -401,10 +401,10 @@ class ChineseTextNormalizer:
         
         # 中文文本正規化規則
         self.normalization_rules = [
-            (r'[\\u3000]+', ' '),
-            (r'\\r\\n|\\r', '\\n'),                       # 統一換行
-            (r'\\n{3,}', '\\n\n'),                      # 限制連續換行
-            (r'[\\u201C\\u201D\\u2018\\u2019\\u201E\\u201A\\u2033\\u2032]', '"'),  # 統一引號
+            (r'[\u3000]+', ' '),
+            (r'\r\n|\r', '\n'),                       # 統一換行
+            (r'\n{3,}', '\n\n'),                      # 限制連續換行
+            (r'[\u201C\u201D\u2018\u2019\u201E\u201A\u2033\u2032]', '"'),  # 統一引號
             (r'[——–∶]', '-'),                          # 統一破折號
             (r'[…⋯]', '...'),                         # 統一省略號
         ]
@@ -453,7 +453,7 @@ class ChineseTextNormalizer:
         
         simplified_count = sum(1 for char in text if char in simplified_chars)
         traditional_count = sum(1 for char in text if char in traditional_chars)
-        total_chinese = len(re.findall(r'[\\u4e00-\\u9fff]', text))
+        total_chinese = len(re.findall(r'[\u4e00-\u9fff]', text))
         
         if total_chinese == 0:
             return 'unknown', 0.0
@@ -520,7 +520,7 @@ class EpubProcessor:
                 book_info.append(f"作者: {author[0][0] if author else '未知'}")
             
             if book_info:
-                content_parts.append("\\n".join(book_info) + "\\n\\n")
+                content_parts.append("\n".join(book_info) + "\n\n")
             
             # 按順序處理章節
             spine_items = book.get_items_of_type(ebooklib.ITEM_DOCUMENT)
@@ -547,9 +547,9 @@ class EpubProcessor:
                             # 添加章節標記
                             chapter_title = self._extract_chapter_title(soup, cleaned_text)
                             if chapter_title:
-                                content_parts.append(f"\\n\\n=== {chapter_title} ===\\n")
+                                content_parts.append(f"\n\n=== {chapter_title} ===\n")
                             else:
-                                content_parts.append(f"\\n\\n=== 第 {chapter_count} 章 ===\\n")
+                                content_parts.append(f"\n\n=== 第 {chapter_count} 章 ===\n")
                             
                             content_parts.append(cleaned_text)
                             
@@ -580,12 +580,12 @@ class EpubProcessor:
         
         # EPUB 特定清理
         epub_cleaning_rules = [
-            (r'\\n{4,}', '\\n\n'),                    # 限制連續換行
+            (r'\n{4,}', '\n\n'),                    # 限制連續換行
             (r'[ \t]{3,}', ' ' ),                    # 限制連續空格
             (r'^[ \t]+', '', re.MULTILINE),          # 移除行首空白
             (r'[ \t]+$', '', re.MULTILINE),          # 移除行尾空白
-            (r'\\n[ \t]*\\n', '\\n\n'),                # 清理空行
-            (r'[\\x00-\\x08\\x0B\\x0C\\x0E-\\x1F]', ''),  # 移除控制字符
+            (r'\n[ \t]*\n', '\n\n'),                # 清理空行
+            (r'[\x00-\x08\x0B\x0C\x0E-\x1F]', ''),  # 移除控制字符
         ]
         
         cleaned_text = normalized_text
@@ -607,7 +607,7 @@ class EpubProcessor:
                         return title
             
             # 從文本開頭查找標題
-            lines = text.split('\\n')[:5]  # 檢查前5行
+            lines = text.split('\n')[:5]  # 檢查前5行
             for line in lines:
                 line = line.strip()
                 if line and 5 <= len(line) <= 100:
@@ -689,8 +689,8 @@ class SmartTextAnalyzer:
     def _analyze_structure(self, text: str) -> Dict:
         """分析文本結構"""
         structure_info = {
-            'paragraphs': len(text.split('\\n\\n')),
-            'lines': len(text.split('\\n')),
+            'paragraphs': len(text.split('\n\n')),
+            'lines': len(text.split('\n')),
             'sentences': len(re.findall(r'[。！？.!?]+', text)),
             'has_chapters': False,
             'has_sections': False,
@@ -702,9 +702,9 @@ class SmartTextAnalyzer:
         
         # 檢測章節結構
         chapter_patterns = [
-            r'第[一二三四五六七八九十\\d]+章',
-            r'Chapter\\s+\\d+',
-            r'\\d+\\.\\s*[^\\n]{1,50}\\n'
+            r'第[一二三四五六七八九十\d]+章',
+            r'Chapter\s+\d+',
+            r'\d+\.\s*[^\n]{1,50}\n'
         ]
         
         for pattern in chapter_patterns:
@@ -716,8 +716,8 @@ class SmartTextAnalyzer:
         
         # 檢測小節結構
         section_patterns = [
-            r'第[一二三四五六七八九十\\d]+節',
-            r'\\d+\\.\\d+',
+            r'第[一二三四五六七八九十\d]+節',
+            r'\d+\.\d+',
             r'[一二三四五六七八九十]、'
         ]
         
@@ -729,8 +729,8 @@ class SmartTextAnalyzer:
                 break
         
         # 檢測列表
-        if re.search(r'^\\s*[•\\-*]\\s+', text, re.MULTILINE) or \
-           re.search(r'^\\s*\\d+\\.\\s+', text, re.MULTILINE):
+        if re.search(r'^\s*[•\-*]\s+', text, re.MULTILINE) or \
+           re.search(r'^\s*\d+\.\s+', text, re.MULTILINE):
             structure_info['has_lists'] = True
         
         # 檢測表格
@@ -741,7 +741,7 @@ class SmartTextAnalyzer:
     
     def _detect_language(self, text: str) -> str:
         """檢測文本主要語言"""
-        chinese_chars = len(re.findall(r'[\\u4e00-\\u9fff]', text))
+        chinese_chars = len(re.findall(r'[\u4e00-\u9fff]', text))
         english_chars = len(re.findall(r'[a-zA-Z]', text))
         total_chars = len(text)
         
@@ -784,7 +784,7 @@ class SmartTextAnalyzer:
             score += 0.1
         
         # 避免重複內容
-        lines = text.split('\\n')
+        lines = text.split('\n')
         unique_lines = len(set(lines))
         if len(lines) > 0:
             uniqueness_ratio = unique_lines / len(lines)
@@ -842,8 +842,8 @@ class OptimizedTextSplitter:
                 chunk_size=chunk_size,
                 chunk_overlap=chunk_overlap,
                 separators=[
-                    "\\n\\n第", "\\n第",      # 章節標題
-                    "\\n\\n", "\\n",          # 段落
+                    "\n\n第", "\n第",      # 章節標題
+                    "\n\n", "\n",          # 段落
                     "。", "！", "？", "；",  # 句子結束
                     "，", "、",            # 短語分隔
                     " ", ""
@@ -935,7 +935,7 @@ class OptimizedTextSplitter:
         print(f"   {config['description']} (目標大小: {chunk_size})")
         
         # 按段落分割
-        paragraphs = [p.strip() for p in text.split('\\n\\n') if p.strip()]
+        paragraphs = [p.strip() for p in text.split('\n\n') if p.strip()]
         
         if not paragraphs:
             return self._process_simple_split(text, doc_id, analysis)
@@ -946,7 +946,7 @@ class OptimizedTextSplitter:
         
         for para_idx, paragraph in enumerate(paragraphs):
             # 檢查是否可以加入當前分塊
-            potential_chunk = current_chunk + ("\\n\\n" if current_chunk else "") + paragraph
+            potential_chunk = current_chunk + ("\n\n" if current_chunk else "") + paragraph
             
             if len(potential_chunk) <= chunk_size or not current_chunk:
                 current_chunk = potential_chunk
@@ -1084,7 +1084,7 @@ class OptimizedTextSplitter:
             return self._process_chapter_aware(text, doc_id, analysis)
         
         # 第二層：段落分割
-        paragraphs = [p.strip() for p in text.split('\\n\\n') if p.strip()]
+        paragraphs = [p.strip() for p in text.split('\n\n') if p.strip()]
         
         if len(paragraphs) > 10:  # 段落較多，用段落感知
             return self._process_paragraph_aware(text, doc_id, analysis)
@@ -1095,10 +1095,10 @@ class OptimizedTextSplitter:
     def _split_by_chapters(self, text: str) -> List[str]:
         """按章節分割文本"""
         chapter_patterns = [
-            r'\\n(第[一二三四五六七八九十\\d]+章[^\\n]*)',
-            r'\\n(Chapter\\s+\\d+[^\\n]*)',
-            r'\\n(\\d+\\.\\d+[^\\n]*)',
-            r'\\n([A-Z][^\\n]{10,50})\\n(?=[A-Z]|$)'
+            r'\n(第[一二三四五六七八九十\d]+章[^\n]*)',
+            r'\n(Chapter\s+\d+[^\n]*)',
+            r'\n(\d+\.\d+[^\n]*)',
+            r'\n([A-Z][^\n]{10,50})\n(?=[A-Z]|$)'
         ]
         
         best_split = None
@@ -1128,10 +1128,10 @@ class OptimizedTextSplitter:
     def _split_by_sections(self, text: str) -> List[str]:
         """按小節分割文本"""
         section_patterns = [
-            r'\\n(第[一二三四五六七八九十\\d]+節[^\\n]*)',
-            r'\\n(\\d+\\.\\d+[^\\n]*)',
-            r'\\n([一二三四五六七八九十]、[^\\n]*)',
-            r'\\n([A-Z]\\.[^\\n]*)'
+            r'\n(第[一二三四五六七八九十\d]+節[^\n]*)',
+            r'\n(\d+\.\d+[^\n]*)',
+            r'\n([一二三四五六七八九十]、[^\n]*)',
+            r'\n([A-Z]\.[^\n]*)'
         ]
         
         for pattern in section_patterns:
@@ -1171,7 +1171,7 @@ class OptimizedTextSplitter:
                 if sentence_end > overlap_size // 2:
                     overlap_text = overlap_text[sentence_end+1:]
                 
-                documents[i].page_content = overlap_text + "\\n" + current_content
+                documents[i].page_content = overlap_text + "\n" + current_content
                 documents[i].metadata['has_overlap'] = True
                 documents[i].metadata['overlap_length'] = len(overlap_text)
         
@@ -1183,7 +1183,7 @@ class OptimizedTextSplitter:
         token_count = self.token_estimator.estimate_tokens(content)
         
         # 搜尋URL
-        url_regex = r'https?://[\\w\-./?#&%=]+'
+        url_regex = r'https?://[\w.?#&%=-]+'
         found_urls = re.findall(url_regex, content)
 
         # 基本元數據（確保都是簡單類型）
@@ -1238,7 +1238,7 @@ class AdaptiveBatchProcessor:
     
     def __init__(self):
         self.token_estimator = AdvancedTokenEstimator()
-        self.max_tokens_per_batch = TOKEN_LIMITS["max_tokens_per_request"]
+        self.max_tokens_per_request = TOKEN_LIMITS["max_tokens_per_request"]
         self.max_batch_size = TOKEN_LIMITS["max_batch_size"]
         self.adaptive_batching = TOKEN_LIMITS.get("adaptive_batching", True)
         
@@ -1264,7 +1264,7 @@ class AdaptiveBatchProcessor:
         
         print("🔧 創建智能批次...")
         print(f"   文檔數: {len(documents)}")
-        print(f"   Token 限制: {self.max_tokens_per_batch:,}")
+        print(f"   Token 限制: {self.max_tokens_per_request:,}")
         print(f"   最大批次大小: {self.max_batch_size}")
         print(f"   自適應批次: {'✅' if self.adaptive_batching else '❌'}")
         
@@ -1286,7 +1286,7 @@ class AdaptiveBatchProcessor:
                         self.token_estimator.estimate_tokens(doc.page_content)
             
             # 檢查單個文檔是否過大
-            if doc_tokens > self.max_tokens_per_batch:
+            if doc_tokens > self.max_tokens_per_request:
                 print(f"   文檔 {doc_idx+1} 過大 ({doc_tokens:,} tokens)，需要分割")
                 
                 # 完成當前批次
@@ -1381,14 +1381,14 @@ class AdaptiveBatchProcessor:
         max_chars = int(self.max_tokens_per_request * 2.5)  # 估算字符數
         
         # 嘗試按段落分割
-        paragraphs = content.split('\\n\\n')
+        paragraphs = content.split('\n\n')
         split_docs = []
         current_content = ""
         part_index = 0
         
         for para in paragraphs:
             if len(current_content + para) <= max_chars or not current_content:
-                current_content += ("\\n\\n" if current_content else "") + para
+                current_content += ("\n\n" if current_content else "") + para
             else:
                 if current_content.strip():
                     split_doc = Document(
@@ -1496,7 +1496,7 @@ class VectorOperationsCore:
             print("⚠️ PGVector依賴未安裝，使用Chroma作為備用")
             self.persist_dir.mkdir(exist_ok=True)
 
-        # ✅ 3. 先初始化Embedding模型（關鍵！)
+        # ✅ 3. 先初始化Embedding模型（關鍵!)
         self._setup_embedding_model()
         print("✅ Embedding模型初始化完成")
 
@@ -2162,7 +2162,6 @@ class VectorOperationsCore:
                         
                     except Exception as retry_e:
                         print(f"         重新處理也失敗: {retry_e}")
-                
                 # 其他錯誤處理
                 if "timeout" in error_msg.lower():
                     print(f"         超時錯誤，延長等待時間...")
