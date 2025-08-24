@@ -602,77 +602,108 @@ class OptimizedVectorSystem(VectorOperationsCore):
             logger.error(f"Delete file failed: {e}")
             return {"success": False, "message": f"Delete failed: {str(e)}", "deleted_chunks": 0}
 
-    def _find_file_ids_corrected(self, vectorstore, filename: str) -> Dict[str, List[str]]:
-        """🗑️ 修正版：找出檔案的所有doc_id和chunk_id"""
+    # ==================== 🗑️ 刪除功能 (重構後) ====================
+
+    def delete_by_file_ids(self, collection_name: str, filename: str) -> Dict:
+        """🗑️ [重構] 直接通過元數據過濾器從PGVector或Chroma刪除文件。
+
+        這種方法比先獲取ID再刪除更直接、更可靠。
+        """
+        if not self.use_postgres:
+            # 對於 ChromaDB，使用基於元數據的過濾器
+            return self._delete_from_chroma_by_filter(collection_name, filename)
+
+        # 對於 PGVector，使用直接的SQL語句執行刪除
+        return self._delete_from_pgvector_by_sql(collection_name, filename)
+
+    def _delete_from_chroma_by_filter(self, collection_name: str, filename: str) -> Dict:
+        """從ChromaDB中通過元數據過濾器刪除"""
         try:
-            # 🔧 修正：使用更可靠的方法獲取文檔
-            # 方法1：如果是PGVector，嘗試使用get()方法
-            if hasattr(vectorstore, 'get'):
-                try:
-                    # 使用where條件查詢
-                    result = vectorstore.get(
-                        where={"original_filename": filename}
+            vectorstore = self.get_or_create_vectorstore(collection_name)
+            
+            # ChromaDB的 `delete` 方法接受一個 `where` 過濾器
+            # 我們需要先計算有多少個匹配的塊
+            existing_chunks = vectorstore.get(where={"filename": filename})['ids']
+            if not existing_chunks:
+                return {"success": True, "message": "文件不存在，無需刪除", "deleted_chunks": 0}
+
+            vectorstore.delete(where={"filename": filename})
+            logger.info(f"✅ [Chroma] 成功為文件 '{filename}' 發出刪除請求。")
+            
+            return {
+                "success": True,
+                "message": f"文件 '{filename}' 及其 {len(existing_chunks)} 個分塊已成功刪除。",
+                "deleted_chunks": len(existing_chunks),
+                "filename": filename
+            }
+        except Exception as e:
+            logger.error(f"❌ [Chroma] 文件刪除失敗 '{filename}': {e}", exc_info=True)
+            return {"success": False, "message": f"Chroma刪除失敗: {e}", "deleted_chunks": 0}
+
+    def _delete_from_pgvector_by_sql(self, collection_name: str, filename: str) -> Dict:
+        """🗑️ [核心] 使用SQL直接從PGVector刪除，這是最可靠的方法。"""
+        try:
+            vectorstore = self.get_or_create_vectorstore(collection_name)
+            collection_id = self._get_pg_collection_id(vectorstore, collection_name)
+            if not collection_id:
+                return {"success": False, "message": f"找不到集合ID: {collection_name}"}
+
+            # 直接從 LangChain 的 PGVector 實現中獲取連接
+            with vectorstore._connect() as conn:
+                with conn.cursor() as cur:
+                    # 查詢要刪除的行數 (用於報告)
+                    count_query = """
+                        SELECT COUNT(*) FROM langchain_pg_embedding
+                        WHERE collection_id = %s AND (cmetadata->>'filename' = %s OR cmetadata->>'original_filename' = %s);
+                    """
+                    cur.execute(count_query, (collection_id, filename, filename))
+                    chunks_to_delete = cur.fetchone()[0]
+
+                    if chunks_to_delete == 0:
+                        logger.warning(f"[PGVector] 在集合 '{collection_name}' 中找不到文件 '{filename}' 的記錄。")
+                        return {"success": True, "message": "文件不存在，無需刪除", "deleted_chunks": 0}
+
+                    logger.info(f"[PGVector] 準備從集合 '{collection_name}' 中刪除文件 '{filename}' 的 {chunks_to_delete} 個分塊...")
+
+                    # 執行刪除
+                    delete_query = """
+                        DELETE FROM langchain_pg_embedding
+                        WHERE collection_id = %s AND (cmetadata->>'filename' = %s OR cmetadata->>'original_filename' = %s);
+                    """
+                    cur.execute(delete_query, (collection_id, filename, filename))
+                    deleted_count = cur.rowcount
+                    conn.commit()
+
+                    logger.info(f"✅ [PGVector] 成功刪除 {deleted_count} 個分塊。")
+
+            return {
+                "success": True,
+                "message": f"文件 '{filename}' 及其 {deleted_count} 個分塊已成功刪除。",
+                "deleted_chunks": deleted_count,
+                "filename": filename
+            }
+
+        except Exception as e:
+            logger.error(f"❌ [PGVector] SQL刪除失敗 '{filename}': {e}", exc_info=True)
+            # 嘗試回滾事務
+            if 'conn' in locals() and conn:
+                conn.rollback()
+            return {"success": False, "message": f"資料庫刪除操作失敗: {e}", "deleted_chunks": 0}
+
+    def _get_pg_collection_id(self, vectorstore, collection_name: str) -> Optional[str]:
+        """獲取給定集合名稱的UUID。"""
+        try:
+            with vectorstore._connect() as conn:
+                with conn.cursor() as cur:
+                    cur.execute(
+                        "SELECT uuid FROM langchain_pg_collection WHERE name = %s;",
+                        (collection_name,)
                     )
-                    all_docs = []
-                    if result and result.get('documents') and result.get('metadatas'):
-                        for i, (doc_content, metadata) in enumerate(zip(result['documents'], result['metadatas'])):
-                            # 創建Document物件
-                            from langchain_core.documents import Document
-                            doc = Document(page_content=doc_content, metadata=metadata)
-                            all_docs.append(doc)
-                except Exception as get_error:
-                    logger.warning(f"vectorstore.get() failed: {get_error}, trying similarity_search")
-                    all_docs = None
-            else:
-                all_docs = None
-            
-            # 方法2：備用方法 - 使用similarity_search
-            if all_docs is None:
-                try:
-                    # 🔧 修正：使用更大的k值，並處理可能的限制
-                    all_docs = vectorstore.similarity_search("", k=10000)
-                    if not all_docs:
-                        # 再次嘗試使用一個通用查詢
-                        all_docs = vectorstore.similarity_search("the", k=10000)
-                except Exception as search_error:
-                    logger.error(f"similarity_search failed: {search_error}")
-                    all_docs = []
-            
-            if not all_docs:
-                logger.warning("No documents found in collection")
-                return {"doc_ids": [], "chunk_ids": [], "total_chunks": 0}
-            
-            doc_ids = set()
-            chunk_ids = []
-            matching_count = 0
-            
-            logger.info(f"📊 Scanning {len(all_docs)} documents for filename: {filename}")
-            
-            for doc in all_docs:
-                metadata = doc.metadata
-                
-                # 🔧 修正：更嚴格的匹配條件
-                is_match = (
-                    metadata.get('original_filename') == filename or
-                    metadata.get('filename') == filename
-                )
-                
-                if is_match:
-                    matching_count += 1
-                    
-                    # Collect doc_id
-                    doc_id = metadata.get('doc_id')
-                    if doc_id:
-                        doc_ids.add(str(doc_id))  # 確保是字串
-                    
-                    # Collect chunk_id  
-                    chunk_id = metadata.get('chunk_id')
-                    if chunk_id:
-                        chunk_ids.append(str(chunk_id))  # 確保是字串
-            
-            result = {
-                "doc_ids": list(doc_ids),
-                "chunk_ids": chunk_ids,
+                    result = cur.fetchone()
+                    return result[0] if result else None
+        except Exception as e:
+            logger.error(f"獲取集合ID失敗 '{collection_name}': {e}")
+            return None
                 "total_chunks": matching_count
             }
             
