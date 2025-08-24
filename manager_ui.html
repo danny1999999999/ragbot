@@ -264,7 +264,7 @@
         }
 
         /* Modal 樣式（僅用於 Chunk 詳情等輔助功能） */
-        .modal { 
+        .modal {
             display: none; 
             position: fixed; 
             top: 0; 
@@ -276,7 +276,7 @@
             align-items: center; 
             z-index: 1000;
         }
-        .modal-content { 
+        .modal-content {
             background: white; 
             padding: 30px; 
             border-radius: 8px; 
@@ -791,7 +791,7 @@
             }
             
             // 檢查特殊字符（可選）
-            const invalidChars = /[<>"\\'&]/;
+            const invalidChars = /[<"'\&]/;
             if (invalidChars.test(displayName)) {
                 return { valid: false, message: '顯示名稱包含無效字符' };
             }
@@ -1391,7 +1391,7 @@
 
         // 載入對話記錄
         async function loadConversations(page = 1, search = '') {
-            if (!currentBotName) return;
+            if (!currentBotName) return; 
             
             const listDiv = document.getElementById('conversationsList');
             const statsDiv = document.getElementById('conversationStats');
@@ -1450,17 +1450,17 @@
                     const timestamp = conv.timestamp || conv.created_at;
                     const timeStr = timestamp ? new Date(timestamp).toLocaleString('zh-TW') : '未知';
                     
-                    // 生成 chunk 按鈕
+                    // 修正後的 Chunk 按鈕生成
                     let chunkButtons = '';
-                    if (conv.chunk_ids && conv.chunk_ids.length > 0) {
-                        chunkButtons = conv.chunk_ids.map((chunkIndex, idx) => 
-                            `<button onclick="showChunkContent(${chunkIndex})" class="chunk-btn" title="查看 Chunk ${chunkIndex}">${idx + 1}</button>`
-                        ).join('');
+                    if (conv.chunk_references && Array.isArray(conv.chunk_references) && conv.chunk_references.length > 0) {
+                        chunkButtons = conv.chunk_references.map((ref, idx) => {
+                            const chunkId = ref.chunk_id || '';
+                            return `<button onclick="showChunkContent('${escapeHtml(chunkId)}')" class="chunk-btn" title="查看 Chunk: ${escapeHtml(chunkId)}">${idx + 1}</button>`;
+                        }).join('');
                     } else {
                         chunkButtons = '<span style="color: #6c757d;">無</span>';
                     }
                     
-                    // 添加狀態指示器
                     const statusIcon = conv.error_occurred ? '❌' : '✅';
                     const statusTitle = conv.error_occurred ? '處理失敗' : '處理成功';
                     const rowClass = conv.error_occurred ? 'error-row' : 'success-row';
@@ -1471,18 +1471,18 @@
                                 <input type="checkbox" value="${conv.id}" onchange="toggleConversationSelection(${conv.id})">
                             </td>
                             <td style="padding: 8px; word-break: break-word; max-width: 200px;">
-                                <span title="${conv.full_user_message || conv.user_message}">${conv.user_message}</span>
+                                <span title="${escapeHtml(conv.user_message || '')}">${escapeHtml((conv.user_message || '').substring(0, 100))}</span>
                                 <div class="conversation-meta">
-                                    會話: ${conv.session_id}
+                                    會話: ${escapeHtml(conv.session_id || '')}
                                 </div>
                             </td>
                             <td style="padding: 8px; word-break: break-word; max-width: 250px;">
-                                <span title="${conv.full_bot_response || conv.bot_response}">${conv.bot_response}</span>
-                                ${conv.collection_used ? `<div class="conversation-meta" style="color: #007bff;">📚 ${conv.collection_used}</div>` : ''}
+                                <span title="${escapeHtml(conv.bot_response || '')}">${escapeHtml((conv.bot_response || '').substring(0, 150))}</span>
+                                ${conv.collection_used ? `<div class="conversation-meta" style="color: #007bff;">📚 ${escapeHtml(conv.collection_used)}</div>` : ''}
                             </td>
                             <td style="padding: 8px; text-align: center;">${chunkButtons}</td>
                             <td style="padding: 8px; text-align: center; font-size: 0.9em;">
-                                <div>${timeStr}</div>
+                                <div>${escapeHtml(timeStr)}</div>
                                 ${conv.processing_time ? `<div class="conversation-meta">${conv.processing_time}ms</div>` : ''}
                             </td>
                             <td style="padding: 8px; text-align: center;">
@@ -1500,7 +1500,6 @@
                 tableHtml += '</tbody></table>';
                 listDiv.innerHTML = tableHtml;
                 
-                // 重置選擇狀態
                 selectedConversations.clear();
                 updateSelectedUI();
                 
@@ -1536,13 +1535,11 @@
             const checkboxes = document.querySelectorAll('input[type="checkbox"][value]');
             
             if (selectAllCheckbox.checked) {
-                // 全選當前頁面
                 checkboxes.forEach(cb => {
                     cb.checked = true;
                     selectedConversations.add(parseInt(cb.value));
                 });
             } else {
-                // 取消全選
                 checkboxes.forEach(cb => {
                     cb.checked = false;
                     selectedConversations.delete(parseInt(cb.value));
@@ -1561,7 +1558,6 @@
             countSpan.textContent = `已選中 ${selectedCount} 項`;
             deleteBtn.disabled = selectedCount === 0;
             
-            // 更新全選按鈕文字
             if (selectedCount === 0) {
                 selectAllBtn.textContent = '☑️ 全選';
             } else if (selectedCount === allConversationsOnPage.length) {
@@ -1571,23 +1567,23 @@
             }
         }
 
-        // 顯示 Chunk 內容
-        async function showChunkContent(chunkIndex) {
-            if (!currentBotName || chunkIndex === undefined) return;
+        // 顯示 Chunk 內容 (修正版)
+        async function showChunkContent(chunkId) {
+            if (!currentBotName || chunkId === undefined) return;
             
             const modal = document.getElementById('chunkModal');
             const title = document.getElementById('chunkModalTitle');
             const content = document.getElementById('chunkContent');
             const metadata = document.getElementById('chunkMetadata');
             
-            title.textContent = `Chunk 內容: #${chunkIndex}`;
+            title.textContent = `Chunk 內容: #${chunkId}`;
             content.textContent = '載入中...';
             metadata.innerHTML = '';
             modal.style.display = 'flex';
             
             try {
-                const response = await fetch(`/api/bots/${currentBotName}/conversations/chunk/${chunkIndex}`);
-                if (!response.ok) throw new Error('載入失敗');
+                const response = await fetch(`/api/bots/${currentBotName}/conversations/chunk/${encodeURIComponent(chunkId)}`);
+                if (!response.ok) throw new Error(`載入失敗 (${response.status})`);
                 
                 const data = await response.json();
                 
@@ -1598,23 +1594,14 @@
                 const chunk = data.chunk;
                 content.textContent = chunk.content;
                 
-                // 顯示元數據
                 const stats = chunk.content_stats || {};
                 metadata.innerHTML = `
                     <h4>📊 Chunk 詳細信息</h4>
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
-                        <div><strong>Chunk 索引:</strong> ${chunk.chunk_index}</div>
+                        <div><strong>Chunk ID:</strong> ${escapeHtml(chunk.chunk_id)}</div>
                         <div><strong>Token 數量:</strong> ${chunk.token_count || 'N/A'}</div>
-                        <div><strong>文字類型:</strong> ${chunk.text_type || 'N/A'}</div>
+                        <div><strong>來源文件:</strong> ${escapeHtml(chunk.original_filename || chunk.source_file || 'N/A')}</div>
                         <div><strong>品質分數:</strong> ${chunk.quality_score || 'N/A'}</div>
-                        <div><strong>字符數:</strong> ${stats.total_chars || 'N/A'}</div>
-                        <div><strong>行數:</strong> ${stats.total_lines || 'N/A'}</div>
-                        <div><strong>詞數:</strong> ${stats.total_words || 'N/A'}</div>
-                        <div><strong>句數:</strong> ${stats.total_sentences || 'N/A'}</div>
-                        <div><strong>來源文件:</strong> ${chunk.original_filename || chunk.source_file || 'N/A'}</div>
-                        <div><strong>語言:</strong> ${chunk.language || 'N/A'}</div>
-                        <div><strong>處理策略:</strong> ${chunk.processing_strategy || 'N/A'}</div>
-                        <div><strong>分割方法:</strong> ${chunk.split_method || 'N/A'}</div>
                     </div>
                 `;
                 
@@ -1624,7 +1611,7 @@
             }
         }
 
-        // 顯示對話詳情
+        // 顯示對話詳情 (修正版)
         function showConversationDetail(conversationId) {
             const conversation = allConversationsOnPage.find(conv => conv.id === conversationId);
             if (!conversation) return;
@@ -1638,52 +1625,32 @@
             content.innerHTML = `
                 <div class="info-card">
                     <h4>📊 對話基本信息</h4>
-                    <div class="info-row">
-                        <span class="info-label">對話ID:</span>
-                        <span class="info-value">${conversation.id}</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">會話ID:</span>
-                        <span class="info-value">${conversation.session_id}</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">時間:</span>
-                        <span class="info-value">${timeStr}</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">處理時間:</span>
-                        <span class="info-value">${conversation.processing_time || 0}ms</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">使用集合:</span>
-                        <span class="info-value">${conversation.collection_used || '無'}</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">狀態:</span>
-                        <span class="info-value">${conversation.error_occurred ? '❌ 處理失敗' : '✅ 處理成功'}</span>
-                    </div>
+                    <div class="info-row"><span class="info-label">對話ID:</span><span class="info-value">${conversation.id}</span></div>
+                    <div class="info-row"><span class="info-label">會話ID:</span><span class="info-value">${escapeHtml(conversation.session_id)}</span></div>
+                    <div class="info-row"><span class="info-label">時間:</span><span class="info-value">${escapeHtml(timeStr)}</span></div>
+                    <div class="info-row"><span class="info-label">狀態:</span><span class="info-value">${conversation.error_occurred ? '❌ 處理失敗' : '✅ 處理成功'}</span></div>
                 </div>
 
                 <div style="margin-bottom: 20px;">
                     <h4>❓ 用戶問題</h4>
                     <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; border-left: 4px solid #007bff;">
-                        ${conversation.full_user_message || conversation.user_message}
+                        ${escapeHtml(conversation.user_message)}
                     </div>
                 </div>
 
                 <div style="margin-bottom: 20px;">
                     <h4>🤖 機器人回答</h4>
                     <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; border-left: 4px solid #28a745;">
-                        ${conversation.full_bot_response || conversation.bot_response}
+                        ${escapeHtml(conversation.bot_response)}
                     </div>
                 </div>
 
-                ${conversation.chunk_ids && conversation.chunk_ids.length > 0 ? `
+                ${(conversation.chunk_references && conversation.chunk_references.length > 0) ? `
                 <div>
                     <h4>📚 相關 Chunks</h4>
                     <div style="display: flex; gap: 5px; flex-wrap: wrap;">
-                        ${conversation.chunk_ids.map((chunkIndex, idx) => 
-                            `<button onclick="showChunkContent(${chunkIndex})" class="chunk-btn">Chunk ${idx + 1}</button>`
+                        ${conversation.chunk_references.map((ref, idx) => 
+                            `<button onclick="showChunkContent('${escapeHtml(ref.chunk_id || '')}')" class="chunk-btn">Chunk ${idx + 1}</button>`
                         ).join('')}
                     </div>
                 </div>

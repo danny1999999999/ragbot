@@ -580,7 +580,7 @@ class ChatbotInstance:
                 <body>
                     <h1>聊天界面载入失败</h1>
                     <p>错误：{e}</p>
-                    <p>请检查模板文件是否存在于 chatbot_templates/modern/chat.html</p>
+                    <p>请确保模板文件是否存在于 chatbot_templates/modern/chat.html</p>
                 </body>
                 </html>
                 """, status_code=500)
@@ -642,8 +642,6 @@ class ChatbotInstance:
                         doc_content = self._get_document_content(doc)
                         retrieved_docs_content.append(doc_content)
                         
-                        chunk_index = self._get_chunk_index_from_doc(doc, i)
-                        
                         # 获取元数据
                         metadata = {}
                         if hasattr(doc, 'metadata') and doc.metadata:
@@ -651,8 +649,12 @@ class ChatbotInstance:
                         elif isinstance(doc, dict) and 'metadata' in doc:
                             metadata = doc['metadata']
                         
+                        # 修正：直接從 metadata 獲取真實的 chunk_id
+                        chunk_id = metadata.get('chunk_id', f'fallback_{i}')
+
                         chunk_ref = {
-                            "index": chunk_index,
+                            "chunk_id": chunk_id,  # <-- 使用真實的 chunk_id
+                            "index": i, # 使用循環的索引 i 作為備用
                             "content_preview": doc_content[:100] + "..." if len(doc_content) > 100 else doc_content,
                             "source": metadata.get('source', 'unknown'),
                             "filename": metadata.get('filename', metadata.get('original_filename', 'unknown'))
@@ -891,7 +893,8 @@ class ChatbotInstance:
         if should_recommend and (recommend_count == 0 or conversation_count <= recommend_count):
             logger.info(f"✅ 机器人 '{self.bot_name}' 开始生成推荐问题...")
             
-            recommend_prompt = f"""**原始对话**
+            recommend_prompt = f"""
+**原始对话**
 用户问：「{query}」
 你的回答：「{main_answer}」
 
@@ -933,7 +936,7 @@ class ChatbotInstance:
             # Markdown格式: [标题](URL) -> (title, url)
             r'\[([^\]]+)\]\((https?://[^\s)]+)\)',
             # HTML格式: <a href="URL">标题</a> -> (url, title)
-            r'<a[^>]+href=["\']([^"\']+)["\'][^>]*>([^<]+)</a>',
+            r'<a[^>]+href=["\\]([^\"\\]+)["\\][^>]*>([^<]+)</a>',
             # 纯文字格式: 标题: URL  -> (title, url)
             r'([^:\n]+):\s*(https?://[^\s]+)',
             # 纯文字格式: 标题 - URL  -> (title, url)
@@ -995,7 +998,7 @@ class ChatbotInstance:
                         context_line = context_line.strip()
                         if context_line and len(context_line) > 5 and len(context_line) < 200:
                             # 移除常见的标记符号
-                            cleaned = re.sub(r'^[#*\-•\d\.\s]+', '', context_line)
+                            cleaned = re.sub(r'^[#*\-\•\d\.\s]+', '', context_line)
                             if cleaned and len(cleaned) > 5:
                                 return cleaned
             
