@@ -23,7 +23,7 @@ from auth_middleware import AdminAuth, User, auth_response, JWTManager
 from user_manager import user_manager
 from bot_service_manager import bot_manager, global_bot_instances
 from conversation_logger_simple import create_logger_instance
-from vector_builder_langchain_huge import OptimizedVectorSystem
+from vector_builder_langchain import OptimizedVectorSystem
 
 # --- Logging Setup ---
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(name)s: %(message)s')
@@ -614,7 +614,7 @@ async def emergency_clear_test01(current_user: User = Depends(AdminAuth)):
         
         # 驗證清空結果
         try:
-            from vector_builder_langchain_huge import OptimizedVectorSystem
+            from vector_builder_langchain import OptimizedVectorSystem
             system = OptimizedVectorSystem()
             vectorstore = system.get_or_create_vectorstore("collection_test_01")
             remaining_docs = vectorstore.similarity_search("", k=100)
