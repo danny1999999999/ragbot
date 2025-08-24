@@ -1,5 +1,3 @@
-
-
 python-dotenv
 PyJWT
 requests
@@ -28,3 +26,4 @@ jinja2
 python-multipart
 pytz
 starlette 
+pgvector
