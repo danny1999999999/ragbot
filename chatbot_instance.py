@@ -1105,6 +1105,15 @@ class ChatbotInstance:
                         sources.append(link_info)
                         seen_urls.add(link_info['url'])
                 
+                # 🆕 方法2.5: 如果沒有找到格式化鏈接，則從內容中提取原始URL
+                if not extracted_links:
+                    raw_urls = re.findall(r'https?://[^\s\(\]+', doc_content)
+                    for url in raw_urls:
+                        if url not in seen_urls:
+                            title = self._generate_smart_title(metadata, url)
+                            sources.append({"title": title, "url": url})
+                            seen_urls.add(url)
+                
                 # 方法3: 从contained_urls获取URL，然后尝试匹配标题
                 url_string = metadata.get('contained_urls', '')
                 if url_string and not extracted_links:
