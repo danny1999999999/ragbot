@@ -13,6 +13,7 @@ import os
 from pathlib import Path
 from typing import Dict, List, Optional, Any
 from datetime import datetime
+import psycopg
 
 # 🔗 依賴4A檔案：向量操作核心層
 try:
@@ -575,15 +576,14 @@ class OptimizedVectorSystem(VectorOperationsCore):
     # ==================== 🗑️ 刪除功能 (重構後) ====================
 
     def delete_by_file_ids(self, collection_name: str, filename: str) -> Dict:
-        """🗑️ [修復版] 使用標準 API 刪除文件，避免使用不存在的 _connect 方法"""
+        """🗑️ [修復版] 使用標準 API 刪除檔案，解決實際刪除問題"""
         try:
             vectorstore = self.get_or_create_vectorstore(collection_name)
             
-            print(f"🔍 開始刪除文件: {filename}")
+            print(f"🔍 [管理API] 開始刪除檔案: {filename}")
             
-            # ✅ 使用標準的相似性搜索方法獲取所有文檔
-            # 這是跨版本兼容的安全方法
-            all_docs = vectorstore.similarity_search("", k=10000)  # 獲取大量文檔
+            # ✅ 步驟1: 獲取所有文檔，使用標準的相似性搜尋方法
+            all_docs = vectorstore.similarity_search("", k=10000)
             
             # 找到匹配的文檔
             docs_to_delete = []
@@ -591,23 +591,29 @@ class OptimizedVectorSystem(VectorOperationsCore):
             
             for doc in all_docs:
                 metadata = doc.metadata
-                doc_filename = (metadata.get('original_filename') or 
-                            metadata.get('filename', ''))
+                doc_filename = (
+                    metadata.get('original_filename') or 
+                    metadata.get('filename') or 
+                    ''
+                )
                 
+                # 嚴格匹配檔名
                 if doc_filename == filename:
                     docs_to_delete.append(doc)
                     
-                    # 嘗試獲取文檔ID（如果存在）
-                    doc_id = (metadata.get('id') or 
-                            metadata.get('document_id') or 
-                            metadata.get('chunk_id'))
-                    if doc_id:
-                        ids_to_delete.append(str(doc_id))
+                    # 嘗試獲取文檔ID
+                    doc_id = (
+                        metadata.get('id') or 
+                        metadata.get('document_id') or 
+                        metadata.get('chunk_id') or
+                        f"doc_{len(ids_to_delete)}"  # 生成備用ID
+                    )
+                    ids_to_delete.append(str(doc_id))
             
             if not docs_to_delete:
                 return {
                     "success": True,
-                    "message": f"文件 '{filename}' 不存在，無需刪除",
+                    "message": f"檔案 '{filename}' 不存在，無需刪除",
                     "deleted_chunks": 0,
                     "filename": filename
                 }
@@ -615,113 +621,128 @@ class OptimizedVectorSystem(VectorOperationsCore):
             deleted_count = len(docs_to_delete)
             print(f"📄 找到 {deleted_count} 個匹配的分塊")
             
-            # ✅ 方法1：如果有ID且支持delete方法，使用標準API
-            if ids_to_delete and hasattr(vectorstore, 'delete'):
+            # ✅ 步驟2: 使用多重刪除策略
+            success = False
+            method_used = ""
+            
+            # 策略1: 標準API刪除
+            if hasattr(vectorstore, 'delete') and ids_to_delete:
                 try:
-                    print(f"🎯 使用標準API通過ID刪除")
+                    print("🎯 使用標準API刪除...")
                     vectorstore.delete(ids=ids_to_delete)
                     
-                    return {
-                        "success": True,
-                        "message": f"文件 '{filename}' 及其 {deleted_count} 個分塊已成功刪除",
-                        "deleted_chunks": deleted_count,
-                        "filename": filename
-                    }
+                    # 立即驗證刪除結果
+                    import time
+                    time.sleep(2)  # 等待操作生效
                     
-                except Exception as delete_error:
-                    print(f"⚠️ 標準刪除API失敗: {delete_error}")
-                    # 繼續嘗試其他方法
+                    verification_docs = vectorstore.similarity_search("", k=10000)
+                    remaining_count = sum(1 for doc in verification_docs 
+                                        if (doc.metadata.get('original_filename') == filename or
+                                            doc.metadata.get('filename') == filename))
+                    
+                    if remaining_count == 0:
+                        success = True
+                        method_used = "standard_api"
+                        print("✅ 標準API刪除成功並驗證")
+                    else:
+                        print(f"⚠️ 標準API刪除不完整，仍有 {remaining_count} 個分塊")
+                        
+                except Exception as e:
+                    print(f"❌ 標準API刪除失敗: {e}")
             
-            # ✅ 方法2：使用集合重建方法（最可靠）
-            print(f"🔄 使用集合重建方法刪除文件")
-            return self._delete_by_collection_rebuild(vectorstore, collection_name, filename, all_docs, docs_to_delete)
+            # 策略2: 集合重建方法
+            if not success:
+                print("🔧 使用集合重建方法...")
+                rebuild_result = self._delete_by_collection_rebuild_fixed(
+                    vectorstore, collection_name, filename, all_docs, docs_to_delete
+                )
+                if rebuild_result["success"]:
+                    success = True
+                    method_used = "collection_rebuild"
+            
+            # 策略3: SQL直接刪除（最後手段）
+            if not success and hasattr(self, 'use_postgres') and self.use_postgres:
+                print("🗄️ 使用SQL直接刪除...")
+                sql_result = self._delete_by_sql_fixed(collection_name, filename)
+                if sql_result["success"]:
+                    success = True
+                    method_used = "sql_direct"
+            
+            return {
+                "success": success,
+                "message": (f"檔案 '{filename}' 及其 {deleted_count} 個分塊已" +
+                        f"{'成功' if success else '嘗試'}刪除 (方法: {method_used})"),
+                "deleted_chunks": deleted_count if success else 0,
+                "filename": filename,
+                "method": method_used
+            }
             
         except Exception as e:
-            logger.error(f"刪除文件失敗 {filename}: {e}")
+            logger.error(f"刪除檔案失敗 {filename}: {e}")
             return {
                 "success": False, 
                 "message": f"刪除失敗: {str(e)}", 
                 "deleted_chunks": 0
             }
         
+
+    
+        
     def _delete_by_collection_rebuild(self, vectorstore, collection_name: str, filename: str, 
                                 all_docs: List, docs_to_delete: List) -> Dict:
-        """🔧 通過重建集合來刪除文檔（最可靠的方法）"""
+        """🗄️ SQL直接刪除方法（使用psycopg3）"""
         try:
-            print(f"🔧 開始重建集合以刪除文件: {filename}")
+            import os
+            database_url = os.getenv("DATABASE_URL")
+            if not database_url:
+                return {"success": False, "error": "沒有資料庫連接"}
             
-            # 過濾出要保留的文檔
-            docs_to_keep = []
-            for doc in all_docs:
-                if doc not in docs_to_delete:
-                    docs_to_keep.append(doc)
-            
-            deleted_count = len(docs_to_delete)
-            kept_count = len(docs_to_keep)
-            
-            print(f"   要刪除: {deleted_count} 個分塊")
-            print(f"   要保留: {kept_count} 個分塊")
-            
-            # ✅ 如果要刪除所有文檔，直接清空集合
-            if kept_count == 0:
-                if hasattr(vectorstore, 'delete_collection'):
-                    vectorstore.delete_collection()
-                    print("🧹 集合已完全清空")
-                elif hasattr(vectorstore, 'clear'):
-                    vectorstore.clear()
-                    print("🧹 集合已清空")
-                else:
-                    print("⚠️ 無法清空集合，但所有文檔都已標記刪除")
-            
-            # ✅ 部分刪除：重建集合
-            else:
-                print("🔄 重建集合中...")
-                
-                # 方案A：如果支持，先清空再重新添加
-                try:
-                    if hasattr(vectorstore, 'delete_collection'):
-                        vectorstore.delete_collection()
-                        # 重新創建vectorstore實例
-                        vectorstore = self.get_or_create_vectorstore(collection_name)
-                    elif hasattr(vectorstore, 'clear'):
-                        vectorstore.clear()
+            # ✅ 使用 psycopg3 語法
+            with psycopg.connect(database_url) as conn:
+                with conn.cursor() as cursor:
+                    # 查找langchain相關表
+                    cursor.execute("""
+                        SELECT table_name FROM information_schema.tables 
+                        WHERE table_schema = 'public' 
+                        AND table_name LIKE %s;
+                    """, ('%langchain%',))
                     
-                    # 重新添加保留的文檔
-                    if docs_to_keep:
-                        print(f"📝 重新添加 {len(docs_to_keep)} 個文檔...")
-                        
-                        # 分批處理大量文檔
-                        batch_size = 50
-                        for i in range(0, len(docs_to_keep), batch_size):
-                            batch = docs_to_keep[i:i + batch_size]
-                            vectorstore.add_documents(batch)
-                            print(f"   已處理 {min(i + batch_size, len(docs_to_keep))}/{len(docs_to_keep)} 個文檔")
+                    tables = [row[0] for row in cursor.fetchall()]
+                    total_deleted = 0
                     
-                    print("✅ 集合重建完成")
+                    for table in tables:
+                        try:
+                            # 刪除匹配的記錄，使用多個條件確保找到
+                            cursor.execute(f"""
+                                DELETE FROM {table} 
+                                WHERE (cmetadata::text LIKE %s 
+                                    OR cmetadata::text LIKE %s)
+                                AND cmetadata::text LIKE %s;
+                            """, (
+                                f'%"filename": "{filename}"%',
+                                f'%"original_filename": "{filename}"%',
+                                f'%{collection_name}%'
+                            ))
+                            
+                            deleted_rows = cursor.rowcount
+                            total_deleted += deleted_rows
+                            if deleted_rows > 0:
+                                print(f"SQL刪除 {table}: {deleted_rows} 條記錄")
+                            
+                        except Exception as table_error:
+                            print(f"處理表 {table} 時出錯: {table_error}")
                     
-                except Exception as rebuild_error:
-                    logger.error(f"集合重建失敗: {rebuild_error}")
-                    return {
-                        "success": False,
-                        "message": f"集合重建失敗: {str(rebuild_error)}",
-                        "deleted_chunks": 0
-                    }
+                    # ✅ psycopg3 會自動提交事務
+                    conn.commit()
             
             return {
-                "success": True,
-                "message": f"文件 '{filename}' 及其 {deleted_count} 個分塊已通過集合重建成功刪除",
-                "deleted_chunks": deleted_count,
-                "filename": filename,
-                "method": "collection_rebuild"
+                "success": total_deleted > 0,
+                "deleted_rows": total_deleted
             }
             
         except Exception as e:
-            logger.error(f"集合重建刪除失敗: {e}")
-            return {
-                "success": False,
-                "message": f"集合重建刪除失敗: {str(e)}",
-                "deleted_chunks": 0
-            }
+            print(f"SQL直接刪除失敗: {e}")
+            return {"success": False, "error": str(e)}
 
 
 

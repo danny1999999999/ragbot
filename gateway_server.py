@@ -6,7 +6,7 @@ import asyncio
 from pathlib import Path
 from typing import Dict, Optional
 from datetime import datetime
-
+import psycopg
 import uvicorn
 from fastapi import FastAPI, Request, Response, Header, Depends, HTTPException, UploadFile, File
 from fastapi.responses import JSONResponse, HTMLResponse, PlainTextResponse
