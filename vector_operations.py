@@ -1507,8 +1507,8 @@ class VectorOperationsCore:
                 # 測試連接
                 PGVector.from_existing_index(
                     collection_name="_test_connection",
-                    embedding=self.embeddings,  # ✅ 現在安全了
-                    connection_string=self.connection_string
+                    embedding=self.embeddings,
+                    connection=self.connection_string  # ✅ 修正參數名稱
                 )
                 self.use_postgres = True
                 print("✅ PostgreSQL (pgvector) 連接成功")
@@ -1627,9 +1627,9 @@ class VectorOperationsCore:
                     except ImportError:
                         from langchain_community.vectorstores import PGVector
                         self._vector_stores[collection_name] = PGVector(
-                            connection_string=self.connection_string,
+                            connection=self.connection_string,  # ✅ 修正參數
                             collection_name=collection_name,
-                            embedding_function=self.embeddings,
+                            embeddings=self.embeddings,  # ✅ 修正參數
                             distance_strategy="cosine",
                             pre_delete_collection=False,
                             logger=logger
