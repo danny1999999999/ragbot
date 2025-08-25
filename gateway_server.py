@@ -444,6 +444,29 @@ async def delete_file(bot_name: str, filename: str, current_user: User = Depends
             "filename": filename
         }, status_code=500)
 
+@app.post("/api/search")
+async def api_search(request: Request, current_user: User = Depends(AdminAuth)):
+    """
+    通用搜索 API 端點，用於從特定知識庫集合中搜索。
+    """
+    try:
+        data = await request.json()
+        query = data.get("query")
+        collection_name = data.get("collection_name")
+        k = data.get("k", 5)
+
+        if not query or not collection_name:
+            raise HTTPException(status_code=400, detail="需要提供查詢內容 (query) 和集合名稱 (collection_name)。")
+
+        # 調用核心搜索功能
+        results = vector_system.search(query=query, collection_name=collection_name, k=k)
+        
+        return JSONResponse({"success": True, "results": results})
+    except Exception as e:
+        logger.error(f"API search failed: {e}", exc_info=True)
+        return JSONResponse({"success": False, "message": f"搜索時發生內部錯誤: {str(e)}"}, status_code=500)
+
+
 # --- Health & Debug Routes ---
 @app.get("/health")
 async def health_check():

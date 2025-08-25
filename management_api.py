@@ -577,108 +577,133 @@ class OptimizedVectorSystem(VectorOperationsCore):
     
     # ==================== 🗑️ 刪除功能 (重構後) ====================
 
-    def delete_by_file_ids(self, collection_name: str, filename: str) -> Dict:
-        """🗑️ [極簡修復版] 只修復核心問題，不添加複雜邏輯"""
+    def _delete_from_pg_by_filename(self, collection_name: str, filename: str) -> int:
+        """
+        直接使用 SQL 從 PGVector 刪除與特定文件名相關的所有分塊。
+        """
+        database_url = os.getenv("DATABASE_URL")
+        if not database_url:
+            logger.error("DATABASE_URL is not set. Cannot perform SQL deletion.")
+            return 0
+
+        deleted_count = 0
         try:
-            print(f"🎯 刪除文檔: {filename}")
-            
-            # 🔑 關鍵修復：確保獲取有效的vectorstore
-            vectorstore = self._ensure_valid_vectorstore(collection_name)
-            
-            # 查找要刪除的文檔
-            all_docs = vectorstore.similarity_search("", k=5000)
-            target_docs = [
-                doc for doc in all_docs 
-                if (doc.metadata.get('original_filename') == filename or 
-                    doc.metadata.get('filename') == filename)
-            ]
-            
-            if not target_docs:
-                return {
-                    "success": True,
-                    "message": f"文檔 '{filename}' 不存在",
-                    "deleted_chunks": 0,
-                    "filename": filename
-                }
-            
-            print(f"📋 找到 {len(target_docs)} 個分塊")
-            
-            # 🎯 核心修復：使用最安全的刪除方法
-            success = self._safe_delete_documents(vectorstore, target_docs, filename)
-            
-            if success:
-                return {
-                    "success": True,
-                    "message": f"文檔 '{filename}' 刪除成功",
-                    "deleted_chunks": len(target_docs),
-                    "filename": filename
-                }
-            else:
-                return {
-                    "success": False,
-                    "message": f"文檔 '{filename}' 刪除失敗",
-                    "deleted_chunks": 0,
-                    "filename": filename
-                }
-                
+            with psycopg.connect(database_url) as conn:
+                with conn.cursor() as cur:
+                    # 1. 根據集合名稱找到集合的 UUID
+                    cur.execute(
+                        "SELECT uuid FROM langchain_pg_collection WHERE name = %s",
+                        (collection_name,)
+                    )
+                    collection_uuid_row = cur.fetchone()
+                    if not collection_uuid_row:
+                        logger.warning(f"Collection '{collection_name}' not found in database.")
+                        return 0
+                    collection_uuid = collection_uuid_row[0]
+
+                    # 2. 根據 collection_id 和 metadata 中的 filename 刪除嵌入
+                    #    這比使用 LIKE 更安全、更準確
+                    cur.execute(
+                        """
+                        DELETE FROM langchain_pg_embedding
+                        WHERE collection_id = %s AND (cmetadata->>'filename' = %s OR cmetadata->>'original_filename' = %s)
+                        """,
+                        (collection_uuid, filename, filename)
+                    )
+
+                    deleted_count = cur.rowcount
+                    conn.commit()
+                    logger.info(f"Successfully deleted {deleted_count} chunks for file '{filename}' from collection '{collection_name}' using direct SQL.")
         except Exception as e:
-            logger.error(f"刪除文檔失敗 {filename}: {e}")
-            return {
-                "success": False,
-                "message": f"刪除失敗: {str(e)}",
-                "deleted_chunks": 0,
-                "filename": filename
-            }
+            logger.error(f"Direct SQL deletion for file '{filename}' failed: {e}", exc_info=True)
+            return 0
+        
+        return deleted_count
+
+    def delete_by_file_ids(self, collection_name: str, filename: str) -> Dict:
+        """🗑️ 刪除文檔（已修復PGVector支持）"""
+        try:
+            logger.info(f"🎯 Deleting document: {filename} from collection: {collection_name}")
+
+            # 優先使用為 PGVector 優化的直接 SQL 刪除方法
+            if self.use_postgres:
+                deleted_chunks = self._delete_from_pg_by_filename(collection_name, filename)
+                
+                if deleted_chunks > 0:
+                    return {
+                        "success": True,
+                        "message": f"文檔 '{filename}' 及其 {deleted_chunks} 個分塊已成功刪除。",
+                        "deleted_chunks": deleted_chunks,
+                        "filename": filename
+                    }
+                else:
+                    # 如果刪除數量為0，需要確認文件是否一開始就不存在
+                    vectorstore = self._ensure_valid_vectorstore(collection_name)
+                    # 這個搜索效率不高，但遵循了原有代碼的邏輯來檢查文件存在性
+                    all_docs = vectorstore.similarity_search("", k=10000) 
+                    target_docs = [doc for doc in all_docs if (doc.metadata.get('original_filename') == filename or doc.metadata.get('filename') == filename)]
+                    
+                    if not target_docs:
+                        return {"success": True, "message": f"文檔 '{filename}' 不存在。", "deleted_chunks": 0, "filename": filename}
+                    else:
+                        return {"success": False, "message": f"文檔 '{filename}' 刪除失敗，SQL操作未刪除任何行，但文件中仍存在。可能存在數據不一致。", "deleted_chunks": 0, "filename": filename}
+
+            # 為 ChromaDB 或其他非 PGVector 後端保留原有邏輯
+            else:
+                vectorstore = self._ensure_valid_vectorstore(collection_name)
+                all_docs = vectorstore.similarity_search("", k=10000)
+                target_docs = [doc for doc in all_docs if (doc.metadata.get('original_filename') == filename or doc.metadata.get('filename') == filename)]
+
+                if not target_docs:
+                    return {"success": True, "message": f"文檔 '{filename}' 不存在", "deleted_chunks": 0, "filename": filename}
+
+                logger.info(f"📋 Found {len(target_docs)} chunks for file '{filename}' in ChromaDB.")
+                success = self._safe_delete_documents_chroma(vectorstore, filename)
+                
+                if success:
+                    return {"success": True, "message": f"文檔 '{filename}' 刪除成功", "deleted_chunks": len(target_docs), "filename": filename}
+                else:
+                    return {"success": False, "message": f"文檔 '{filename}' 在 ChromaDB 中刪除失敗", "deleted_chunks": 0, "filename": filename}
+
+        except Exception as e:
+            logger.error(f"Exception in delete_by_file_ids for {filename}: {e}", exc_info=True)
+            return {"success": False, "message": f"刪除過程中發生意外錯誤: {str(e)}", "deleted_chunks": 0, "filename": filename}
 
     def _ensure_valid_vectorstore(self, collection_name: str):
         """🔑 確保vectorstore有效 - 極簡版本"""
-        # 如果緩存中的實例有問題，清除它
         if collection_name in self._vector_stores:
             try:
                 cached_store = self._vector_stores[collection_name]
-                # 快速測試
                 cached_store.similarity_search("", k=1)
                 return cached_store
             except Exception as e:
-                print(f"⚠️ 清除無效緩存: {e}")
+                logger.warning(f"⚠️ Clearing invalid vectorstore cache for '{collection_name}': {e}")
                 del self._vector_stores[collection_name]
         
-        # 使用原有的創建邏輯（不重複代碼）
         return self.get_or_create_vectorstore(collection_name)
 
-    def _safe_delete_documents(self, vectorstore, target_docs: List, filename: str) -> bool:
-        """🛡️ 安全刪除文檔 - 避免collection級操作"""
+    def _safe_delete_documents_chroma(self, vectorstore, filename: str) -> bool:
+        """🛡️ 安全刪除文檔 - 專為 ChromaDB 設計"""
         try:
-            # 方法1：where條件刪除（Chroma友好）
-            if hasattr(vectorstore, 'delete') and not self.use_postgres:
-                try:
-                    vectorstore.delete(where={"filename": filename})
-                    print("✅ Where條件刪除成功")
-                    return True
-                except Exception as e:
-                    print(f"⚠️ Where條件刪除失敗: {e}")
-            
-            # 方法2：嘗試使用真實的文檔ID（如果可用）
-            if hasattr(vectorstore, 'delete'):
-                try:
-                    # 🔑 關鍵：只使用vectorstore提供的真實ID
-                    if hasattr(vectorstore, 'get'):
-                        # 對於Chroma
-                        existing_docs = vectorstore.get(where={"filename": filename})
-                        if existing_docs and existing_docs.get('ids'):
-                            vectorstore.delete(ids=existing_docs['ids'])
-                            print("✅ 真實ID刪除成功")
-                            return True
-                except Exception as e:
-                    print(f"⚠️ 真實ID刪除失敗: {e}")
-            
-            # 如果都失敗了，不進行危險操作
-            print("❌ 安全刪除方法都失敗，拒絕進行危險操作")
-            return False
-            
+            # ChromaDB 的主要刪除方式是使用 where 過濾器
+            vectorstore.delete(where={"filename": filename})
+            logger.info(f"✅ ChromaDB 'where' deletion successful for filename: {filename}")
+            return True
         except Exception as e:
-            print(f"❌ 安全刪除失敗: {e}")
-            return False
+            logger.error(f"⚠️ ChromaDB 'where' deletion failed for {filename}: {e}", exc_info=True)
+            # 作為後備，可以嘗試基於ID的刪除，但 'where' 通常是首選
+            try:
+                existing_docs = vectorstore.get(where={"filename": filename})
+                if existing_docs and existing_docs.get('ids'):
+                    vectorstore.delete(ids=existing_docs['ids'])
+                    logger.info(f"✅ ChromaDB 'ID' deletion successful for filename: {filename}")
+                    return True
+                else:
+                    logger.warning(f"Could not find document IDs for file '{filename}' for fallback deletion.")
+                    return False
+            except Exception as final_e:
+                logger.error(f"❌ ChromaDB fallback ID deletion also failed for {filename}: {final_e}", exc_info=True)
+                return False
     
     def _ensure_valid_vectorstore(self, collection_name: str):
         """🔑 確保vectorstore有效 - 極簡版本"""

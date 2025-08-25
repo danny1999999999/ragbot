@@ -249,7 +249,7 @@ class ChatbotInstance:
             timeout = httpx.Timeout(30.0, connect=5.0)
             async with httpx.AsyncClient(timeout=timeout) as client:
                 response = await client.post(
-                    f"{self.vector_api_url}/search",
+                    f"{self.vector_api_url}/api/search",
                     json={
                         "query": query,
                         "collection_name": self.collection_name,
