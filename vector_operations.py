@@ -1185,6 +1185,8 @@ class OptimizedTextSplitter:
         # 搜尋URL
         url_regex = r'https?://[^\s\'"<>\[\]]+'  # 修正後的正則表達式，可以匹配更複雜的URL
         found_urls = re.findall(url_regex, content)
+        if found_urls:
+            logger.info(f"🔍 成功從文本塊中提取到URL: {found_urls}")
 
         # 基本元數據（確保都是簡單類型）
         metadata = {
