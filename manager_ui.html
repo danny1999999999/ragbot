@@ -541,7 +541,7 @@
 
                 <!-- 上傳區塊 -->
                 <div class="form-group">
-                    <label for="fileUpload">上傳新文件 (支援 .txt, .pdf, .docx, .md)</label>
+                    <label for="fileUpload">上傳新文件 (支持 .txt, .pdf, .docx, .md)</label>
                     <input type="file" id="fileUpload" accept=".txt,.pdf,.docx,.md">
                     <button id="uploadBtn" onclick="uploadFile()" class="btn-config" style="margin-top:10px;">
                         <span id="uploadIcon">📤</span> 上傳文件
@@ -855,7 +855,7 @@
             }
         }
 
-        // 渲染機器人表格 - 支援顯示名稱
+        // 渲染機器人表格 - 支持顯示名稱
         function renderBotTable(bots) {
             botTableBody.innerHTML = '';
             if (bots.length === 0) {
@@ -1078,7 +1078,7 @@
             });
             
             const data = await response.json();
-            console.log('📥 刪除回應:', data);
+            console.log('🔥 刪除回應:', data);
             
             if (response.ok && data.success) {
                 showMessage(`✅ 文件 "${filename}" 已成功刪除`, false, true);
@@ -1389,7 +1389,7 @@
 
         // ================= 對話記錄管理功能 =================
 
-        // 載入對話記錄
+        // 載入對話記錄 - 修正字段匹配
         async function loadConversations(page = 1, search = '') {
             if (!currentBotName) return; 
             
@@ -1428,7 +1428,7 @@
                     return;
                 }
                 
-                // 建立對話記錄表格
+                // 建立對話記錄表格 - 使用正確的字段名
                 let tableHtml = `
                     <table class="conversation-table" style="width: 100%; border-collapse: collapse;">
                         <thead>
@@ -1450,11 +1450,11 @@
                     const timestamp = conv.timestamp || conv.created_at;
                     const timeStr = timestamp ? new Date(timestamp).toLocaleString('zh-TW') : '未知';
                     
-                    // 修正後的 Chunk 按鈕生成
+                    // 修正後的 Chunk 按鈕生成 - 使用正確的字段名
                     let chunkButtons = '';
                     if (conv.chunk_references && Array.isArray(conv.chunk_references) && conv.chunk_references.length > 0) {
                         chunkButtons = conv.chunk_references.map((ref, idx) => {
-                            const chunkId = ref.chunk_id || '';
+                            const chunkId = ref.id || '';
                             return `<button onclick="showChunkContent('${escapeHtml(chunkId)}')" class="chunk-btn" title="查看 Chunk: ${escapeHtml(chunkId)}">${idx + 1}</button>`;
                         }).join('');
                     } else {
@@ -1471,19 +1471,19 @@
                                 <input type="checkbox" value="${conv.id}" onchange="toggleConversationSelection(${conv.id})">
                             </td>
                             <td style="padding: 8px; word-break: break-word; max-width: 200px;">
-                                <span title="${escapeHtml(conv.user_message || '')}">${escapeHtml((conv.user_message || '').substring(0, 100))}</span>
+                                <span title="${escapeHtml(conv.user_query || '')}">${escapeHtml((conv.user_query || '').substring(0, 100))}</span>
                                 <div class="conversation-meta">
-                                    會話: ${escapeHtml(conv.session_id || '')}
+                                    用戶: ${escapeHtml(conv.user_id || '')}
                                 </div>
                             </td>
                             <td style="padding: 8px; word-break: break-word; max-width: 250px;">
-                                <span title="${escapeHtml(conv.bot_response || '')}">${escapeHtml((conv.bot_response || '').substring(0, 150))}</span>
+                                <span title="${escapeHtml(conv.ai_response || '')}">${escapeHtml((conv.ai_response || '').substring(0, 150))}</span>
                                 ${conv.collection_used ? `<div class="conversation-meta" style="color: #007bff;">📚 ${escapeHtml(conv.collection_used)}</div>` : ''}
                             </td>
                             <td style="padding: 8px; text-align: center;">${chunkButtons}</td>
                             <td style="padding: 8px; text-align: center; font-size: 0.9em;">
                                 <div>${escapeHtml(timeStr)}</div>
-                                ${conv.processing_time ? `<div class="conversation-meta">${conv.processing_time}ms</div>` : ''}
+                                ${conv.processing_time_ms ? `<div class="conversation-meta">${conv.processing_time_ms}ms</div>` : ''}
                             </td>
                             <td style="padding: 8px; text-align: center;">
                                 <div style="display: flex; flex-direction: column; gap: 2px;">
@@ -1611,7 +1611,7 @@
             }
         }
 
-        // 顯示對話詳情 (修正版)
+        // 顯示對話詳情 (修正版) - 使用正確的字段名
         function showConversationDetail(conversationId) {
             const conversation = allConversationsOnPage.find(conv => conv.id === conversationId);
             if (!conversation) return;
@@ -1626,7 +1626,7 @@
                 <div class="info-card">
                     <h4>📊 對話基本信息</h4>
                     <div class="info-row"><span class="info-label">對話ID:</span><span class="info-value">${conversation.id}</span></div>
-                    <div class="info-row"><span class="info-label">會話ID:</span><span class="info-value">${escapeHtml(conversation.session_id)}</span></div>
+                    <div class="info-row"><span class="info-label">用戶ID:</span><span class="info-value">${escapeHtml(conversation.user_id)}</span></div>
                     <div class="info-row"><span class="info-label">時間:</span><span class="info-value">${escapeHtml(timeStr)}</span></div>
                     <div class="info-row"><span class="info-label">狀態:</span><span class="info-value">${conversation.error_occurred ? '❌ 處理失敗' : '✅ 處理成功'}</span></div>
                 </div>
@@ -1634,14 +1634,14 @@
                 <div style="margin-bottom: 20px;">
                     <h4>❓ 用戶問題</h4>
                     <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; border-left: 4px solid #007bff;">
-                        ${escapeHtml(conversation.user_message)}
+                        ${escapeHtml(conversation.user_query)}
                     </div>
                 </div>
 
                 <div style="margin-bottom: 20px;">
                     <h4>🤖 機器人回答</h4>
                     <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; border-left: 4px solid #28a745;">
-                        ${escapeHtml(conversation.bot_response)}
+                        ${escapeHtml(conversation.ai_response)}
                     </div>
                 </div>
 
@@ -1650,7 +1650,7 @@
                     <h4>📚 相關 Chunks</h4>
                     <div style="display: flex; gap: 5px; flex-wrap: wrap;">
                         ${conversation.chunk_references.map((ref, idx) => 
-                            `<button onclick="showChunkContent('${escapeHtml(ref.chunk_id || '')}')" class="chunk-btn">Chunk ${idx + 1}</button>`
+                            `<button onclick="showChunkContent('${escapeHtml(ref.id || '')}')" class="chunk-btn">Chunk ${idx + 1}</button>`
                         ).join('')}
                     </div>
                 </div>
@@ -1774,7 +1774,7 @@
             }
         });
 
-        // 搜索框 Enter 鍵支援
+        // 搜索框 Enter 鍵支持
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
                 const activeElement = document.activeElement;
@@ -1784,7 +1784,7 @@
             }
         });
 
-        // 瀏覽器前進後退按鍵支援
+        // 瀏覽器前進後退按鍵支持
         window.addEventListener('popstate', (e) => {
             if (e.state && e.state.page === 'manage') {
                 showManagePage(e.state.botName);
@@ -1793,13 +1793,13 @@
             }
         });
 
-        // 更新 showManagePage 函數以支援瀏覽器歷史
+        // 更新 showManagePage 函數以支持瀏覽器歷史
         function showManagePageWithHistory(botName) {
             history.pushState({page: 'manage', botName: botName}, '', `#manage-${botName}`);
             showManagePage(botName);
         }
 
-        // 更新 showMainPage 函數以支援瀏覽器歷史
+        // 更新 showMainPage 函數以支持瀏覽器歷史
         function showMainPageWithHistory() {
             history.pushState({page: 'main'}, '', '#main');
             showMainPage();
