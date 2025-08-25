@@ -2,28 +2,27 @@
 # TEMPORARY DATABASE RESET CODE
 # This code will be removed after one successful run.
 # =================================================================
-import psycopg2
+import psycopg
+import os
 
 def reset_vector_database():
     """
     Connects to the PostgreSQL database and drops the langchain vector tables.
     This is a one-time operation to fix a schema mismatch issue.
     """
-    # The load_dotenv() is already called in the original script,
-    # so os.getenv() will work here.
     database_url = os.getenv("DATABASE_URL")
     
     if not database_url:
         print("❌ TEMPORARY CODE: DATABASE_URL not found. Skipping table reset.")
         return
 
-    print("✅ TEMPORARY CODE: Running one-time database table reset...")
+    print("✅ TEMPORARY CODE: Running one-time database table reset using psycopg v3...")
     conn = None
     try:
-        conn = psycopg2.connect(database_url)
+        # Use psycopg.connect with conninfo for the URL
+        conn = psycopg.connect(conninfo=database_url)
         cursor = conn.cursor()
         
-        # Drop the problematic tables
         statements = [
             "DROP TABLE IF EXISTS langchain_pg_embedding;",
             "DROP TABLE IF EXISTS langchain_pg_collection;"
