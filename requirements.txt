@@ -27,3 +27,8 @@ python-multipart
 pytz
 starlette 
 pgvector
+langchain-postgres>=0.0.9
+psycopg[binary]>=3.1.0
+langchain-text-splitters>=0.2.0
+pandas>=2.0.0
+numpy>=1.24.0
