@@ -416,26 +416,33 @@ async def reset_knowledge_collection(
 
 @app.delete("/api/bots/{bot_name}/knowledge/files/{filename}")
 async def delete_file(bot_name: str, filename: str, current_user: User = Depends(AdminAuth)):
-    """刪除指定檔案 - 基於ID的精確刪除"""
+    """🗑️ 刪除指定檔案 - 最終穩定版本"""
     try:
-        # URL decode for Chinese filename
+        # URL解碼處理中文檔名
         decoded_filename = urllib.parse.unquote(filename, encoding='utf-8')
-        logger.info(f"🗑️ Delete request: {decoded_filename}")
+        logger.info(f"🗑️ 刪除請求: {decoded_filename} from {bot_name}")
         
         collection_name = f"collection_{bot_name}"
         
-        # 🎯 使用修正後的刪除方法
+        # 調用修正後的刪除方法
         result = vector_system.delete_by_file_ids(collection_name, decoded_filename)
         
+        # 根據成功/失敗返回適當狀態碼
         if result["success"]:
-            return JSONResponse(result)
+            return JSONResponse(result, status_code=200)
         else:
-            status_code = 404 if "not found" in result["message"].lower() else 500
+            # 如果是文檔不存在，返回404；其他錯誤返回500
+            status_code = 404 if "不存在" in result["message"] else 500
             return JSONResponse(result, status_code=status_code)
         
     except Exception as e:
-        logger.error(f"Delete failed: {e}", exc_info=True)
-        return JSONResponse({"success": False, "message": str(e)}, status_code=500)
+        logger.error(f"刪除API異常: {e}", exc_info=True)
+        return JSONResponse({
+            "success": False, 
+            "message": f"服務器內部錯誤: {str(e)}", 
+            "deleted_chunks": 0,
+            "filename": filename
+        }, status_code=500)
 
 # --- Health & Debug Routes ---
 @app.get("/health")
