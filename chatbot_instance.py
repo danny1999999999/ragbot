@@ -930,10 +930,11 @@ class ChatbotInstance:
         return main_answer, recommended_questions
     
     def _extract_links_from_content(self, content: str) -> List[dict]:
-        """從文件內容中提取連線和標題（穩健判定 URL/標題順序）"""
+        """從文件內容中提取連結和標題（穩健判定 URL/標題順序）- 修復版本"""
         links = []
+        seen_urls = set()  # 🔧 新增：URL去重集合
         
-        # 正規表示式樣板符合各種連線格式
+        # 正規表示式樣版符合各種連結格式
         patterns = [
             # Markdown格式: [標題](URL) -> (title, url)
             r'\[([^\]]+)\]\((https?://[^\s)]+)\)',
@@ -963,18 +964,23 @@ class ChatbotInstance:
                     # 回退策略：沿用原本 (title, url) 假設
                     title, url = a, b
 
+                # 🔧 新增：檢查URL是否已存在
+                if url in seen_urls:
+                    continue
+
                 # 清理標題
                 title = title.strip().strip('"\'')
                 if not title or len(title) < 3 or len(title) > 200:
                     continue
 
                 # 排除無意義的標題
-                if re.match(r'^(點擊這裡|閱讀更多|更多資訊|連線|網址|click here|read more|more info|link|url)$', title, re.IGNORECASE):
+                if re.match(r'^(點擊這裡|閱讀更多|更多資訊|連結|網址|click here|read more|more info|link|url)$', title, re.IGNORECASE):
                     continue
                 if re.match(r'^\d+$', title) or re.match(r'^[^\w\u4e00-\u9fff]+$', title):
                     continue
 
                 links.append({"title": title, "url": url})
+                seen_urls.add(url)  # 🔧 新增：記錄已處理的URL
 
         return links
     
