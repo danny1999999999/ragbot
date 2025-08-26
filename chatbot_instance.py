@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
+# -*- coding: utf-8 -*-"""
 chatbot_instance.py -  (API兼容版)
 
 修复内容：
@@ -258,17 +257,19 @@ class ChatbotInstance:
                 )
                 
                 if response.status_code == 200:
-                    api_results = response.json()
+                    response_data = response.json()
+                    api_results = response_data.get("results", []) # Safely get the list
                     
                     # 转换为兼容原有代码的文档格式
                     documents = []
-                    for result in api_results:
-                        # 创建兼容的文档对象
-                        doc = type('Document', (), {
-                            'page_content': result.get('content', ''),
-                            'metadata': result.get('metadata', {})
-                        })()
-                        documents.append(doc)
+                    if api_results: # Check if there are any results
+                        for result in api_results:
+                            # 创建兼容的文档对象
+                            doc = type('Document', (), {
+                                'page_content': result.get('content', ''),
+                                'metadata': result.get('metadata', {})
+                            })()
+                            documents.append(doc)
                     
                     logger.info(f"API搜索成功: {len(documents)} 个结果")
                     return documents
@@ -542,7 +543,7 @@ class ChatbotInstance:
                                     logger.info(f"✅ 通過詞匯匹配找到索引: {best_match_idx} (相似度: {best_match_score:.2f})")
                                     return best_match_idx
                     
-                    logger.warning(f"⚠️ 向量數據庫查詢無匹配結果")
+                    logger.warning("⚠️ 向量數據庫查詢無匹配結果")
                             
                 except Exception as query_error:
                     logger.warning(f"⚠️ 查詢向量數據庫索引失敗: {query_error}")
@@ -936,7 +937,7 @@ class ChatbotInstance:
             # Markdown格式: [标题](URL) -> (title, url)
             r'\[([^\]]+)\]\((https?://[^\s)]+)\)',
             # HTML格式: <a href="URL">标题</a> -> (url, title)
-            r'<a[^>]+href=["\\]([^\"\\]+)["\\][^>]*>([^<]+)</a>',
+            r'<a[^>]+href=["\\]([^"\\]+)["\\][^>]*>([^<]+)</a>',
             # 纯文字格式: 标题: URL  -> (title, url)
             r'([^:\n]+):\s*(https?://[^\s]+)',
             # 纯文字格式: 标题 - URL  -> (title, url)
@@ -1107,7 +1108,7 @@ class ChatbotInstance:
                 
                 # 🆕 方法2.5: 如果沒有找到格式化鏈接，則從內容中提取原始URL
                 if not extracted_links:
-                    raw_urls = re.findall(r'https?://[^\s\(\]+', doc_content)
+                    raw_urls = re.findall(r'https?://[^\s<>"\\\)+]', doc_content)
                     for url in raw_urls:
                         if url not in seen_urls:
                             title = self._generate_smart_title(metadata, url)
