@@ -445,7 +445,7 @@ async def delete_file(bot_name: str, filename: str, current_user: User = Depends
         }, status_code=500)
 
 @app.post("/api/search")
-async def api_search(request: Request, current_user: User = Depends(AdminAuth)):
+async def api_search(request: Request):
     """
     通用搜索 API 端點，用於從特定知識庫集合中搜索。
     """
