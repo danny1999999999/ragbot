@@ -964,7 +964,7 @@ class ChatbotInstance:
                     title, url = a, b
 
                 # 清理標題
-                title = title.strip().strip('"\')
+                title = title.strip().strip('"\'')
                 if not title or len(title) < 3 or len(title) > 200:
                     continue
 
