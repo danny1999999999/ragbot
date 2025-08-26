@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用戶管理</title>
+    <style>
+        :root {
+            --primary-color: #007bff;
+            --secondary-color: #6c757d;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --light-gray: #f8f9fa;
+            --dark-gray: #343a40;
+            --border-color: #dee2e6;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--light-gray);
+            color: var(--dark-gray);
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+        .table-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .btn {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            color: white;
+            text-decoration: none;
+        }
+        .btn-primary { background-color: var(--primary-color); }
+        .btn-success { background-color: var(--success-color); }
+        .btn-danger { background-color: var(--danger-color); }
+        .btn-secondary { background-color: var(--secondary-color); }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            text-align: left;
+        }
+        th {
+            background-color: var(--light-gray);
+        }
+        .status-active { color: var(--success-color); font-weight: bold; }
+        .status-inactive { color: var(--danger-color); font-weight: bold; }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.5);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 10% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 500px;
+            border-radius: 8px;
+            position: relative;
+        }
+        .close-btn {
+            color: #aaa;
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+        }
+        .pagination {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .pagination button {
+            margin: 0 5px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>用戶管理</h1>
+    <div class="table-controls">
+        <button id="createUserBtn" class="btn btn-primary">新增用戶</button>
+        <div>
+            <input type="text" id="searchInput" placeholder="搜尋用戶名或Email...">
+            <button id="searchBtn" class="btn btn-secondary">搜尋</button>
+        </div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>用戶名</th>
+                <th>Email</th>
+                <th>角色</th>
+                <th>狀態</th>
+                <th>創建時間</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody id="userTableBody">
+            <!-- User data will be populated here by JavaScript -->
+        </tbody>
+    </table>
+    
+    <div class="pagination" id="paginationControls">
+        <!-- Pagination controls will be populated here -->
+    </div>
+</div>
+
+<!-- User Form Modal -->
+<div id="userModal" class="modal">
+    <div class="modal-content">
+        <span class="close-btn">&times;</span>
+        <h2 id="modalTitle">新增用戶</h2>
+        <form id="userForm">
+            <input type="hidden" id="userId" name="id">
+            <div class="form-group">
+                <label for="username">用戶名</label>
+                <input type="text" id="username" name="username" required>
+            </div>
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" required>
+            </div>
+            <div class="form-group" id="password-group">
+                <label for="password">密碼 (新增用戶時必填)</label>
+                <input type="password" id="password" name="password">
+            </div>
+            <div class="form-group">
+                <label for="role">角色</label>
+                <select id="role" name="role" required>
+                    <option value="user">User</option>
+                    <option value="admin">Admin</option>
+                    <option value="super_admin">Super Admin</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="is_active">狀態</label>
+                <select id="is_active" name="is_active" required>
+                    <option value="true">啟用</option>
+                    <option value="false">停用</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-success">保存</button>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const userTableBody = document.getElementById('userTableBody');
+    const createUserBtn = document.getElementById('createUserBtn');
+    const userModal = document.getElementById('userModal');
+    const closeModalBtn = userModal.querySelector('.close-btn');
+    const userForm = document.getElementById('userForm');
+    const modalTitle = document.getElementById('modalTitle');
+    const passwordGroup = document.getElementById('password-group');
+    const paginationControls = document.getElementById('paginationControls');
+    const searchInput = document.getElementById('searchInput');
+    const searchBtn = document.getElementById('searchBtn');
+
+    let currentPage = 1;
+    const limit = 15;
+
+    const api = {
+        getUsers: (page = 1, searchTerm = '') => {
+            let url = `/api/users?page=${page}&limit=${limit}`;
+            if (searchTerm) {
+                url += `&search=${encodeURIComponent(searchTerm)}`;
+            }
+            return fetch(url).then(res => res.json());
+        },
+        createUser: (data) => fetch('/api/users', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        }).then(res => res.json()),
+        updateUser: (id, data) => fetch(`/api/users/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        }).then(res => res.json()),
+        deleteUser: (id) => fetch(`/api/users/${id}`, {
+            method: 'DELETE'
+        }).then(res => res.json())
+    };
+
+    function renderTable(users) {
+        userTableBody.innerHTML = '';
+        if (!users || users.length === 0) {
+            userTableBody.innerHTML = '<tr><td colspan="7" style="text-align:center;">沒有找到用戶</td></tr>';
+            return;
+        }
+        users.forEach(user => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${user.id}</td>
+                <td>${escapeHtml(user.username)}</td>
+                <td>${escapeHtml(user.email)}</td>
+                <td>${escapeHtml(user.role)}</td>
+                <td>
+                    <span class="status-${user.is_active ? 'active' : 'inactive'}">
+                        ${user.is_active ? '啟用' : '停用'}
+                    </span>
+                </td>
+                <td>${new Date(user.created_at).toLocaleString()}</td>
+                <td>
+                    <button class="btn btn-secondary btn-sm edit-btn" data-id="${user.id}">編輯</button>
+                    <button class="btn btn-danger btn-sm toggle-active-btn" data-id="${user.id}" data-active="${user.is_active}">
+                        ${user.is_active ? '停用' : '啟用'}
+                    </button>
+                </td>
+            `;
+            userTableBody.appendChild(tr);
+        });
+    }
+    
+    function renderPagination(total, page, limit) {
+        paginationControls.innerHTML = '';
+        const totalPages = Math.ceil(total / limit);
+        if (totalPages <= 1) return;
+
+        const prevBtn = document.createElement('button');
+        prevBtn.textContent = '上一頁';
+        prevBtn.disabled = page === 1;
+        prevBtn.addEventListener('click', () => {
+            currentPage--;
+            loadUsers();
+        });
+        paginationControls.appendChild(prevBtn);
+
+        const pageInfo = document.createElement('span');
+        pageInfo.textContent = ` 第 ${page} / ${totalPages} 頁 `;
+        paginationControls.appendChild(pageInfo);
+
+        const nextBtn = document.createElement('button');
+        nextBtn.textContent = '下一頁';
+        nextBtn.disabled = page === totalPages;
+        nextBtn.addEventListener('click', () => {
+            currentPage++;
+            loadUsers();
+        });
+        paginationControls.appendChild(nextBtn);
+    }
+
+    async function loadUsers(searchTerm = '') {
+        const response = await api.getUsers(currentPage, searchTerm);
+        if (response.success) {
+            renderTable(response.users);
+            renderPagination(response.total, response.page, response.limit);
+        } else {
+            alert('無法載入用戶列表: ' + response.message);
+        }
+    }
+
+    function openModal(user = null) {
+        userForm.reset();
+        if (user) {
+            modalTitle.textContent = '編輯用戶';
+            document.getElementById('userId').value = user.id;
+            document.getElementById('username').value = user.username;
+            document.getElementById('email').value = user.email;
+            document.getElementById('role').value = user.role;
+            document.getElementById('is_active').value = user.is_active.toString();
+            passwordGroup.style.display = 'none'; // Hide password for editing
+        } else {
+            modalTitle.textContent = '新增用戶';
+            passwordGroup.style.display = 'block';
+        }
+        userModal.style.display = 'block';
+    }
+
+    function closeModal() {
+        userModal.style.display = 'none';
+    }
+
+    createUserBtn.addEventListener('click', () => openModal());
+    closeModalBtn.addEventListener('click', closeModal);
+    window.addEventListener('click', (event) => {
+        if (event.target == userModal) {
+            closeModal();
+        }
+    });
+
+    userForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const formData = new FormData(userForm);
+        const id = formData.get('id');
+        const data = {
+            username: formData.get('username'),
+            email: formData.get('email'),
+            role: formData.get('role'),
+            is_active: formData.get('is_active') === 'true'
+        };
+
+        let response;
+        if (id) { // Update user
+            response = await api.updateUser(id, data);
+        } else { // Create user
+            const password = formData.get('password');
+            if (!password) {
+                alert('新增用戶時必須提供密碼');
+                return;
+            }
+            data.password = password;
+            response = await api.createUser(data);
+        }
+
+        if (response.success) {
+            alert('操作成功!');
+            closeModal();
+            loadUsers();
+        } else {
+            alert('操作失敗: ' + response.message);
+        }
+    });
+
+    userTableBody.addEventListener('click', async (event) => {
+        const target = event.target;
+        const id = target.dataset.id;
+
+        if (target.classList.contains('edit-btn')) {
+            const response = await api.getUsers(1, ''); // A bit inefficient, better to have a getUser(id) api
+            const user = response.users.find(u => u.id == id);
+            if(user) openModal(user);
+        }
+
+        if (target.classList.contains('toggle-active-btn')) {
+            const isActive = target.dataset.active === 'true';
+            const confirmAction = confirm(`您確定要${isActive ? '停用' : '啟用'}此用戶嗎?`);
+            if (confirmAction) {
+                const response = await api.updateUser(id, { is_active: !isActive });
+                if (response.success) {
+                    alert('狀態更新成功!');
+                    loadUsers();
+                } else {
+                    alert('操作失敗: ' + response.message);
+                }
+            }
+        }
+    });
+    
+    searchBtn.addEventListener('click', () => {
+        currentPage = 1;
+        loadUsers(searchInput.value.trim());
+    });
+    
+    searchInput.addEventListener('keypress', (event) => {
+        if (event.key === 'Enter') {
+            currentPage = 1;
+            loadUsers(searchInput.value.trim());
+        }
+    });
+
+    function escapeHtml(unsafe) {
+        return unsafe
+             .replace(/&/g, "&amp;")
+             .replace(/</g, "&lt;")
+             .replace(/>/g, "&gt;")
+             .replace(/"/g, "&quot;")
+             .replace(/'/g, "&#039;");
+    }
+
+    // Initial load
+    loadUsers();
+});
+</script>
+
+</body>
+</html>

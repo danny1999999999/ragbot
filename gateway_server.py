@@ -1,10 +1,9 @@
-
 import os
 import json
 import logging
 import asyncio
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 from datetime import datetime
 import psycopg
 import uvicorn
@@ -21,7 +20,7 @@ load_dotenv()
 # --- Project-level Imports ---
 from config import app_config
 from auth_middleware import AdminAuth, User, auth_response, JWTManager
-from user_manager import user_manager
+from user_manager import user_manager, User as ModelUser # Rename to avoid conflict
 from bot_service_manager import bot_manager, global_bot_instances
 from conversation_logger_simple import create_logger_instance
 from vector_builder_langchain import OptimizedVectorSystem
@@ -61,6 +60,81 @@ async def login_page(request: Request):
 @app.get("/manager", response_class=HTMLResponse)
 async def manager_page(request: Request, current_user: User = Depends(AdminAuth)):
     return templates.TemplateResponse("manager_ui.html", {"request": request, "user": current_user})
+
+@app.get("/admin/users", response_class=HTMLResponse)
+async def user_admin_page(request: Request, current_user: User = Depends(AdminAuth)):
+    return templates.TemplateResponse("user_admin.html", {"request": request, "user": current_user})
+
+# --- User Management API ---
+@app.get("/api/users")
+async def get_users(page: int = 1, limit: int = 15, search: str = "", current_user: User = Depends(AdminAuth)):
+    if search:
+        users = user_manager.search_users(search_term=search, limit=limit)
+        total = len(users) # Simplified total for search
+    else:
+        users = user_manager.get_users(limit=limit, offset=(page - 1) * limit)
+        total = user_manager.get_total_users_count()
+    
+    return {
+        "success": True,
+        "users": [u.to_dict() for u in users],
+        "total": total,
+        "page": page,
+        "limit": limit
+    }
+
+@app.post("/api/users")
+async def create_user(request: Request, current_user: User = Depends(AdminAuth)):
+    data = await request.json()
+    username = data.get("username")
+    email = data.get("email")
+    password = data.get("password")
+    role = data.get("role", "user")
+
+    if not all([username, email, password]):
+        raise HTTPException(status_code=400, detail="Username, email, and password are required.")
+
+    if user_manager.get_user_by_username(username) or user_manager.get_user_by_email(email):
+        raise HTTPException(status_code=400, detail="User or email already exists.")
+
+    hashed_password = user_manager.hash_password(password)
+    new_user = ModelUser(
+        username=username,
+        email=email,
+        password_hash=hashed_password,
+        role=role
+    )
+    user_id = user_manager.create_user(new_user)
+
+    if user_id:
+        return {"success": True, "message": "User created successfully", "user_id": user_id}
+    else:
+        raise HTTPException(status_code=500, detail="Failed to create user.")
+
+@app.put("/api/users/{user_id}")
+async def update_user(user_id: int, request: Request, current_user: User = Depends(AdminAuth)):
+    data = await request.json()
+    # Fields that can be updated
+    allowed_updates = ["role", "is_active"]
+    updates = {key: data[key] for key in allowed_updates if key in data}
+
+    if not updates:
+        raise HTTPException(status_code=400, detail="No valid fields to update.")
+
+    success = user_manager.update_user(user_id, updates)
+    if success:
+        return {"success": True, "message": "User updated successfully."}
+    else:
+        raise HTTPException(status_code=500, detail="Failed to update user.")
+
+@app.delete("/api/users/{user_id}")
+async def delete_user(user_id: int, current_user: User = Depends(AdminAuth)):
+    # This is a soft delete
+    success = user_manager.delete_user(user_id)
+    if success:
+        return {"success": True, "message": "User deactivated successfully."}
+    else:
+        raise HTTPException(status_code=500, detail="Failed to deactivate user.")
 
 # --- Authentication & Management API ---
 @app.post("/api/login")
