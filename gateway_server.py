@@ -278,7 +278,7 @@ async def delete_single_conversation(bot_name: str, conversation_id: int, curren
 
 
 @app.get("/api/bots/{bot_name}/conversations/chunk/{chunk_id}")
-async def get_chunk_details(bot_name: str, chunk_id: int, current_user: User = Depends(AdminAuth)):
+async def get_chunk_details(bot_name: str, chunk_id: str, current_user: User = Depends(AdminAuth)):
     # This functionality depends on the vector system, not the conversation logger.
     # Assuming the vector system can fetch a chunk by its ID.
     try:
