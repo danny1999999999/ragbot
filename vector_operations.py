@@ -1178,15 +1178,17 @@ class OptimizedTextSplitter:
         return documents
     
     def _create_chunk_document(self, content: str, doc_id: str, chunk_index: int, 
-                          analysis: TextAnalysis, split_method: str) -> Document:
-        """創建分塊文檔 - 統一元數據格式"""
+                              analysis: TextAnalysis, split_method: str) -> Document:
+        """創建分塊文檔 - 修復版：智能URL提取和驗證"""
         token_count = self.token_estimator.estimate_tokens(content)
         
-        # 搜尋URL
-        url_regex = r'https?://[^\s\'"<>\[\]]+'  # 修正後的正則表達式，可以匹配更複雜的URL
-        found_urls = re.findall(url_regex, content)
-        if found_urls:
-            logger.info(f"🔍 成功從文本塊中提取到URL: {found_urls}")
+        # 智能URL提取和驗證
+        valid_urls = self._extract_and_validate_urls(content)
+        
+        if valid_urls:
+            logger.info(f"成功從文本塊中提取到有效URL: {len(valid_urls)}個")
+            for i, url in enumerate(valid_urls[:3], 1):  # 只顯示前3個
+                logger.info(f"  {i}. {url}")
 
         # 基本元數據（確保都是簡單類型）
         metadata = {
@@ -1203,33 +1205,229 @@ class OptimizedTextSplitter:
             'has_overlap': False
         }
 
-        # 🎯 正確方案：URL列表 → 分隔符字串 (這是唯一可行的方案)
-        if found_urls:
-            metadata['contained_urls'] = '|'.join(found_urls)  # ✅ 字符串類型
-            metadata['url_count'] = len(found_urls)           # ✅ 整數類型
-            metadata['has_urls'] = True                       # ✅ 布林類型
+        # URL處理 - 修復版
+        if valid_urls:
+            metadata['contained_urls'] = '|'.join(valid_urls)
+            metadata['url_count'] = len(valid_urls)
+            metadata['has_urls'] = True
+            # 額外添加URL分析信息
+            metadata['url_analysis'] = self._analyze_urls(valid_urls)
         else:
-            metadata['contained_urls'] = ''                   # ✅ 空字符串
-            metadata['url_count'] = 0                        # ✅ 整數 0
-            metadata['has_urls'] = False                     # ✅ 布林 False
+            metadata['contained_urls'] = ''
+            metadata['url_count'] = 0
+            metadata['has_urls'] = False
+            metadata['url_analysis'] = ''
 
-        # 🎯 正確方案：複雜結構 → JSON字串
+        # 複雜結構 → JSON字符串
         if analysis.structure_info:
-            metadata['structure_info'] = json.dumps(analysis.structure_info, ensure_ascii=False)  # ✅ JSON字符串
+            metadata['structure_info'] = json.dumps(analysis.structure_info, ensure_ascii=False)
             # 同時保留關鍵信息作為簡單字段（便於查詢）
-            metadata['has_chapters'] = bool(analysis.structure_info.get('has_chapters', False))    # ✅ 布林
-            metadata['has_sections'] = bool(analysis.structure_info.get('has_sections', False))    # ✅ 布林  
-            metadata['paragraph_count'] = int(analysis.structure_info.get('paragraphs', 0))       # ✅ 整數
-            metadata['sentence_count'] = int(analysis.structure_info.get('sentences', 0))         # ✅ 整數
+            metadata['has_chapters'] = bool(analysis.structure_info.get('has_chapters', False))
+            metadata['has_sections'] = bool(analysis.structure_info.get('has_sections', False))
+            metadata['paragraph_count'] = int(analysis.structure_info.get('paragraphs', 0))
+            metadata['sentence_count'] = int(analysis.structure_info.get('sentences', 0))
         else:
-            metadata['structure_info'] = '{}'        # ✅ 空JSON字符串
-            metadata['has_chapters'] = False         # ✅ 布林
-            metadata['has_sections'] = False         # ✅ 布林
-            metadata['paragraph_count'] = 0          # ✅ 整數
-            metadata['sentence_count'] = 0           # ✅ 整數
+            metadata['structure_info'] = '{}'
+            metadata['has_chapters'] = False
+            metadata['has_sections'] = False
+            metadata['paragraph_count'] = 0
+            metadata['sentence_count'] = 0
         
         return Document(page_content=content, metadata=metadata)
+    def _extract_and_validate_urls(self, content: str) -> List[str]:
+        """智能URL提取和驗證"""
+        if not content:
+            return []
+        
+        # 多層次URL提取策略
+        all_urls = set()
+        
+        # 1. 基本URL模式
+        basic_patterns = [
+            r'https?://[^\s\'"<>\[\]]{10,}',  # 基本模式，至少10字符
+            r'https?://[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}[^\s\'"<>\[\]]*',  # 需要有效域名
+            r'https?://(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(?:/[^\s]*)?'  # 更嚴格的域名檢查
+        ]
+        
+        for pattern in basic_patterns:
+            urls = re.findall(pattern, content, re.IGNORECASE)
+            all_urls.update(urls)
+        
+        # 2. 清理和驗證URL
+        valid_urls = []
+        for url in all_urls:
+            cleaned_url = self._clean_url(url)
+            if self._is_valid_url(cleaned_url):
+                valid_urls.append(cleaned_url)
+        
+        # 3. 去重並排序
+        return sorted(list(set(valid_urls)))
+    
 
+    def _clean_url(self, url: str) -> str:
+        """清理URL"""
+        # 移除末尾的標點符號
+        url = re.sub(r'[.,;:!?)\]}>"\']$', '', url.strip())
+        
+        # 移除括號內容（如果整個URL被括號包圍）
+        if url.startswith('(') and url.endswith(')'):
+            url = url[1:-1]
+        
+        # 確保協議存在
+        if not url.startswith(('http://', 'https://')):
+            if url.startswith('www.'):
+                url = 'https://' + url
+            elif '.' in url and not url.startswith(('ftp://', 'file://')):
+                url = 'https://' + url
+        
+        return url.strip()
+
+    def _is_valid_url(self, url: str) -> bool:
+        """驗證URL有效性"""
+        if not url or len(url) < 12:  # https://a.co 最少12字符
+            return False
+        
+        # 檢查基本格式
+        if not re.match(r'^https?://', url, re.IGNORECASE):
+            return False
+        
+        # 檢查是否有合理的域名
+        domain_pattern = r'https?://([^/\s?#]+)'
+        domain_match = re.match(domain_pattern, url, re.IGNORECASE)
+        
+        if not domain_match:
+            return False
+        
+        domain = domain_match.group(1)
+        
+        # 域名基本驗證
+        if not self._is_valid_domain(domain):
+            return False
+        
+        # 排除明顯無效的URL
+        invalid_patterns = [
+            r'https?://p/?$',  # 只有p的域名
+            r'https?://[^.]{1,2}/?$',  # 域名太短
+            r'https?://[^/]*\.(test|invalid|example|localhost)(?:/|$)',  # 測試域名
+            r'https?://[0-9.]{1,6}/?$',  # 不完整的IP
+        ]
+        
+        for pattern in invalid_patterns:
+            if re.match(pattern, url, re.IGNORECASE):
+                return False
+        
+        return True
+
+    def _is_valid_domain(self, domain: str) -> bool:
+        """驗證域名有效性"""
+        if not domain or len(domain) < 4:  # 最短如a.co
+            return False
+        
+        # 檢查是否包含點
+        if '.' not in domain:
+            return False
+        
+        # 基本域名格式檢查
+        domain_pattern = r'^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*$'
+        
+        if not re.match(domain_pattern, domain):
+            return False
+        
+        # 檢查頂級域名
+        parts = domain.split('.')
+        if len(parts) < 2:
+            return False
+        
+        # 頂級域名至少2字符
+        tld = parts[-1]
+        if len(tld) < 2 or not tld.isalpha():
+            return False
+        
+        # 二級域名至少1字符
+        if len(parts[-2]) < 1:
+            return False
+        
+        return True
+
+    def _analyze_urls(self, urls: List[str]) -> str:
+        """分析URL並生成摘要信息"""
+        if not urls:
+            return ''
+        
+        analysis = {
+            'total': len(urls),
+            'domains': set(),
+            'types': {'http': 0, 'https': 0},
+            'suspicious': []
+        }
+        
+        for url in urls:
+            # 協議統計
+            if url.startswith('https://'):
+                analysis['types']['https'] += 1
+            else:
+                analysis['types']['http'] += 1
+            
+            # 域名提取
+            domain_match = re.match(r'https?://([^/\s?#]+)', url, re.IGNORECASE)
+            if domain_match:
+                domain = domain_match.group(1)
+                analysis['domains'].add(domain)
+                
+                # 檢查可疑URL
+                if len(domain) < 5 or domain.count('.') == 0:
+                    analysis['suspicious'].append(url)
+        
+        # 生成摘要
+        summary_parts = [
+            f"total:{analysis['total']}",
+            f"domains:{len(analysis['domains'])}",
+            f"https:{analysis['types']['https']}",
+            f"http:{analysis['types']['http']}"
+        ]
+        
+        if analysis['suspicious']:
+            summary_parts.append(f"suspicious:{len(analysis['suspicious'])}")
+        
+        return '|'.join(summary_parts)
+
+    def _detect_url_boundaries(self, text: str) -> List[Tuple[int, int]]:
+        """檢測文本中URL的邊界位置"""
+        url_positions = []
+        url_pattern = r'https?://[^\s\'"<>\[\]]+'
+        
+        for match in re.finditer(url_pattern, text):
+            url_positions.append((match.start(), match.end()))
+        
+        return url_positions
+
+    def _avoid_splitting_urls(self, text: str, split_positions: List[int]) -> List[int]:
+        """調整分割位置以避免切斷URL"""
+        url_boundaries = self._detect_url_boundaries(text)
+        adjusted_positions = []
+        
+        for pos in split_positions:
+            adjusted_pos = pos
+            
+            # 檢查分割點是否在URL內部
+            for start, end in url_boundaries:
+                if start < pos < end:
+                    # 將分割點移到URL之前或之後
+                    before_distance = pos - start
+                    after_distance = end - pos
+                    
+                    if before_distance < after_distance:
+                        adjusted_pos = start - 1  # 移到URL之前
+                    else:
+                        adjusted_pos = end + 1    # 移到URL之後
+                    break
+            
+            adjusted_positions.append(max(0, min(adjusted_pos, len(text))))
+        
+        return adjusted_positions
+
+
+    
 # --- End of content from text_processing.py ---
 
 
