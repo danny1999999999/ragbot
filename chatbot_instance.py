@@ -629,10 +629,20 @@ class ChatbotInstance:
                         metadata = getattr(doc, 'metadata', {})
                         contained_urls = metadata.get('contained_urls', '')
                         
+                        # 🔧 新增：详细调试信息
+                        print(f"=== 调试：文件 {i+1} ===")
+                        print(f"contained_urls: '{contained_urls}'")
+                        print(f"url_count: {metadata.get('url_count', 0)}")
+                        print(f"filename: {metadata.get('filename', 'unknown')}")
+                        print(f"chunk_id: {metadata.get('chunk_id', 'unknown')}")
+                        print(f"内容前100字符: {content_preview}")
+                        print("=" * 40)
+                        
+                        # 保留原来的日志
                         logger.info(f"📄 文件 {i+1}:")
-                        logger.info(f"  內容預覽: {content_preview}")
-                        logger.info(f"  包含連線: {contained_urls}")
-                        logger.info(f"  來源檔案: {metadata.get('filename', 'unknown')}")
+                        logger.info(f"  内容预览: {content_preview}")
+                        logger.info(f"  包含链接: {contained_urls}")
+                        logger.info(f"  来源档案: {metadata.get('filename', 'unknown')}")
 
                 context = "\n".join([self._get_document_content(doc) for doc in context_docs]) if context_docs else ""
                 
@@ -929,93 +939,6 @@ class ChatbotInstance:
 
         return main_answer, recommended_questions
     
-    def _extract_links_from_content(self, content: str) -> List[dict]:
-        """從文件內容中提取連結和標題（穩健判定 URL/標題順序）- 修復版本"""
-        links = []
-        seen_urls = set()  # 🔧 新增：URL去重集合
-        
-        # 正規表示式樣版符合各種連結格式
-        patterns = [
-            # Markdown格式: [標題](URL) -> (title, url)
-            r'\[([^\]]+)\]\((https?://[^\s)]+)\)',
-            # HTML格式: <a href="URL">標題</a> -> (url, title)
-            r'<a[^>]+href=["\\]([^"\\]+)["\\][^>]*>([^<]+)</a>',
-            # 純文字格式: 標題: URL  -> (title, url)
-            r'([^:\n]+):\s*(https?://[^\s]+)',
-            # 純文字格式: 標題 - URL  -> (title, url)
-            r'([^-\n]+)\s*-\s*(https?://[^\s]+)'
-        ]
-        
-        url_like = re.compile(r'^https?://', re.IGNORECASE)
-
-        for pattern in patterns:
-            matches = re.findall(pattern, content, re.IGNORECASE)
-            for match in matches:
-                if len(match) != 2:
-                    continue
-                a, b = match[0].strip(), match[1].strip()
-
-                # 以是否像 URL 來決定欄位對應，統一輸出為 (title, url)
-                if url_like.match(a) and not url_like.match(b):
-                    url, title = a, b
-                elif url_like.match(b) and not url_like.match(a):
-                    url, title = b, a
-                else:
-                    # 回退策略：沿用原本 (title, url) 假設
-                    title, url = a, b
-
-                # 🔧 新增：檢查URL是否已存在
-                if url in seen_urls:
-                    continue
-
-                # 清理標題
-                title = title.strip().strip('"\'')
-                if not title or len(title) < 3 or len(title) > 200:
-                    continue
-
-                # 排除無意義的標題
-                if re.match(r'^(點擊這裡|閱讀更多|更多資訊|連結|網址|click here|read more|more info|link|url)$', title, re.IGNORECASE):
-                    continue
-                if re.match(r'^\d+$', title) or re.match(r'^[^\w\u4e00-\u9fff]+$', title):
-                    continue
-
-                links.append({"title": title, "url": url})
-                seen_urls.add(url)  # 🔧 新增：記錄已處理的URL
-
-        return links
-    
-    def _find_title_for_url_in_content(self, content: str, target_url: str) -> str:
-        """在文件內容中尋找特定URL對應的標題"""
-        try:
-            lines = content.split('\n')
-            
-            for i, line in enumerate(lines):
-                if target_url in line:
-                    # 查看目前行和前後幾行尋找標題
-                    context_lines = []
-                    start = max(0, i - 2)
-                    end = min(len(lines), i + 3)
-                    context_lines = lines[start:end]
-                    
-                    for context_line in context_lines:
-                        # 跳過包含URL的行
-                        if target_url in context_line:
-                            continue
-                        
-                        # 尋找標題樣板
-                        context_line = context_line.strip()
-                        if context_line and len(context_line) > 5 and len(context_line) < 200:
-                            # 移除常見的標記符號
-                            cleaned = re.sub(r'^[#*\-\•\d\.\s]+', '', context_line)
-                            if cleaned and len(cleaned) > 5:
-                                return cleaned
-            
-            return ""
-            
-        except Exception as e:
-            logger.debug(f"在內容中尋找標題失敗: {e}")
-            return ""
-
     def _generate_smart_title(self, metadata: dict, url: str) -> str:
         """智慧生成標題"""
         try:
@@ -1078,15 +1001,15 @@ class ChatbotInstance:
             return self._extract_domain_from_url(url)
 
     def _extract_source_urls(self, docs: List) -> List[dict]:
-        """從文件元資料中提取URL和完整標題資訊"""
+        """從文檔元數據中直接讀取URL資訊 - 修正版"""
         sources = []
-        seen_urls = set()
+        seen_urls = set()  # 全局去重
 
         for doc in docs:
             try:
                 metadata = getattr(doc, 'metadata', {})
                 
-                # 方法1: 檢查是否有預處理的標題-URL對應
+                # 方法1：檢查預處理的標題-URL對應（優先級最高）
                 title_url_mapping = metadata.get('title_url_mapping', {})
                 if isinstance(title_url_mapping, str):
                     try:
@@ -1094,57 +1017,31 @@ class ChatbotInstance:
                     except json.JSONDecodeError:
                         title_url_mapping = {}
                 
-                # 如果有對應，直接使用
                 if title_url_mapping:
                     for title, url in title_url_mapping.items():
                         if url not in seen_urls:
-                            sources.append({
-                                "title": title,
-                                "url": url
-                            })
-                            seen_urls.add(url)
-                    continue
-                
-                # 方法2: 從文件內容中提取標題和URL
-                doc_content = self._get_document_content(doc)
-                extracted_links = self._extract_links_from_content(doc_content)
-                for link_info in extracted_links:
-                    if link_info['url'] not in seen_urls:
-                        sources.append(link_info)
-                        seen_urls.add(link_info['url'])
-                
-                # 🆕 方法2.5: 如果沒有找到格式化連線，則從內容中提取原始URL
-                if not extracted_links:
-                    raw_urls = re.findall(r'https?://[^\s<>"\\\)+]', doc_content)
-                    for url in raw_urls:
-                        if url not in seen_urls:
-                            title = self._generate_smart_title(metadata, url)
                             sources.append({"title": title, "url": url})
                             seen_urls.add(url)
+                    continue  # 如果有預處理對應，跳過其他方法
                 
-                # 方法3: 從contained_urls獲取URL，然後嘗試符合標題
+                # 方法2：從元數據的contained_urls提取（fallback）
                 url_string = metadata.get('contained_urls', '')
-                if url_string and not extracted_links:
+                if url_string:
                     urls_in_chunk = [url.strip() for url in url_string.split('|') if url.strip()]
                     
                     for url in urls_in_chunk:
                         if url not in seen_urls:
-                            # 嘗試從文件內容中找到對應的標題
-                            title = self._find_title_for_url_in_content(doc_content, url)
-                            if not title:
-                                # 如果找不到，使用智慧標題提取
-                                title = self._generate_smart_title(metadata, url)
+                            # 生成智慧標題
+                            title = self._generate_smart_title(metadata, url)
                             
-                            sources.append({
-                                "title": title,
-                                "url": url
-                            })
-                            seen_urls.add(url)
+                            # 驗證標題有效性
+                            if title and len(title.strip()) > 0:
+                                sources.append({"title": title, "url": url})
+                                seen_urls.add(url)
 
             except Exception as e:
-                logger.warning(f"從元資料提取URL時出錯: {e}")
+                logger.warning(f"從元數據提取URL時出錯: {e}")
 
-        logger.info(f"從元資料中提取到 {len(sources)} 個連線")
         return sources
 
     def _extract_domain_from_url(self, url: str) -> str:

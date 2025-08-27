@@ -1234,6 +1234,144 @@ class OptimizedTextSplitter:
             metadata['sentence_count'] = 0
         
         return Document(page_content=content, metadata=metadata)
+    
+    def _create_chunk_document(self, content: str, doc_id: str, chunk_index: int, 
+                          analysis: TextAnalysis, split_method: str) -> Document:
+        """創建分塊文檔 - 修正版：一次性提取並保存完整URL資訊"""
+        token_count = self.token_estimator.estimate_tokens(content)
+        
+        # 修正：使用新的URL和標題提取方法
+        valid_urls, title_mapping = self._extract_and_validate_urls_with_titles(content)
+        
+        if valid_urls:
+            logger.info(f"成功從文本塊中提取到有效URL: {len(valid_urls)}個")
+
+        # 基本元數據（確保都是簡單類型）
+        metadata = {
+            'doc_id': str(doc_id),
+            'chunk_id': f"{doc_id}_{chunk_index+1:03d}",
+            'chunk_index': int(chunk_index),
+            'text_type': str(analysis.text_type),
+            'processing_strategy': str(analysis.processing_strategy),
+            'split_method': str(split_method),
+            'chunk_length': int(len(content)),
+            'token_count': int(token_count),
+            'quality_score': float(analysis.quality_score),
+            'language': str(analysis.language),
+            'has_overlap': False
+        }
+
+        # URL處理 - 完整版
+        if valid_urls:
+            metadata['contained_urls'] = '|'.join(valid_urls)
+            metadata['url_count'] = len(valid_urls)
+            metadata['has_urls'] = True
+            
+            # 關鍵改進：保存標題-URL映射
+            metadata['title_url_mapping'] = json.dumps(title_mapping, ensure_ascii=False)
+            
+            metadata['url_analysis'] = self._analyze_urls(valid_urls)
+        else:
+            metadata['contained_urls'] = ''
+            metadata['url_count'] = 0
+            metadata['has_urls'] = False
+            metadata['title_url_mapping'] = '{}'
+            metadata['url_analysis'] = ''
+
+        # 其餘metadata處理保持不變...
+        if analysis.structure_info:
+            metadata['structure_info'] = json.dumps(analysis.structure_info, ensure_ascii=False)
+            metadata['has_chapters'] = bool(analysis.structure_info.get('has_chapters', False))
+            metadata['has_sections'] = bool(analysis.structure_info.get('has_sections', False))
+            metadata['paragraph_count'] = int(analysis.structure_info.get('paragraphs', 0))
+            metadata['sentence_count'] = int(analysis.structure_info.get('sentences', 0))
+        else:
+            metadata['structure_info'] = '{}'
+            metadata['has_chapters'] = False
+            metadata['has_sections'] = False
+            metadata['paragraph_count'] = 0
+            metadata['sentence_count'] = 0
+        
+        return Document(page_content=content, metadata=metadata)
+    
+    def _extract_and_validate_urls_with_titles(self, content: str) -> Tuple[List[str], Dict[str, str]]:
+        """提取URL和標題的完整方法"""
+        if not content:
+            return [], {}
+        
+        all_links = []
+        seen_urls = set()
+        
+        # 提取所有格式的連結
+        patterns = [
+            # Markdown格式: [標題](URL) 
+            (r'\[([^\]]+)\]\((https?://[^\s)]+)\)', lambda m: (m[1].strip(), m[2].strip())),
+            # HTML格式: <a href="URL">標題</a>
+            (r'<a[^>]+href=["\'](https?://[^"\']+)["\'][^>]*>([^<]+)</a>', lambda m: (m[2].strip(), m[1].strip())),
+            # 純文字格式: 標題: URL
+            (r'([^:\n]+):\s*(https?://[^\s]+)', lambda m: (m[1].strip(), m[2].strip())),
+            # 純文字格式: 標題 - URL
+            (r'([^-\n]+)\s*-\s*(https?://[^\s]+)', lambda m: (m[1].strip(), m[2].strip()))
+        ]
+        
+        for pattern, extract_func in patterns:
+            matches = re.findall(pattern, content, re.IGNORECASE)
+            for match in matches:
+                try:
+                    title, url = extract_func(match)
+                    
+                    # 清理URL
+                    cleaned_url = self._clean_url(url)
+                    if self._is_valid_url(cleaned_url) and cleaned_url not in seen_urls:
+                        # 清理並驗證標題
+                        cleaned_title = self._validate_title(title)
+                        if cleaned_title:
+                            all_links.append({
+                                'title': cleaned_title,
+                                'url': cleaned_url
+                            })
+                            seen_urls.add(cleaned_url)
+                except Exception as e:
+                    logger.debug(f"URL提取失敗: {e}")
+                    continue
+        
+        # 分離URL清單和標題映射
+        valid_urls = [link['url'] for link in all_links]
+        title_mapping = {link['url']: link['title'] for link in all_links}
+        
+        return valid_urls, title_mapping
+
+# 新增標題驗證方法到 vector_operations.py  
+    def _validate_title(self, title: str) -> str:
+        """驗證並清理標題"""
+        if not title:
+            return ""
+        
+        # 清理標題
+        title = title.strip()
+        title = re.sub(r'\s+', ' ', title)  # 合併多個空格
+        title = re.sub(r'^[^\w\u4e00-\u9fff]+', '', title)  # 移除開頭的符號
+        title = re.sub(r'[^\w\u4e00-\u9fff]+$', '', title)  # 移除結尾的符號
+        
+        # 驗證標題長度
+        if len(title) < 3 or len(title) > 200:
+            return ""
+        
+        # 排除無意義的標題
+        meaningless_patterns = [
+            r'^(點擊這裡|閱讀更多|更多資訊|連結|網址|click here|read more|more info|link|url)$',
+            r'^\d+$',  # 純數字
+            r'^[^\w\u4e00-\u9fff]+$',  # 只有符號
+        ]
+        
+        for pattern in meaningless_patterns:
+            if re.match(pattern, title, re.IGNORECASE):
+                return ""
+        
+        return title
+
+
+
     def _extract_and_validate_urls(self, content: str) -> List[str]:
         """智能URL提取和驗證"""
         if not content:
