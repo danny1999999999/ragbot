@@ -1115,7 +1115,7 @@ class ChatbotInstance:
                 
                 # 🆕 方法2.5: 如果沒有找到格式化連線，則從內容中提取原始URL
                 if not extracted_links:
-                    raw_urls = re.findall(r'https?://[^\s<>"\\\)+]', doc_content)
+                    raw_urls = re.findall(r'https?://[^\s<>"\\\)]+', doc_content)
                     for url in raw_urls:
                         if url not in seen_urls:
                             title = self._generate_smart_title(metadata, url)
@@ -1146,6 +1146,18 @@ class ChatbotInstance:
 
         logger.info(f"從元資料中提取到 {len(sources)} 個連線")
         return sources
+
+    def _is_valid_url(self, url: str) -> bool:
+        try:
+            from urllib.parse import urlparse
+            parsed = urlparse(url)
+            return (parsed.scheme in ['http', 'https'] and 
+                    parsed.netloc and 
+                    '.' in parsed.netloc and
+                    len(url) > 10)
+        except:
+            return False
+
 
     def _extract_domain_from_url(self, url: str) -> str:
         """從URL中提取域名作為標題"""
@@ -1181,8 +1193,8 @@ class ChatbotInstance:
         if not sources:
             return ""
         
-        # 🔧 修正：確保機器人回答和推薦區塊之間有空行
-        source_links = "\n\n💡 你可能想知道\n"  # 兩個\n確保空行，最後一個\n讓標題單獨一行
+        # ✅ 修正：正確賦值給變量
+        source_links = "\n\n💡 你可能想知道\n\n"  # 簡化版本
         
         formatted_items = []
         for source in sources:
