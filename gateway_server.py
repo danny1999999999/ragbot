@@ -346,7 +346,16 @@ async def get_knowledge_files(bot_name: str, current_user: User = Depends(AdminA
 @app.get("/api/bots/{bot_name}/conversations")
 async def get_conversations(bot_name: str, page: int = 1, limit: int = 20, search: str = "", current_user: User = Depends(AdminAuth)):
     conv_logger = get_conversation_logger(bot_name)
-    conversations, total = conv_logger.get_conversations(limit=limit, offset=(page - 1) * limit, search=search if search else None)
+    # 將機器人名稱轉換為 collection 名稱格式
+    collection_name = f"collection_{bot_name}"
+    
+    conversations, total = conv_logger.get_conversations(
+        limit=limit, 
+        offset=(page - 1) * limit, 
+        search=search if search else None,
+        collection=collection_name  # 添加這個參數來過濾
+    )
+    
     logger.info(f"Conversations data for bot '{bot_name}': {conversations}")
     total_pages = (total + limit - 1) // limit if total > 0 else 1
     return JSONResponse({

@@ -822,7 +822,7 @@ class ChatbotInstance:
                     "bot_name": self.bot_name,
                     "display_name": self.config.get("display_name", self.bot_name),
                     "collection_name": self.collection_name,
-                    "conversation_db_path": self.conversation_db_path,
+                    "db_type": "postgresql",
                     "search_mode": self.search_mode,
                     "vector_api_url": self.vector_api_url if self.search_mode == "api" else None,
                     "session_stats": {
