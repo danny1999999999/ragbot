@@ -580,7 +580,7 @@
 
                 <div class="form-group">
     <label for="fileUpload">上傳新文件 (支持 .txt, .pdf, .docx, .doc, .md, .csv, .json, .epub, .py, .js, .rst, .org)</label>
-    <input type="file" id="fileUpload" accept=".txt,.pdf,.docx,.doc,.md,.csv,.json,.epub,.py,.js,.rst,.org">
+    <input type="file" id="fileUpload" accept=".txt,.pdf,.docx,.doc,.md,.csv,.json,.epub,.py,.js,.rst,.org" multiple>
     <button id="uploadBtn" onclick="uploadFile()" class="btn-config" style="margin-top:10px;">
         <span id="uploadIcon">📤</span> 上傳文件
     </button>
@@ -1870,8 +1870,9 @@ async function uploadFile() {
     const uploadBtn = document.getElementById('uploadBtn');
     const uploadStatus = document.getElementById('uploadStatus');
     
+    // ✅ 檢查是否有檔案
     if (!fileInput.files || fileInput.files.length === 0) {
-        showMessage('請先選擇要上傳的文件', true, true);
+        showMessage('請先選擇要上傳的檔案', true, true);
         return;
     }
     
@@ -1880,25 +1881,32 @@ async function uploadFile() {
         return;
     }
     
-    const file = fileInput.files[0];
+    const files = Array.from(fileInput.files);  // ✅ 取得所有檔案
     
-    // 文件大小檢查 (50MB)
-    if (file.size > 50 * 1024 * 1024) {
-        showMessage('文件大小不能超過 50MB', true, true);
-        return;
+    // 檔案大小檢查 (每個檔案最大 50MB)
+    for (const file of files) {
+        if (file.size > 50 * 1024 * 1024) {
+            showMessage(`檔案 "${file.name}" 大小不能超過 50MB`, true, true);
+            return;
+        }
     }
     
     // 更新UI狀態
     uploadBtn.disabled = true;
     uploadBtn.innerHTML = '<span id="uploadIcon">⏳</span> 上傳中...';
-    uploadStatus.textContent = '正在處理文件...';
+    uploadStatus.textContent = `正在處理 ${files.length} 個檔案...`;
     uploadStatus.style.color = '#007bff';
     
     try {
         const formData = new FormData();
-        formData.append('file', file);
         
-        const response = await fetch(`/api/bots/${currentBotName}/knowledge/upload`, {
+        // ✅ 添加所有檔案
+        files.forEach(file => {
+            formData.append('files', file);  // 注意：後台期望的參數名是 'files'
+        });
+        
+        // ✅ 使用批次上傳 API
+        const response = await fetch(`/api/bots/${currentBotName}/knowledge/upload-batch`, {
             method: 'POST',
             body: formData
         });
@@ -1907,43 +1915,64 @@ async function uploadFile() {
         
         if (response.ok && result.success) {
             uploadBtn.innerHTML = '<span id="uploadIcon">✅</span> 上傳成功';
-            uploadStatus.textContent = result.message || '文件上傳成功';
+            uploadStatus.textContent = `成功上傳 ${result.stats.successful_files}/${result.stats.total_files} 個檔案`;
             uploadStatus.style.color = '#28a745';
             
-            showMessage(`文件 "${file.name}" 上傳成功！`, false, true);
+            // 顯示詳細結果
+            let successCount = 0;
+            let errorMessages = [];
             
-            // 清空選擇並重新載入文件列表
+            result.results.forEach(fileResult => {
+                if (fileResult.success) {
+                    successCount++;
+                } else {
+                    errorMessages.push(`${fileResult.filename}: ${fileResult.message}`);
+                }
+            });
+            
+            let message = `批次上傳完成：${successCount} 個成功`;
+            if (errorMessages.length > 0) {
+                message += `，${errorMessages.length} 個失敗`;
+            }
+            
+            showMessage(message, errorMessages.length > 0, true);
+            
+            // 如果有錯誤，顯示詳細信息
+            if (errorMessages.length > 0) {
+                console.warn('上傳錯誤詳情:', errorMessages);
+            }
+            
+            // 清空選擇並重新載入檔案列表
             fileInput.value = '';
             setTimeout(() => {
                 loadKnowledgeFiles(currentBotName);
                 // 重置按鈕
                 uploadBtn.disabled = false;
-                uploadBtn.innerHTML = '<span id="uploadIcon">📤</span> 上傳文件';
+                uploadBtn.innerHTML = '<span id="uploadIcon">📤</span> 上傳檔案';
                 uploadStatus.textContent = '';
             }, 2000);
             
         } else {
-            throw new Error(result.message || '上傳失敗');
+            throw new Error(result.message || '批次上傳失敗');
         }
         
     } catch (error) {
-        console.error('上傳失敗:', error);
+        console.error('批次上傳失敗:', error);
         
         uploadBtn.innerHTML = '<span id="uploadIcon">❌</span> 上傳失敗';
-        uploadStatus.textContent = `上傳失敗: ${error.message}`;
+        uploadStatus.textContent = `批次上傳失敗: ${error.message}`;
         uploadStatus.style.color = '#dc3545';
         
-        showMessage(`文件上傳失敗: ${error.message}`, true, true);
+        showMessage(`批次上傳失敗: ${error.message}`, true, true);
         
         // 重置按鈕
         setTimeout(() => {
             uploadBtn.disabled = false;
-            uploadBtn.innerHTML = '<span id="uploadIcon">📤</span> 上傳文件';
+            uploadBtn.innerHTML = '<span id="uploadIcon">📤</span> 上傳檔案';
             uploadStatus.textContent = '';
         }, 3000);
     }
 }
-
 
 // 緊急清空 test_01
 async function emergencyClearTest01() {
@@ -2028,34 +2057,45 @@ function setupFileUpload() {
     const uploadStatus = document.getElementById('uploadStatus');
     
     if (!fileInput || !uploadBtn) {
-        console.warn('文件上傳組件未找到');
+        console.warn('檔案上傳組件未找到');
         return;
     }
     
-    // 文件選擇事件
+    // 檔案選擇事件
     fileInput.addEventListener('change', function() {
-        const file = this.files[0];
-        if (file) {
-            const fileSize = (file.size / 1024 / 1024).toFixed(2);
-            uploadStatus.textContent = `已選擇: ${file.name} (${fileSize} MB)`;
+        if (this.files.length > 0) {
+            const fileCount = this.files.length;
+            let totalSize = 0;
+            let fileList = [];
+            
+            for (let i = 0; i < fileCount; i++) {
+                totalSize += this.files[i].size;
+                fileList.push(this.files[i].name);
+            }
+            
+            const totalSizeMB = (totalSize / 1024 / 1024).toFixed(2);
+            
+            uploadStatus.innerHTML = `
+                已選擇: ${fileCount} 個檔案 (共 ${totalSizeMB} MB)<br>
+                <small style="color: #6c757d;">${fileList.slice(0, 3).join(', ')}${fileCount > 3 ? ` 等 ${fileCount} 個檔案` : ''}</small>
+            `;
             uploadStatus.style.color = '#007bff';
             
             uploadBtn.style.background = '#28a745';
-            uploadBtn.innerHTML = '<span>✅</span> 確認上傳';
+            uploadBtn.innerHTML = '<span>✅</span> 確認批次上傳';
         } else {
             resetUploadButton();
         }
     });
     
-    // 創建拖拽區域（可選增強功能）
+    // 建立拖拽區域
     const dropZone = document.createElement('div');
     dropZone.className = 'drop-zone';
-    dropZone.innerHTML = '<p>🗂️ 或直接拖放文件到此區域</p>';
+    dropZone.innerHTML = '<p>🗂️ 或直接拖放多個檔案到此區域 (支援批次上傳)</p>';
     
-    // 將拖拽區域插入到文件輸入框後面
     fileInput.parentElement.appendChild(dropZone);
     
-    // 拖拽事件處理
+    // ✅ 改善拖拽事件處理
     dropZone.addEventListener('dragover', (e) => {
         e.preventDefault();
         dropZone.classList.add('drag-over');
@@ -2072,8 +2112,15 @@ function setupFileUpload() {
         
         const files = e.dataTransfer.files;
         if (files.length > 0) {
+            // ✅ 直接設置檔案並觸發 change 事件
             fileInput.files = files;
             fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+            
+            // 顯示拖拽成功提示
+            dropZone.innerHTML = `<p style="color: #28a745;">✅ 已接收 ${files.length} 個檔案，點擊上傳按鈕開始處理</p>`;
+            setTimeout(() => {
+                dropZone.innerHTML = '<p>🗂️ 或直接拖放多個檔案到此區域 (支援批次上傳)</p>';
+            }, 3000);
         }
     });
     
@@ -2081,12 +2128,10 @@ function setupFileUpload() {
         fileInput.click();
     });
     
-    console.log('✅ 文件上傳功能已初始化');
+    console.log('✅ 多檔案上傳與拖拽功能已初始化');
 }
-
 // 頁面載入後初始化
 document.addEventListener('DOMContentLoaded', setupFileUpload);
-
 
 
     
