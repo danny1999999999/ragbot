@@ -236,6 +236,135 @@ async def update_bot_config(bot_name: str, request: Request, current_user: User 
     return {"success": True, "message": "Configuration updated successfully."}
 
 
+@app.post("/api/bots/{bot_name}/knowledge/upload-batch")
+async def upload_knowledge_files_batch(
+    bot_name: str, 
+    files: List[UploadFile] = File(...),  # 支援多檔案
+    current_user: User = Depends(AdminAuth)
+):
+    """批次上傳多個知識庫檔案"""
+    try:
+        collection_name = f"collection_{bot_name}"
+        results = []
+        
+        # 建立臨時目錄存放檔案
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_dir_path = Path(temp_dir)
+            file_paths = []
+            
+            # 儲存所有上傳的檔案
+            for file in files:
+                if not file.filename:
+                    continue
+                    
+                file_path = temp_dir_path / file.filename
+                
+                # 檢查檔案格式
+                if file_path.suffix.lower() not in SUPPORTED_EXTENSIONS:
+                    results.append({
+                        "filename": file.filename,
+                        "success": False,
+                        "message": f"不支援的檔案格式: {file_path.suffix}"
+                    })
+                    continue
+                
+                # 寫入檔案
+                try:
+                    content = await file.read()
+                    with open(file_path, 'wb') as f:
+                        f.write(content)
+                    file_paths.append(file_path)
+                    
+                except Exception as e:
+                    results.append({
+                        "filename": file.filename,
+                        "success": False,
+                        "message": f"檔案寫入失敗: {str(e)}"
+                    })
+                    continue
+            
+            if not file_paths:
+                return JSONResponse({
+                    "success": False,
+                    "message": "沒有有效的檔案可以處理",
+                    "results": results
+                }, status_code=400)
+            
+            # 使用向量系統批次處理
+            try:
+                # 載入所有文檔
+                all_documents = []
+                for file_path in file_paths:
+                    try:
+                        documents = vector_system.load_document(file_path)
+                        if documents:
+                            all_documents.extend(documents)
+                            results.append({
+                                "filename": file_path.name,
+                                "success": True,
+                                "message": f"成功載入 {len(documents)} 個分塊",
+                                "chunks": len(documents)
+                            })
+                        else:
+                            results.append({
+                                "filename": file_path.name,
+                                "success": False,
+                                "message": "檔案載入後無有效內容"
+                            })
+                    except Exception as e:
+                        results.append({
+                            "filename": file_path.name,
+                            "success": False,
+                            "message": f"載入失敗: {str(e)}"
+                        })
+                
+                if not all_documents:
+                    return JSONResponse({
+                        "success": False,
+                        "message": "所有檔案載入失敗",
+                        "results": results
+                    }, status_code=400)
+                
+                # 批次向量化
+                vectorstore = vector_system.get_or_create_vectorstore(collection_name)
+                
+                # 使用批次處理器
+                batches = vector_system.batch_processor.create_smart_batches(all_documents)
+                success_count = vector_system._process_batches(vectorstore, batches)
+                
+                # 計算總數據
+                total_files = len([r for r in results if r["success"]])
+                total_chunks = sum(r.get("chunks", 0) for r in results if r["success"])
+                
+                return JSONResponse({
+                    "success": success_count > 0,
+                    "message": f"批次上傳完成: {total_files} 個檔案, {total_chunks} 個分塊, {success_count} 個成功向量化",
+                    "results": results,
+                    "stats": {
+                        "total_files": len(files),
+                        "successful_files": total_files,
+                        "total_chunks": total_chunks,
+                        "vectorized_chunks": success_count
+                    }
+                })
+                
+            except Exception as e:
+                logger.error(f"批次向量化失敗: {e}")
+                return JSONResponse({
+                    "success": False,
+                    "message": f"批次處理失敗: {str(e)}",
+                    "results": results
+                }, status_code=500)
+                
+    except Exception as e:
+        logger.error(f"批次上傳失敗: {e}")
+        return JSONResponse({
+            "success": False,
+            "message": f"批次上傳失敗: {str(e)}"
+        }, status_code=500)
+
+
+
 @app.delete("/api/bots/{bot_name}")
 async def delete_bot(bot_name: str, current_user: User = Depends(AdminAuth)):
     # First, stop the bot if it is running

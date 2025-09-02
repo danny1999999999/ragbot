@@ -355,6 +355,45 @@
                 align-items: flex-start;
             }
         }
+            /* 改善的樣式 */
+            .form-group details summary {
+                padding: 4px 8px;
+                border-radius: 4px;
+                background: #e9ecef;
+                display: inline-block;
+            }
+
+            .form-group details summary:hover {
+                background: #dee2e6;
+            }
+
+            .form-group details[open] summary {
+                background: #007bff;
+                color: white;
+            }
+
+            /* 拖放區域樣式（可選增強功能） */
+            .drop-zone {
+                border: 2px dashed #dee2e6;
+                border-radius: 8px;
+                padding: 20px;
+                text-align: center;
+                background: #f8f9fa;
+                transition: all 0.3s ease;
+                margin-top: 10px;
+            }
+
+            .drop-zone.drag-over {
+                border-color: #007bff;
+                background: #e3f2fd;
+            }
+
+            .drop-zone p {
+                margin: 0;
+                color: #6c757d;
+                font-size: 0.9em;
+            }
+
     </style>
 </head>
 <body>
@@ -539,15 +578,34 @@
                     <!-- JS 動態填入 -->
                 </div>
 
-                <!-- 上傳區塊 -->
                 <div class="form-group">
-                    <label for="fileUpload">上傳新文件 (支持 .txt, .pdf, .docx, .md)</label>
-                    <input type="file" id="fileUpload" accept=".txt,.pdf,.docx,.md">
-                    <button id="uploadBtn" onclick="uploadFile()" class="btn-config" style="margin-top:10px;">
-                        <span id="uploadIcon">📤</span> 上傳文件
-                    </button>
-                    <span id="uploadStatus" style="margin-left: 15px; color: #007bff; font-weight: bold;"></span>
+    <label for="fileUpload">上傳新文件 (支持 .txt, .pdf, .docx, .doc, .md, .csv, .json, .epub, .py, .js, .rst, .org)</label>
+    <input type="file" id="fileUpload" accept=".txt,.pdf,.docx,.doc,.md,.csv,.json,.epub,.py,.js,.rst,.org">
+    <button id="uploadBtn" onclick="uploadFile()" class="btn-config" style="margin-top:10px;">
+        <span id="uploadIcon">📤</span> 上傳文件
+    </button>
+    <span id="uploadStatus" style="margin-left: 15px; color: #007bff; font-weight: bold;"></span>
+    
+    <!-- 添加文件格式說明 -->
+    <div style="margin-top: 8px; font-size: 0.85em; color: #6c757d;">
+        <details>
+            <summary style="cursor: pointer; user-select: none;">📝 支持的文件格式詳細說明</summary>
+            <div style="margin-top: 8px; padding: 10px; background: #f8f9fa; border-radius: 4px;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px;">
+                    <div><strong>文檔類型:</strong> .txt, .md, .rst, .org</div>
+                    <div><strong>PDF文檔:</strong> .pdf</div>
+                    <div><strong>Word文檔:</strong> .docx, .doc</div>
+                    <div><strong>數據文件:</strong> .csv, .json</div>
+                    <div><strong>代碼文件:</strong> .py, .js</div>
+                    <div><strong>電子書:</strong> .epub</div>
                 </div>
+                <div style="margin-top: 8px; font-size: 0.8em; color: #495057;">
+                    💡 系統會自動檢測文件編碼並進行智能分塊處理，支持中英文混合內容。
+                </div>
+            </div>
+        </details>
+    </div>
+</div>
 
                 <!-- 🚨 緊急操作區域 -->
 <div style="margin-top: 30px; padding: 15px; border: 2px solid #dc3545; border-radius: 8px; background-color: #fff5f5;">
@@ -1340,50 +1398,7 @@
             }
         }
 
-        // 上傳文件
-        async function uploadFile() {
-            if (!currentBotName) return;
-            const fileInput = document.getElementById('fileUpload');
-            const file = fileInput.files[0];
-            if (!file) {
-                showMessage('請先選擇一個文件再上傳。', true, true);
-                return;
-            }
-
-            const uploadBtn = document.getElementById('uploadBtn');
-            const uploadStatus = document.getElementById('uploadStatus');
-
-            uploadBtn.disabled = true;
-            uploadBtn.style.backgroundColor = '#6c757d';
-            uploadStatus.textContent = '上傳與向量化處理中，請稍候...';
-
-            const formData = new FormData();
-            formData.append('file', file);
-
-            try {
-                const response = await fetch(`/api/bots/${currentBotName}/knowledge/upload`, {
-                    method: 'POST',
-                    body: formData
-                });
-                
-                const data = await response.json();
-
-                if (response.ok && data.success) {
-                    showMessage(`文件 ${file.name} 已成功上傳並索引。`, false, true);
-                    fileInput.value = '';
-                    loadKnowledgeFiles(currentBotName);
-                } else {
-                    throw new Error(data.message || '上傳失敗，請檢查伺服器日誌。');
-                }
-            } catch (error) {
-                showMessage('上傳失敗: ' + error.message, true, true);
-            } finally {
-                uploadBtn.disabled = false;
-                uploadBtn.style.backgroundColor = '#007bff';
-                uploadStatus.textContent = '';
-            }
-        }
-
+        
 
    
 
@@ -1910,6 +1925,60 @@ async function emergencyClearTest01() {
             </div>
         `;
     }
+    
+    // 增強的文件上傳功能
+function setupFileUpload() {
+    const fileInput = document.getElementById('fileUpload');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const uploadStatus = document.getElementById('uploadStatus');
+    
+    // 文件選擇事件
+    fileInput.addEventListener('change', function() {
+        const file = this.files[0];
+        if (file) {
+            uploadStatus.textContent = `已選擇: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+            uploadBtn.style.background = '#28a745';
+            uploadBtn.innerHTML = '<span>✅</span> 確認上傳';
+        }
+    });
+    
+    // 可選：添加拖放功能
+    const dropZone = document.createElement('div');
+    dropZone.className = 'drop-zone';
+    dropZone.innerHTML = '<p>🗂️ 或直接拖放文件到此區域</p>';
+    fileInput.parentElement.appendChild(dropZone);
+    
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.classList.add('drag-over');
+    });
+    
+    dropZone.addEventListener('dragleave', () => {
+        dropZone.classList.remove('drag-over');
+    });
+    
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('drag-over');
+        
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            fileInput.files = files;
+            fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+    });
+    
+    dropZone.addEventListener('click', () => {
+        fileInput.click();
+    });
+}
+
+// 頁面載入後初始化
+document.addEventListener('DOMContentLoaded', setupFileUpload);
+
+
+
+    
 }
     </script>
 </body>
