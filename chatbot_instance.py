@@ -917,7 +917,8 @@ class ChatbotInstance:
                 logger.info(f"🤖 機器人 '{self.bot_name}' LLM 原始回應:")
                 logger.info(f"'{questions_text}'")
                 
-                recommended_questions = [q.strip() for q in questions_text.split('\n') if q.strip()]
+                questions_list = [q.strip() for q in questions_text.split('\n') if q.strip()]
+                recommended_questions = list(dict.fromkeys(questions_list))
                 
                 logger.info(f"📝 機器人 '{self.bot_name}' 解析後的推薦問題: {recommended_questions}")
                 
