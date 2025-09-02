@@ -26,7 +26,7 @@ from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import (
     TextLoader, PyPDFLoader, Docx2txtLoader, 
-    CSVLoader, JSONLoader
+    CSVLoader, JSONLoader, PandasExcelLoader
 )
 
 # --- Start of content from core_config.py ---
@@ -153,7 +153,7 @@ PERFORMANCE_CONFIG = {
 # 支持的文件格式擴展
 SUPPORTED_EXTENSIONS = {
     '.txt', '.md', '.pdf', '.csv', '.json', '.py', '.js', 
-    '.docx', '.doc', '.epub', '.rst', '.org'
+    '.docx', '.doc', '.epub', '.rst', '.org', '.xlsx', '.xls'
 }
 
 from typing import TYPE_CHECKING
@@ -1210,7 +1210,7 @@ from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import (
     TextLoader, PyPDFLoader, Docx2txtLoader, 
-    CSVLoader, JSONLoader
+    CSVLoader, JSONLoader, PandasExcelLoader
 )
 
 # --- Start of content from core_config.py ---
@@ -1337,7 +1337,7 @@ PERFORMANCE_CONFIG = {
 # 支持的文件格式擴展
 SUPPORTED_EXTENSIONS = {
     '.txt', '.md', '.pdf', '.csv', '.json', '.py', '.js', 
-    '.docx', '.doc', '.epub', '.rst', '.org'
+    '.docx', '.doc', '.epub', '.rst', '.org', '.xlsx', '.xls'
 }
 
 from typing import TYPE_CHECKING
@@ -2872,6 +2872,10 @@ class VectorOperationsCore:
                 loader = CSVLoader(str(file_path), encoding='utf-8')
                 documents = loader.load()
                 full_text = "\n".join([doc.page_content for doc in documents if doc.page_content])
+            elif extension in ['.xlsx', '.xls']:
+                loader = PandasExcelLoader(str(file_path), sheet_name=None)
+                documents = loader.load()
+                full_text = "\n\n".join([doc.page_content for doc in documents if doc.page_content])
             elif extension == '.json':
                 loader = JSONLoader(str(file_path), jq_schema='.', text_content=False)
                 documents = loader.load()

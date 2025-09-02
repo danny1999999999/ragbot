@@ -1,34 +1,38 @@
+# --- 核心應用與網頁框架 ---
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
 python-dotenv
+pydantic
+python-multipart
+jinja2
+starlette
+httpx>=0.25.0
+psutil
+
+# --- 驗證與授權 ---
 PyJWT
-requests
+
+# --- LangChain 核心與 OpenAI ---
+langchain>=0.0.335
 langchain-community
 langchain-openai
+langchain-text-splitters>=0.2.0
 
-psutil
-jieba
-opencc-python-reimplemented
+# --- 向量儲存與資料庫 ---
+langchain-postgres>=0.0.9
+pgvector
+psycopg[binary]>=3.1.0
+psycopg2-binary
+chromadb
+SQLAlchemy
+
+# --- 文件讀取與文本處理 ---
+pypdf # 處理 PDF 的關鍵套件
+pandas # <--- 新增，用於讀取 Excel
+openpyxl # <--- 新增，用於讀取 .xlsx 檔案
 docx2txt
 ebooklib
 beautifulsoup4
-lxml
-chromadb
-SQLAlchemy
-pydantic
-
-fastapi>=0.104.0
-uvicorn[standard]>=0.24.0
-httpx>=0.25.0
-
-langchain>=0.0.335
-psycopg2-binary
-
-jinja2
-python-multipart
-pytz
-starlette 
-pgvector
-langchain-postgres>=0.0.9
-psycopg[binary]>=3.1.0
-langchain-text-splitters>=0.2.0
-pandas>=2.0.0
-numpy>=1.24.0
+lxml # beautifulsoup4 的建議搭配解析器
+opencc-python-reimplemented
+jieba
