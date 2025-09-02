@@ -12,7 +12,7 @@ from fastapi.responses import JSONResponse, HTMLResponse, PlainTextResponse
 from fastapi.templating import Jinja2Templates
 from dotenv import load_dotenv
 import urllib.parse
-
+import tempfile
 
 # Load environment variables at the very top
 load_dotenv()
