@@ -34,6 +34,10 @@ ROOT_DIR = Path(__file__).resolve().parent
 BOT_CONFIGS_DIR = ROOT_DIR / "bot_configs"
 BOT_CONFIGS_DIR.mkdir(exist_ok=True)
 
+SUPPORTED_EXTENSIONS = {
+    '.txt', '.md', '.pdf', '.csv', '.json', '.py', '.js', 
+    '.docx', '.doc', '.rst', '.org', '.epub'
+}
 
 # --- FastAPI App Initialization ---
 app = FastAPI(title="Unified API Gateway", version="3.0")
