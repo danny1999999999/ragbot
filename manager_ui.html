@@ -454,7 +454,6 @@
                             <th>機器人名稱</th>
                             <th>狀態</th>
                             <th>端口</th>
-                            <th>系統角色</th>
                             <th>操作</th>
                         </tr>
                     </thead>
@@ -948,7 +947,7 @@
         function renderBotTable(bots) {
             botTableBody.innerHTML = '';
             if (bots.length === 0) {
-                botTableBody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#6c757d;">尚未創建任何機器人</td></tr>';
+            botTableBody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#6c757d;">尚未創建任何機器人</td></tr>';
                 return;
             }
 
@@ -976,7 +975,6 @@
                     </td>
                     <td><span class="status-badge ${statusClass}">${statusText}</span></td>
                     <td>${isRunning ? `<a href="${publicUrl}" target="_blank" style="color:#007bff;" title="在新分頁中打開聊天介面">${bot.port} 🔗</a>` : bot.port}</td>
-                    <td style="max-width:200px; overflow:hidden; text-overflow:ellipsis;">${bot.system_role || '未設定'}</td>
                     <td>
                         <div class="btn-group">
                             <button class="${toggleClass}" onclick="toggleBot('${bot.name}', '${toggleAction}')">${toggleText}</button>
