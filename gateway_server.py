@@ -354,15 +354,29 @@ async def upload_knowledge_files_batch(
 
 
 
+@app.delete("/api/bots/{bot_name}")
 async def delete_bot(bot_name: str, current_user: User = Depends(AdminAuth)):
-    if bot_name in global_bot_instances:
-        bot_manager.stop_bot(bot_name, app)
+    """刪除指定的機器人"""
+    try:
+        # 如果機器人正在運行，先停止它
+        if bot_name in global_bot_instances:
+            logger.info(f"正在停止運行中的機器人: {bot_name}")
+            bot_manager.stop_bot(bot_name, app)
 
-    result = db_bot_manager.delete_bot(bot_name)
-    if result["success"]:
-        return JSONResponse(result)
-    else:
-        raise HTTPException(status_code=500, detail=result["message"])
+        # 從資料庫刪除配置
+        result = db_bot_manager.delete_bot(bot_name)
+        
+        if result["success"]:
+            logger.info(f"機器人 {bot_name} 已成功刪除 (用戶: {current_user.username})")
+            return JSONResponse(result)
+        else:
+            logger.warning(f"刪除機器人失敗: {result['message']}")
+            raise HTTPException(status_code=404, detail=result["message"])
+            
+    except Exception as e:
+        logger.error(f"刪除機器人時發生錯誤: {e}")
+        raise HTTPException(status_code=500, detail=f"刪除失敗: {str(e)}")
+
 
 
 @app.delete("/api/bots/{bot_name}/conversations")
