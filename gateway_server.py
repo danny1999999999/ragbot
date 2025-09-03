@@ -462,13 +462,43 @@ async def get_file_details(bot_name: str, filename: str, current_user: User = De
 
 
 @app.get("/api/bots/{bot_name}/knowledge/files")
-async def get_knowledge_files(bot_name: str, current_user: User = Depends(AdminAuth)):
+async def get_knowledge_files(
+    bot_name: str, 
+    page: int = 1,           # 🆕 新增參數，默認值保持相容
+    limit: int = 20,         # 🆕 新增參數，默認值保持相容
+    search: str = "",        # 🆕 新增參數，默認值保持相容
+    current_user: User = Depends(AdminAuth)
+):
+    """🔧 修改：在現有端點添加分頁參數，保持向後相容性"""
     try:
+        # ✅ 參數驗證和清理
+        page = max(1, page)
+        limit = max(1, min(limit, 100))  # 限制最大值防止性能問題
+        search = search.strip() if search else ""
+        
         collection_name = f"collection_{bot_name}"
-        docs_result = vector_system.get_collection_documents(collection_name)
+        
+        # 🆕 調用新的分頁方法
+        docs_result = vector_system.get_collection_documents_paginated(
+            collection_name=collection_name,
+            page=page, 
+            limit=limit,
+            search=search
+        )
+        
         return JSONResponse(docs_result)
+        
     except Exception as e:
-        return JSONResponse({"success": False, "message": str(e)}, status_code=500)
+        logger.error(f"獲取文件清單失敗: {e}")
+        return JSONResponse({
+            "success": False,
+            "message": str(e),
+            "documents": [],
+            "total": 0,
+            "page": page,
+            "limit": limit, 
+            "total_pages": 0
+        }, status_code=500)
 
 @app.get("/api/bots/{bot_name}/conversations")
 async def get_conversations(bot_name: str, page: int = 1, limit: int = 20, search: str = "", current_user: User = Depends(AdminAuth)):

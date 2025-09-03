@@ -572,74 +572,97 @@
                         <span class="stat-value" id="knowledgeStatus">就緒</span>
                     </div>
                 </div>
-                
+                <div style="margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+    <div style="display: flex; gap: 10px; align-items: center;">
+        <input type="text" id="knowledgeSearch" placeholder="搜索文件名..." style="padding: 8px; border: 1px solid #ccc; border-radius: 4px; width: 200px;">
+        <button onclick="searchKnowledgeFiles()" class="btn-config">🔍 搜索</button>
+        <button onclick="loadKnowledgeFiles(currentBotName, 1)" class="btn-config">🔄 重置</button>
+    </div>
+    <div>
+        <span id="knowledgePageStats">載入中...</span>
+    </div>
+</div>
+
+<!-- 🆕 分頁控制區域 -->
+<div style="margin-bottom: 15px; display: flex; justify-content: center; align-items: center; gap: 10px;">
+    <button id="knowledgePrevBtn" onclick="loadKnowledgeFiles(currentBotName, knowledgeCurrentPage - 1)" class="btn-config" disabled>⬅️ 上一頁</button>
+    <span id="knowledgePageInfo" style="margin: 0 15px;">頁面 1</span>
+    <button id="knowledgeNextBtn" onclick="loadKnowledgeFiles(currentBotName, knowledgeCurrentPage + 1)" class="btn-config" disabled>下一頁 ➡️</button>
+    
+    <select id="knowledgePageSize" onchange="changeKnowledgePageSize()" style="margin-left: 15px; padding: 4px;">
+        <option value="10">每頁 10 項</option>
+        <option value="20" selected>每頁 20 項</option>
+        <option value="50">每頁 50 項</option>
+        <option value="100">每頁 100 項</option>
+    </select>
+</div>
                 <!-- 文件列表表格 -->
                 <div id="knowledgeFilesList" style="max-height: 400px; overflow-y: auto; margin-bottom: 20px;">
                     <!-- JS 動態填入 -->
                 </div>
 
                 <div class="form-group">
-    <label for="fileUpload">上傳新文件 (支持 .txt, .pdf, .docx, .doc, .md, .csv, .json, .epub, .py, .js, .rst, .org)</label>
-    <input type="file" id="fileUpload" accept=".txt,.pdf,.docx,.doc,.md,.csv,.json,.epub,.py,.js,.rst,.org" multiple>
-    <button id="uploadBtn" onclick="uploadFile()" class="btn-config" style="margin-top:10px;">
-        <span id="uploadIcon">📤</span> 上傳文件
-    </button>
-    <span id="uploadStatus" style="margin-left: 15px; color: #007bff; font-weight: bold;"></span>
-    
-    <!-- 添加文件格式說明 -->
-    <div style="margin-top: 8px; font-size: 0.85em; color: #6c757d;">
-        <details>
-            <summary style="cursor: pointer; user-select: none;">📝 支持的文件格式詳細說明</summary>
-            <div style="margin-top: 8px; padding: 10px; background: #f8f9fa; border-radius: 4px;">
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px;">
-                    <div><strong>文檔類型:</strong> .txt, .md, .rst, .org</div>
-                    <div><strong>PDF文檔:</strong> .pdf</div>
-                    <div><strong>Word文檔:</strong> .docx, .doc</div>
-                    <div><strong>數據文件:</strong> .csv, .json</div>
-                    <div><strong>代碼文件:</strong> .py, .js</div>
-                    <div><strong>電子書:</strong> .epub</div>
-                </div>
-                <div style="margin-top: 8px; font-size: 0.8em; color: #495057;">
-                    💡 系統會自動檢測文件編碼並進行智能分塊處理，支持中英文混合內容。
+                <label for="fileUpload">上傳新文件 (支持 .txt, .pdf, .docx, .doc, .md, .csv, .json, .epub, .py, .js, .rst, .org)</label>
+                <input type="file" id="fileUpload" accept=".txt,.pdf,.docx,.doc,.md,.csv,.json,.epub,.py,.js,.rst,.org" multiple>
+                <button id="uploadBtn" onclick="uploadFile()" class="btn-config" style="margin-top:10px;">
+                    <span id="uploadIcon">📤</span> 上傳文件
+                </button>
+                <span id="uploadStatus" style="margin-left: 15px; color: #007bff; font-weight: bold;"></span>
+                
+                <!-- 添加文件格式說明 -->
+                <div style="margin-top: 8px; font-size: 0.85em; color: #6c757d;">
+                    <details>
+                        <summary style="cursor: pointer; user-select: none;">📝 支持的文件格式詳細說明</summary>
+                        <div style="margin-top: 8px; padding: 10px; background: #f8f9fa; border-radius: 4px;">
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px;">
+                                <div><strong>文檔類型:</strong> .txt, .md, .rst, .org</div>
+                                <div><strong>PDF文檔:</strong> .pdf</div>
+                                <div><strong>Word文檔:</strong> .docx, .doc</div>
+                                <div><strong>數據文件:</strong> .csv, .json</div>
+                                <div><strong>代碼文件:</strong> .py, .js</div>
+                                <div><strong>電子書:</strong> .epub</div>
+                            </div>
+                            <div style="margin-top: 8px; font-size: 0.8em; color: #495057;">
+                                💡 系統會自動檢測文件編碼並進行智能分塊處理，支持中英文混合內容。
+                            </div>
+                        </div>
+                    </details>
                 </div>
             </div>
-        </details>
-    </div>
-</div>
 
-                <!-- 🚨 緊急操作區域 -->
-<div style="margin-top: 30px; padding: 15px; border: 2px solid #dc3545; border-radius: 8px; background-color: #fff5f5;">
-    <h4 style="color: #dc3545; margin-top: 0;">🚨 緊急操作區域</h4>
-    <p style="color: #6c757d; margin-bottom: 15px;">
-        <strong>警告：</strong>以下操作將永久刪除數據，請謹慎使用！
-    </p>
-    
-    <!-- 集合狀態查看 -->
-    <div style="margin-bottom: 15px;">
-        <button onclick="checkCollectionsStatus()" class="btn-config" style="background-color: #17a2b8;">
-            📊 查看集合狀態
-        </button>
-        <div id="collectionsStatus" style="margin-top: 10px; display: none;"></div>
-    </div>
-    
-    <!-- test_01 緊急清空 -->
-    <div style="margin-bottom: 15px;">
-        <button onclick="emergencyClearTest01()" class="btn-delete" style="background-color: #dc3545;">
-            🗑️ 緊急清空 test_01
-        </button>
-        <span style="margin-left: 10px; color: #dc3545; font-size: 0.9em;">
-            此操作將刪除 test_01 的所有向量數據
-        </span>
-    </div>
-    
-    <!-- 操作結果顯示 -->
-    <div id="emergencyResults" style="display: none; margin-top: 15px; padding: 10px; border-radius: 4px;"></div>
-</div>
-
-
+                        <!-- 🚨 緊急操作區域 -->
+        <div style="margin-top: 30px; padding: 15px; border: 2px solid #dc3545; border-radius: 8px; background-color: #fff5f5;">
+            <h4 style="color: #dc3545; margin-top: 0;">🚨 緊急操作區域</h4>
+            <p style="color: #6c757d; margin-bottom: 15px;">
+                <strong>警告：</strong>以下操作將永久刪除數據，請謹慎使用！
+            </p>
+            
+            <!-- 集合狀態查看 -->
+            <div style="margin-bottom: 15px;">
+                <button onclick="checkCollectionsStatus()" class="btn-config" style="background-color: #17a2b8;">
+                    📊 查看集合狀態
+                </button>
+                <div id="collectionsStatus" style="margin-top: 10px; display: none;"></div>
             </div>
+            
+            <!-- test_01 緊急清空 -->
+            <div style="margin-bottom: 15px;">
+                <button onclick="emergencyClearTest01()" class="btn-delete" style="background-color: #dc3545;">
+                    🗑️ 緊急清空 test_01
+                </button>
+                <span style="margin-left: 10px; color: #dc3545; font-size: 0.9em;">
+                    此操作將刪除 test_01 的所有向量數據
+                </span>
+            </div>
+            
+            <!-- 操作結果顯示 -->
+            <div id="emergencyResults" style="display: none; margin-top: 15px; padding: 10px; border-radius: 4px;"></div>
+        </div>
 
-            <!-- 對話記錄標籤 -->
+
+        </div>
+
+        <!-- 對話記錄標籤 -->
             <div id="conversationsTab" class="tab-content">
                 <h4>💬 對話記錄管理</h4>
                 
@@ -737,7 +760,11 @@
             return encodeURIComponent(filename);
         }
 
-
+        // 🆕 修改1: 新增分頁相關變數 - 添加到現有變數聲明區域
+        let knowledgeCurrentPage = 1;
+        let knowledgeTotalPages = 1; 
+        let knowledgePageSize = 20;
+        let knowledgeSearchTerm = '';
 
         const createBotForm = document.getElementById('createBotForm');
         const editBotForm = document.getElementById('editBotForm');
@@ -869,27 +896,31 @@
 
         // 標籤頁切換
         function switchTab(tabName) {
-            // 隱藏所有標籤內容
-            document.querySelectorAll('.tab-content').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            document.querySelectorAll('.tab').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            
-            // 顯示選中的標籤
-            document.getElementById(tabName + 'Tab').classList.add('active');
-            event.target.classList.add('active');
-            
-            // 根據標籤載入相應內容
-            if (tabName === 'knowledge' && currentBotName) {
-                loadKnowledgeFiles(currentBotName);
-            } else if (tabName === 'conversations' && currentBotName) {
-                currentPage = 1;
-                selectedConversations.clear();
-                updateSelectedUI();
-                loadConversations(currentPage);
-            }
+        // 隱藏所有標籤內容
+        document.querySelectorAll('.tab-content').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        
+        // 顯示選中的標籤
+        document.getElementById(tabName + 'Tab').classList.add('active');
+        event.target.classList.add('active');
+        
+        // 根據標籤載入相應內容
+        if (tabName === 'knowledge' && currentBotName) {
+            // 🆕 添加: 重置分頁狀態並載入第一頁
+            knowledgeCurrentPage = 1;
+            knowledgeSearchTerm = '';
+            document.getElementById('knowledgeSearch').value = '';
+            loadKnowledgeFiles(currentBotName, knowledgeCurrentPage, knowledgePageSize);
+        } else if (tabName === 'conversations' && currentBotName) {
+            currentPage = 1;
+            selectedConversations.clear();
+            updateSelectedUI();
+            loadConversations(currentPage);
+        }
         }
 
         // 獲取機器人列表
@@ -1204,203 +1235,151 @@
             });
 
         // 🆕 修正後的載入知識庫文件函數
-        async function loadKnowledgeFiles(botName) {
+        async function loadKnowledgeFiles(botName, page = 1, limit = null, search = '') {
+        
+        const currentLimit = limit || knowledgePageSize;
+        const currentSearch = search || knowledgeSearchTerm;
+        
         const listDiv = document.getElementById('knowledgeFilesList');
         const statsDiv = document.getElementById('knowledgeStats');
         const totalFilesEl = document.getElementById('totalFilesCount');
         const totalChunksEl = document.getElementById('totalChunksCount');
         const statusEl = document.getElementById('knowledgeStatus');
+        const pageStatsEl = document.getElementById('knowledgePageStats');
+        const pageInfoEl = document.getElementById('knowledgePageInfo');
         
-        listDiv.innerHTML = '<p>正在獲取文件列表...</p>';
+        listDiv.innerHTML = '<p>正在載入文件清單...</p>';
+        pageStatsEl.textContent = '載入中...';
         statsDiv.style.display = 'none';
 
         try {
-            const response = await fetch(`/api/bots/${botName}/knowledge/files`);
-            if (!response.ok) throw new Error(`伺服器錯誤: ${response.status}`);
+            const searchParam = currentSearch ? `&search=${encodeURIComponent(currentSearch)}` : '';
+            const requestUrl = `/api/bots/${botName}/knowledge/files?page=${page}&limit=${currentLimit}${searchParam}`;
+            
+            console.log(`🔍 發送分頁請求: ${requestUrl}`);
+            
+            const response = await fetch(requestUrl);
+            if (!response.ok) {
+                throw new Error(`伺服器錯誤: ${response.status}`);
+            }
             
             const responseData = await response.json();
-            console.log('✅ API 回應:', responseData);
+            console.log('✅ 分頁API回應:', responseData);
 
-            let documents = [];
-            let totalFiles = 0;
-            let apiMessage = '';
-
-            // 處理不同的響應格式
             if (responseData.success === false) {
-                throw new Error(responseData.message || '獲取文件列表失敗');
-            } else if (responseData.documents && Array.isArray(responseData.documents)) {
-                documents = responseData.documents;
-                totalFiles = responseData.total || documents.length;
-                apiMessage = responseData.message || '';
-            } else if (Array.isArray(responseData)) {
-                documents = responseData;
-                totalFiles = documents.length;
-            } else {
-                throw new Error("API 返回的資料格式不正確");
+                throw new Error(responseData.message || '獲取文件清單失敗');
             }
 
-            // 顯示統計信息
+            // 更新分頁狀態
+            knowledgeCurrentPage = responseData.page || page;
+            knowledgeTotalPages = responseData.total_pages || 1;
+            const totalFiles = responseData.total || 0;
+            const documents = responseData.documents || [];
+
+            // 更新統計信息
             totalFilesEl.textContent = totalFiles;
-            statusEl.textContent = apiMessage || (totalFiles > 0 ? '就緒' : '空');
+            statusEl.textContent = totalFiles > 0 ? '就緒' : '空';
+            
+            let totalChunks = 0;
+            documents.forEach(doc => {
+                const chunks = parseInt(doc.chunks) || 0;
+                totalChunks += chunks;
+            });
+            totalChunksEl.textContent = totalChunks;
+            
             statsDiv.style.display = 'flex';
 
+            // 更新分頁信息
+            pageStatsEl.textContent = `共 ${totalFiles} 個文件`;
+            pageInfoEl.textContent = `頁面 ${knowledgeCurrentPage} / ${knowledgeTotalPages}`;
+            
+            // 更新分頁按鈕狀態
+            document.getElementById('knowledgePrevBtn').disabled = knowledgeCurrentPage <= 1;
+            document.getElementById('knowledgeNextBtn').disabled = knowledgeCurrentPage >= knowledgeTotalPages;
+
             if (documents.length === 0) {
-                totalChunksEl.textContent = '0';
-            listDiv.innerHTML = '<p style="color:#6c757d; text-align:center; padding: 20px;">此知識庫中沒有文件。</p>';
+                const emptyMessage = currentSearch ? 
+                    `未找到包含 "${currentSearch}" 的文件。` : 
+                    '此知識庫中沒有文件。';
+                listDiv.innerHTML = `<p style="color:#6c757d; text-align:center; padding: 20px;">${emptyMessage}</p>`;
                 return;
             }
 
-            // ✅ 建立文件列表表格（使用事件委託）
+            // 建立文件清單表格
             let tableHtml = `
-            <table style="width: 100%; border-collapse: collapse;">
-                <thead>
-                    <tr style="background-color: #f8f9fa;">
-                        <th style="padding: 12px; text-align: left;">文件名</th>
-                        <th style="padding: 12px; text-align: center;">Chunks</th>
-                        <th style="padding: 12px; text-align: left;">上傳者</th>
-                        <th style="padding: 12px; text-align: left;">上傳時間</th>
-                        <th style="padding: 12px; text-align: center;">操作</th>
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background-color: #f8f9fa;">
+                            <th style="padding: 12px; text-align: left;">文件名</th>
+                            <th style="padding: 12px; text-align: center;">Chunks</th>
+                            <th style="padding: 12px; text-align: left;">上傳者</th>
+                            <th style="padding: 12px; text-align: left;">上傳時間</th>
+                            <th style="padding: 12px; text-align: center;">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="fileTableBody">
+            `;
+
+            documents.forEach((doc, index) => {
+                const filename = doc.filename || 'unknown';
+                const chunkCount = doc.chunks || 0;
+                const uploader = doc.uploader || '未知';
+                const uploadTime = doc.upload_time_formatted || '未知';
+
+                tableHtml += `
+                    <tr data-file-id="${index}">
+                        <td style="padding: 10px; word-break: break-all;">📄 ${escapeHtml(filename)}</td>
+                        <td style="padding: 10px; text-align: center;">${chunkCount}</td>
+                        <td style="padding: 10px;">${escapeHtml(uploader)}</td>
+                        <td style="padding: 10px;">${escapeHtml(uploadTime)}</td>
+                        <td style="padding: 10px; text-align: center;">
+                            <button class="btn-delete delete-file-btn" 
+                                    data-bot-name="${escapeHtml(botName)}" 
+                                    data-filename="${escapeHtml(filename)}"
+                                    style="padding: 5px 10px; font-size: 0.9em; background-color: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;"
+                                    title="刪除文件: ${escapeHtml(filename)}">
+                                🗑️ 刪除
+                            </button>
+                        </td>
                     </tr>
-                </thead>
-                <tbody id="fileTableBody">
-        `;
-
-        let totalChunks = 0;
-        documents.forEach((doc, index) => {
-            const filename = doc.filename || doc.name || 'unknown';
-            const safeFilename = filename.replace(/\./g, '-').replace(/[^a-zA-Z0-9\-_]/g, '_');
-                
-               // ✅ 修復：使用正確的字段名
-    const chunkCount = doc.chunks || doc.chunk_count || 'N/A';
-    const uploader = doc.uploader || doc.uploaded_by || '未知';
-    const uploadTime = doc.upload_time_formatted || 
-                      (doc.uploaded_at ? new Date(doc.uploaded_at).toLocaleString('zh-TW') : '未知');
-
-
-                // ✅ 使用 data 屬性，避免特殊字符問題
-    tableHtml += `
-        <tr data-file-id="${index}">
-            <td style="padding: 10px; word-break: break-all;">📄 ${escapeHtml(filename)}</td>
-            <td style="padding: 10px; text-align: center;">${chunkCount}</td>
-            <td style="padding: 10px;">${escapeHtml(uploader)}</td>
-            <td style="padding: 10px;">${escapeHtml(uploadTime)}</td>
-            <td style="padding: 10px; text-align: center;">
-                <button class="btn-delete delete-file-btn" 
-                        data-bot-name="${escapeHtml(botName)}" 
-                        data-filename="${escapeHtml(filename)}"
-                        style="padding: 5px 10px; font-size: 0.9em; background-color: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;"
-                        title="刪除文件: ${escapeHtml(filename)}">
-                    🗑️ 刪除
-                </button>
-            </td>
-        </tr>
-    `;
-        // 累計 chunks
-            if (typeof chunkCount === 'number') {
-                totalChunks += chunkCount;
-            } else if (typeof chunkCount === 'string' && !isNaN(parseInt(chunkCount))) {
-                totalChunks += parseInt(chunkCount);
-            }
-        });
+                `;
+            });
             
             tableHtml += '</tbody></table>';
             listDiv.innerHTML = tableHtml;
 
-            // ✅ 設置事件委託
+            // 設置刪除按鈕事件
             setupDeleteButtonEvents();
 
-            // 更新總 chunks 數
-            totalChunksEl.textContent = totalChunks;
-
-            console.log(`✅ 載入完成：${totalFiles} 個文件，總計 ${totalChunks} 個 chunks`);
+            console.log(`✅ 分頁載入完成: 第${knowledgeCurrentPage}頁，${documents.length}個文件，總共${totalFiles}個`);
 
         } catch (error) {
             console.error('❌ 載入知識庫文件失敗:', error);
-            listDiv.innerHTML = `<p style="color:red; text-align:center; padding: 20px;">載入文件列表失敗: ${error.message}</p>`;
+            listDiv.innerHTML = `<p style="color:red; text-align:center; padding: 20px;">載入文件清單失敗: ${error.message}</p>`;
             statusEl.textContent = '錯誤';
             totalFilesEl.textContent = '0';
             totalChunksEl.textContent = '0';
+            pageStatsEl.textContent = '載入失敗';
             statsDiv.style.display = 'flex';
         }
     }
 
-    function setupDeleteButtonEvents() {
-        const tableBody = document.getElementById('fileTableBody');
-        if (!tableBody) return;
-        
-        // 移除舊的事件監聽器（如果存在）
-        const newTableBody = tableBody.cloneNode(true);
-        tableBody.parentNode.replaceChild(newTableBody, tableBody);
-        
-        // 添加新的事件委託
-        newTableBody.addEventListener('click', function(e) {
-            if (e.target.classList.contains('delete-file-btn') || 
-                e.target.closest('.delete-file-btn')) {
-                
-                e.preventDefault();
-                e.stopPropagation();
-                
-                const button = e.target.classList.contains('delete-file-btn') ? 
-                            e.target : e.target.closest('.delete-file-btn');
-                
-                const botName = button.dataset.botName;
-                const filename = button.dataset.filename;
-                
-                console.log('🗑️ 刪除文件請求:', { botName, filename });
-                deleteFileSafe(botName, filename);
-            }
-        });
+
+    // 🆕 修改3: 新增搜索函數 - 添加到script區域
+    function searchKnowledgeFiles() {
+        const searchInput = document.getElementById('knowledgeSearch');
+        knowledgeSearchTerm = searchInput.value.trim();
+        knowledgeCurrentPage = 1; // 重置到第一頁
+        loadKnowledgeFiles(currentBotName, knowledgeCurrentPage, knowledgePageSize, knowledgeSearchTerm);
     }
 
-
-            // ✅ 新增：防止文件拖拽到頁面其他地方觸發瀏覽器打開文件
-        document.addEventListener('dragover', function(e) {
-            e.preventDefault();
-        });
-
-        document.addEventListener('drop', function(e) {
-            e.preventDefault();
-        });
-
-        // 獲取單個文件的詳細資訊
-        async function fetchFileDetails(botName, filename) {
-            try {
-                const safeFilename = filename.replace(/\./g, '-');
-                const response = await fetch(`/api/bots/${botName}/knowledge/files/${filename}/details`);
-                if (!response.ok) throw new Error('獲取失敗');
-                
-                const details = await response.json();
-
-                const chunkCountEl = document.getElementById(`chunk-count-${safeFilename}`);
-                const uploaderEl = document.getElementById(`uploader-${safeFilename}`);
-                const uploadTimeEl = document.getElementById(`upload-time-${safeFilename}`);
-
-                if (chunkCountEl) chunkCountEl.textContent = details.chunk_count || 'N/A';
-                if (uploaderEl) uploaderEl.textContent = details.uploaded_by || '未知';
-                if (uploadTimeEl) uploadTimeEl.textContent = details.uploaded_at ? new Date(details.uploaded_at).toLocaleString('zh-TW') : '未知';
-
-                // 更新總 chunks 計數
-                if (details.chunk_count && typeof details.chunk_count === 'number') {
-                    const currentTotal = parseInt(document.getElementById('totalChunksCount').textContent) || 0;
-                    document.getElementById('totalChunksCount').textContent = currentTotal + details.chunk_count;
-                }
-
-            } catch (error) {
-                console.warn(`獲取文件 ${filename} 的詳細信息失敗:`, error);
-                const safeFilename = filename.replace(/\./g, '-');
-                const chunkCountEl = document.getElementById(`chunk-count-${safeFilename}`);
-                const uploaderEl = document.getElementById(`uploader-${safeFilename}`);
-                const uploadTimeEl = document.getElementById(`upload-time-${safeFilename}`);
-                
-                if (chunkCountEl) chunkCountEl.textContent = '錯誤';
-                if (uploaderEl) uploaderEl.textContent = '-';
-                if (uploadTimeEl) uploadTimeEl.textContent = '-';
-            }
-        }
-
-        
-
-   
+    // 🆕 修改4: 新增頁面大小變更函數 - 添加到script區域  
+    function changeKnowledgePageSize() {
+        const pageSizeSelect = document.getElementById('knowledgePageSize');
+        knowledgePageSize = parseInt(pageSizeSelect.value);
+        knowledgeCurrentPage = 1; // 重置到第一頁
+        loadKnowledgeFiles(currentBotName, knowledgeCurrentPage, knowledgePageSize, knowledgeSearchTerm);
+    }
 
         // ================= 對話記錄管理功能 =================
 
@@ -1796,6 +1775,10 @@
                 if (activeElement && activeElement.id === 'conversationSearch') {
                     searchConversations();
                 }
+                // 🆕 添加: 知識庫搜索Enter鍵支持
+                if (activeElement && activeElement.id === 'knowledgeSearch') {
+                    searchKnowledgeFiles();
+                }
             }
         });
 
@@ -1945,12 +1928,13 @@ async function uploadFile() {
             // 清空選擇並重新載入檔案列表
             fileInput.value = '';
             setTimeout(() => {
-                loadKnowledgeFiles(currentBotName);
-                // 重置按鈕
-                uploadBtn.disabled = false;
-                uploadBtn.innerHTML = '<span id="uploadIcon">📤</span> 上傳檔案';
-                uploadStatus.textContent = '';
-            }, 2000);
+        // 🔧 修改: 刷新當前分頁而不是重置到第一頁
+        loadKnowledgeFiles(currentBotName, knowledgeCurrentPage, knowledgePageSize, knowledgeSearchTerm);
+        // 重置按鈕狀態
+        uploadBtn.disabled = false;
+        uploadBtn.innerHTML = '<span id="uploadIcon">📤</span> 上傳文件';
+        uploadStatus.textContent = '';
+     }, 2000);
             
         } else {
             throw new Error(result.message || '批次上傳失敗');
