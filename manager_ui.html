@@ -1364,6 +1364,35 @@
         }
     }
 
+    
+function setupDeleteButtonEvents() {
+    const tableBody = document.getElementById('fileTableBody');
+    if (!tableBody) return;
+    
+    // 移除舊的事件監聽器（如果存在）
+    const newTableBody = tableBody.cloneNode(true);
+    tableBody.parentNode.replaceChild(newTableBody, tableBody);
+    
+    // 添加新的事件委託
+    newTableBody.addEventListener('click', function(e) {
+        if (e.target.classList.contains('delete-file-btn') || 
+            e.target.closest('.delete-file-btn')) {
+            
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const button = e.target.classList.contains('delete-file-btn') ? 
+                        e.target : e.target.closest('.delete-file-btn');
+            
+            const botName = button.dataset.botName;
+            const filename = button.dataset.filename;
+            
+            console.log('🗑️ 刪除文件請求:', { botName, filename });
+            deleteFileSafe(botName, filename);
+        }
+    });
+}
+
 
     // 🆕 修改3: 新增搜索函數 - 添加到script區域
     function searchKnowledgeFiles() {
