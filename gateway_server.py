@@ -13,6 +13,7 @@ from fastapi.templating import Jinja2Templates
 from dotenv import load_dotenv
 import urllib.parse
 import tempfile
+from bot_config_manager import DatabaseBotManager, initialize_database_bot_configs
 
 # Load environment variables at the very top
 load_dotenv()
@@ -31,8 +32,9 @@ logger = logging.getLogger("gateway")
 
 # --- Global Variables & Paths ---
 ROOT_DIR = Path(__file__).resolve().parent
-BOT_CONFIGS_DIR = ROOT_DIR / "bot_configs"
-BOT_CONFIGS_DIR.mkdir(exist_ok=True)
+#BOT_CONFIGS_DIR = ROOT_DIR / "bot_configs"
+#BOT_CONFIGS_DIR.mkdir(exist_ok=True)
+db_bot_manager = None
 
 SUPPORTED_EXTENSIONS = {
     '.txt', '.md', '.pdf', '.csv', '.json', '.py', '.js', 
@@ -42,6 +44,14 @@ SUPPORTED_EXTENSIONS = {
 # --- FastAPI App Initialization ---
 app = FastAPI(title="Unified API Gateway", version="3.0")
 templates = Jinja2Templates(directory=str(ROOT_DIR))
+
+
+try:
+    db_bot_manager = initialize_database_bot_configs()
+    logger.info("資料庫機器人設定系統初始化成功")
+except Exception as e:
+    logger.error(f"資料庫機器人設定系統初始化失敗: {e}")
+    raise
 
 # --- Service Initialization ---
 vector_system = OptimizedVectorSystem()
@@ -161,7 +171,7 @@ async def handle_logout():
 
 @app.get("/api/bots")
 async def get_all_bots(current_user: User = Depends(AdminAuth)):
-    return JSONResponse(bot_manager.get_all_bots())
+    return JSONResponse(db_bot_manager.get_all_bots())
 
 @app.post("/api/bots/{bot_name}/start")
 async def start_bot(bot_name: str, current_user: User = Depends(AdminAuth)):
@@ -173,11 +183,10 @@ async def stop_bot(bot_name: str, current_user: User = Depends(AdminAuth)):
 
 @app.get("/api/bots/{bot_name}/config")
 async def get_bot_config(bot_name: str, current_user: User = Depends(AdminAuth)):
-    config = bot_manager.get_bot_config(bot_name)
+    config = db_bot_manager.get_bot_config(bot_name)
     if config:
         return JSONResponse({"success": True, "config": config})
     return JSONResponse({"success": False, "message": "Config not found"}, status_code=404)
-
 
 @app.post("/api/bots/create")
 async def create_bot(request: Request, current_user: User = Depends(AdminAuth)):
@@ -190,54 +199,30 @@ async def create_bot(request: Request, current_user: User = Depends(AdminAuth)):
     if not bot_name or not port:
         raise HTTPException(status_code=400, detail="Bot name and port are required.")
 
-    config_path = BOT_CONFIGS_DIR / f"{bot_name}.json"
-    if config_path.exists():
-        raise HTTPException(status_code=400, detail="Bot with this name already exists.")
-
-    new_config = {
+    config_data = {
         "bot_name": bot_name,
         "display_name": display_name,
         "port": port,
         "system_role": system_role,
-        "created_by": current_user.username,
-        "created_at": datetime.now().isoformat(),
-        "updated_at": datetime.now().isoformat(),
+        "created_by": current_user.username
     }
 
-    with open(config_path, "w", encoding="utf-8") as f:
-        json.dump(new_config, f, indent=4, ensure_ascii=False)
-
-    return {"success": True, "message": f"Bot {bot_name} created successfully."}
+    result = db_bot_manager.create_bot(config_data)
+    if result["success"]:
+        return JSONResponse(result)
+    else:
+        raise HTTPException(status_code=400, detail=result["message"])
 
 
 @app.post("/api/bots/{bot_name}/config")
 async def update_bot_config(bot_name: str, request: Request, current_user: User = Depends(AdminAuth)):
-    config_path = BOT_CONFIGS_DIR / f"{bot_name}.json"
-    if not config_path.exists():
-        raise HTTPException(status_code=404, detail="Bot not found.")
-
-    with open(config_path, "r", encoding="utf-8") as f:
-        config = json.load(f)
-
     update_data = await request.json()
+    result = db_bot_manager.update_bot_config(bot_name, update_data)
     
-    # Update only the allowed fields
-    allowed_updates = [
-        "display_name", "system_role", "temperature", "max_tokens", 
-        "port", "dynamic_recommendations_enabled", 
-        "dynamic_recommendations_count", "cite_sources_enabled"
-    ]
-    
-    for key in allowed_updates:
-        if key in update_data:
-            config[key] = update_data[key]
-            
-    config["updated_at"] = datetime.now().isoformat()
-
-    with open(config_path, "w", encoding="utf-8") as f:
-        json.dump(config, f, indent=4, ensure_ascii=False)
-
-    return {"success": True, "message": "Configuration updated successfully."}
+    if result["success"]:
+        return JSONResponse(result)
+    else:
+        raise HTTPException(status_code=500, detail=result["message"])
 
 
 @app.post("/api/bots/{bot_name}/knowledge/upload-batch")
@@ -384,7 +369,16 @@ async def delete_bot(bot_name: str, current_user: User = Depends(AdminAuth)):
 
     # Here you could add more cleanup logic, e.g., deleting conversation logs or knowledge base files.
     
-    return {"success": True, "message": f"Bot {bot_name} deleted successfully."}
+    return {"success": True, "message": f"Bot {bot_name} deleted successfully."}@app.delete("/api/bots/{bot_name}")
+async def delete_bot(bot_name: str, current_user: User = Depends(AdminAuth)):
+    if bot_name in global_bot_instances:
+        bot_manager.stop_bot(bot_name, app)
+
+    result = db_bot_manager.delete_bot(bot_name)
+    if result["success"]:
+        return JSONResponse(result)
+    else:
+        raise HTTPException(status_code=500, detail=result["message"])
 
 
 @app.delete("/api/bots/{bot_name}/conversations")
