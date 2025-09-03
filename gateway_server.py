@@ -354,22 +354,6 @@ async def upload_knowledge_files_batch(
 
 
 
-@app.delete("/api/bots/{bot_name}")
-async def delete_bot(bot_name: str, current_user: User = Depends(AdminAuth)):
-    # First, stop the bot if it is running
-    if bot_name in global_bot_instances:
-        bot_manager.stop_bot(bot_name, app)
-
-    # Delete the config file
-    config_path = BOT_CONFIGS_DIR / f"{bot_name}.json"
-    if not config_path.exists():
-        raise HTTPException(status_code=404, detail="Bot not found.")
-    
-    os.remove(config_path)
-
-    # Here you could add more cleanup logic, e.g., deleting conversation logs or knowledge base files.
-    
-    return {"success": True, "message": f"Bot {bot_name} deleted successfully."}@app.delete("/api/bots/{bot_name}")
 async def delete_bot(bot_name: str, current_user: User = Depends(AdminAuth)):
     if bot_name in global_bot_instances:
         bot_manager.stop_bot(bot_name, app)
