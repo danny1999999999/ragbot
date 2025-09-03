@@ -554,112 +554,114 @@
 
             <!-- 知識庫標籤 -->
             <div id="knowledgeTab" class="tab-content">
-                <h4>📁 知識庫文件管理</h4>
-                
-                <!-- 🆕 知識庫統計信息 -->
-                <div id="knowledgeStats" class="knowledge-stats" style="display: none;">
-                    <div class="stat-item">
-                        <span class="stat-label">📄 文件總數:</span>
-                        <span class="stat-value" id="totalFilesCount">0</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label">🧩 總 Chunks:</span>
-                        <span class="stat-value" id="totalChunksCount">0</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label">📊 狀態:</span>
-                        <span class="stat-value" id="knowledgeStatus">就緒</span>
-                    </div>
-                </div>
-                <div style="margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-    <div style="display: flex; gap: 10px; align-items: center;">
-        <input type="text" id="knowledgeSearch" placeholder="搜索文件名..." style="padding: 8px; border: 1px solid #ccc; border-radius: 4px; width: 200px;">
-        <button onclick="searchKnowledgeFiles()" class="btn-config">🔍 搜索</button>
-        <button onclick="loadKnowledgeFiles(currentBotName, 1)" class="btn-config">🔄 重置</button>
-    </div>
-    <div>
-        <span id="knowledgePageStats">載入中...</span>
-    </div>
-</div>
-
-<!-- 🆕 分頁控制區域 -->
-<div style="margin-bottom: 15px; display: flex; justify-content: center; align-items: center; gap: 10px;">
-    <button id="knowledgePrevBtn" onclick="loadKnowledgeFiles(currentBotName, knowledgeCurrentPage - 1)" class="btn-config" disabled>⬅️ 上一頁</button>
-    <span id="knowledgePageInfo" style="margin: 0 15px;">頁面 1</span>
-    <button id="knowledgeNextBtn" onclick="loadKnowledgeFiles(currentBotName, knowledgeCurrentPage + 1)" class="btn-config" disabled>下一頁 ➡️</button>
+    <h4>📁 知識庫文件管理</h4>
     
-    <select id="knowledgePageSize" onchange="changeKnowledgePageSize()" style="margin-left: 15px; padding: 4px;">
-        <option value="10">每頁 10 項</option>
-        <option value="20" selected>每頁 20 項</option>
-        <option value="50">每頁 50 項</option>
-        <option value="100">每頁 100 項</option>
-    </select>
+    <!-- 🆕 知識庫統計信息 -->
+    <div id="knowledgeStats" class="knowledge-stats" style="display: none;">
+        <div class="stat-item">
+            <span class="stat-label">📄 文件總數:</span>
+            <span class="stat-value" id="totalFilesCount">0</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-label">🧩 總 Chunks:</span>
+            <span class="stat-value" id="totalChunksCount">0</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-label">📊 狀態:</span>
+            <span class="stat-value" id="knowledgeStatus">就緒</span>
+        </div>
+    </div>
+
+    <!-- ✅ 上傳檔案區塊 - 移到搜索和分頁之前 -->
+    <div class="form-group" style="margin-bottom: 25px;">
+        <label for="fileUpload">上傳新文件 (支持 .txt, .pdf, .docx, .doc, .md, .csv, .json, .epub, .py, .js, .rst, .org)</label>
+        <input type="file" id="fileUpload" accept=".txt,.pdf,.docx,.doc,.md,.csv,.json,.epub,.py,.js,.rst,.org" multiple>
+        <button id="uploadBtn" onclick="uploadFile()" class="btn-config" style="margin-top:10px;">
+            <span id="uploadIcon">📤</span> 上傳文件
+        </button>
+        <span id="uploadStatus" style="margin-left: 15px; color: #007bff; font-weight: bold;"></span>
+        
+        <!-- 添加文件格式說明 -->
+        <div style="margin-top: 8px; font-size: 0.85em; color: #6c757d;">
+            <details>
+                <summary style="cursor: pointer; user-select: none;">🔍 支持的文件格式詳細說明</summary>
+                <div style="margin-top: 8px; padding: 10px; background: #f8f9fa; border-radius: 4px;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px;">
+                        <div><strong>文檔類型:</strong> .txt, .md, .rst, .org</div>
+                        <div><strong>PDF文檔:</strong> .pdf</div>
+                        <div><strong>Word文檔:</strong> .docx, .doc</div>
+                        <div><strong>數據文件:</strong> .csv, .json</div>
+                        <div><strong>代碼文件:</strong> .py, .js</div>
+                        <div><strong>電子書:</strong> .epub</div>
+                    </div>
+                    <div style="margin-top: 8px; font-size: 0.8em; color: #495057;">
+                        💡 系統會自動檢測文件編碼並進行智能分塊處理，支持中英文混合內容。
+                    </div>
+                </div>
+            </details>
+        </div>
+    </div>
+
+    <!-- ✅ 搜索和分頁控制 - 移到上傳檔案之後 -->
+    <div style="margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <input type="text" id="knowledgeSearch" placeholder="搜索文件名..." style="padding: 8px; border: 1px solid #ccc; border-radius: 4px; width: 200px;">
+            <button onclick="searchKnowledgeFiles()" class="btn-config">🔍 搜索</button>
+            <button onclick="loadKnowledgeFiles(currentBotName, 1)" class="btn-config">🔄 重置</button>
+        </div>
+        <div>
+            <span id="knowledgePageStats">載入中...</span>
+        </div>
+    </div>
+
+    <!-- 🆕 分頁控制域 -->
+    <div style="margin-bottom: 15px; display: flex; justify-content: center; align-items: center; gap: 10px;">
+        <button id="knowledgePrevBtn" onclick="loadKnowledgeFiles(currentBotName, knowledgeCurrentPage - 1)" class="btn-config" disabled>⬅️ 上一頁</button>
+        <span id="knowledgePageInfo" style="margin: 0 15px;">頁面 1</span>
+        <button id="knowledgeNextBtn" onclick="loadKnowledgeFiles(currentBotName, knowledgeCurrentPage + 1)" class="btn-config" disabled>下一頁 ➡️</button>
+        
+        <select id="knowledgePageSize" onchange="changeKnowledgePageSize()" style="margin-left: 15px; padding: 4px;">
+            <option value="10">每頁 10 項</option>
+            <option value="20" selected>每頁 20 項</option>
+            <option value="50">每頁 50 項</option>
+            <option value="100">每頁 100 項</option>
+        </select>
+    </div>
+
+    <!-- 文件列表表格 -->
+    <div id="knowledgeFilesList" style="max-height: 400px; overflow-y: auto; margin-bottom: 20px;">
+        <!-- JS 動態填入 -->
+    </div>
+
+    <!-- 🚨 緊急操作域域 -->
+    <div style="margin-top: 30px; padding: 15px; border: 2px solid #dc3545; border-radius: 8px; background-color: #fff5f5;">
+        <h4 style="color: #dc3545; margin-top: 0;">🚨 緊急操作域域</h4>
+        <p style="color: #6c757d; margin-bottom: 15px;">
+            <strong>警告：</strong>以下操作將永久刪除數據，請謹慎使用！
+        </p>
+        
+        <!-- 集合狀態查看 -->
+        <div style="margin-bottom: 15px;">
+            <button onclick="checkCollectionsStatus()" class="btn-config" style="background-color: #17a2b8;">
+                📊 查看集合狀態
+            </button>
+            <div id="collectionsStatus" style="margin-top: 10px; display: none;"></div>
+        </div>
+        
+        <!-- test_01 緊急清空 -->
+        <div style="margin-bottom: 15px;">
+            <button onclick="emergencyClearTest01()" class="btn-delete" style="background-color: #dc3545;">
+                🗑️ 緊急清空 test_01
+            </button>
+            <span style="margin-left: 10px; color: #dc3545; font-size: 0.9em;">
+                此操作將刪除 test_01 的所有向量數據
+            </span>
+        </div>
+        
+        <!-- 操作結果顯示 -->
+        <div id="emergencyResults" style="display: none; margin-top: 15px; padding: 10px; border-radius: 4px;"></div>
+    </div>
 </div>
-                <!-- 文件列表表格 -->
-                <div id="knowledgeFilesList" style="max-height: 400px; overflow-y: auto; margin-bottom: 20px;">
-                    <!-- JS 動態填入 -->
-                </div>
-
-                <div class="form-group">
-                <label for="fileUpload">上傳新文件 (支持 .txt, .pdf, .docx, .doc, .md, .csv, .json, .epub, .py, .js, .rst, .org)</label>
-                <input type="file" id="fileUpload" accept=".txt,.pdf,.docx,.doc,.md,.csv,.json,.epub,.py,.js,.rst,.org" multiple>
-                <button id="uploadBtn" onclick="uploadFile()" class="btn-config" style="margin-top:10px;">
-                    <span id="uploadIcon">📤</span> 上傳文件
-                </button>
-                <span id="uploadStatus" style="margin-left: 15px; color: #007bff; font-weight: bold;"></span>
-                
-                <!-- 添加文件格式說明 -->
-                <div style="margin-top: 8px; font-size: 0.85em; color: #6c757d;">
-                    <details>
-                        <summary style="cursor: pointer; user-select: none;">📝 支持的文件格式詳細說明</summary>
-                        <div style="margin-top: 8px; padding: 10px; background: #f8f9fa; border-radius: 4px;">
-                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px;">
-                                <div><strong>文檔類型:</strong> .txt, .md, .rst, .org</div>
-                                <div><strong>PDF文檔:</strong> .pdf</div>
-                                <div><strong>Word文檔:</strong> .docx, .doc</div>
-                                <div><strong>數據文件:</strong> .csv, .json</div>
-                                <div><strong>代碼文件:</strong> .py, .js</div>
-                                <div><strong>電子書:</strong> .epub</div>
-                            </div>
-                            <div style="margin-top: 8px; font-size: 0.8em; color: #495057;">
-                                💡 系統會自動檢測文件編碼並進行智能分塊處理，支持中英文混合內容。
-                            </div>
-                        </div>
-                    </details>
-                </div>
-            </div>
-
-                        <!-- 🚨 緊急操作區域 -->
-        <div style="margin-top: 30px; padding: 15px; border: 2px solid #dc3545; border-radius: 8px; background-color: #fff5f5;">
-            <h4 style="color: #dc3545; margin-top: 0;">🚨 緊急操作區域</h4>
-            <p style="color: #6c757d; margin-bottom: 15px;">
-                <strong>警告：</strong>以下操作將永久刪除數據，請謹慎使用！
-            </p>
-            
-            <!-- 集合狀態查看 -->
-            <div style="margin-bottom: 15px;">
-                <button onclick="checkCollectionsStatus()" class="btn-config" style="background-color: #17a2b8;">
-                    📊 查看集合狀態
-                </button>
-                <div id="collectionsStatus" style="margin-top: 10px; display: none;"></div>
-            </div>
-            
-            <!-- test_01 緊急清空 -->
-            <div style="margin-bottom: 15px;">
-                <button onclick="emergencyClearTest01()" class="btn-delete" style="background-color: #dc3545;">
-                    🗑️ 緊急清空 test_01
-                </button>
-                <span style="margin-left: 10px; color: #dc3545; font-size: 0.9em;">
-                    此操作將刪除 test_01 的所有向量數據
-                </span>
-            </div>
-            
-            <!-- 操作結果顯示 -->
-            <div id="emergencyResults" style="display: none; margin-top: 15px; padding: 10px; border-radius: 4px;"></div>
-        </div>
-
-
-        </div>
 
         <!-- 對話記錄標籤 -->
             <div id="conversationsTab" class="tab-content">
