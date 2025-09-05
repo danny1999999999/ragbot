@@ -171,7 +171,10 @@ async def handle_logout():
 
 @app.get("/api/bots")
 async def get_all_bots(current_user: User = Depends(AdminAuth)):
-    return JSONResponse(db_bot_manager.get_all_bots())
+    # ✨ 關鍵更動：直接返回列表，讓 FastAPI 自動處理序列化
+    # 這樣可以確保前端總是收到一個 JSON 陣列
+    bots_list = db_bot_manager.get_all_bots()
+    return bots_list
 
 @app.post("/api/bots/{bot_name}/start")
 async def start_bot(bot_name: str, current_user: User = Depends(AdminAuth)):

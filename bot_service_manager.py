@@ -12,8 +12,6 @@ load_dotenv()
 # --- Project-level Imports ---
 from auth_middleware import User
 from chatbot_instance import ChatbotInstance
-# ❗️ 移除頂層導入，避免循環依賴
-# from gateway_server import db_bot_manager
 
 # --- Logging Setup ---
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -48,8 +46,10 @@ class BotManager:
         
         try:
             logger.info(f"Starting bot '{bot_name}' in-memory with DB config...")
-            # Create the bot instance
-            bot_instance = ChatbotInstance(bot_name)
+            
+            # ✨ 關鍵更動：將完整的 config 字典傳遞給 ChatbotInstance
+            bot_instance = ChatbotInstance(config=config)
+            
             # Store the instance
             global_bot_instances[bot_name] = bot_instance
             # Mount the bot's FastAPI app onto the main gateway app
