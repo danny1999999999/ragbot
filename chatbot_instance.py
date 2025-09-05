@@ -1192,8 +1192,8 @@ class ChatbotInstance:
         if not sources:
             return ""
         
-        # ✅ 修正：正確賦值給變量
-        source_links = "\n\n💡 你可能想知道\n\n"  # 簡化版本
+        # ✅ 修正：在開頭增加一個額外的換行符，來產生更多間距
+        source_links = "\n\n\n💡 你可能想知道\n\n"  # 簡化版本
         
         formatted_items = []
         for source in sources:
