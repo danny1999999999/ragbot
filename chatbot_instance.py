@@ -911,9 +911,6 @@ class ChatbotInstance:
         main_response = llm.invoke(main_answer_messages)
         main_answer = main_response.content.strip()
 
-        # ✨ 最終修正：在後端直接將換行符轉換為 HTML 的 <br> 標籤
-        main_answer = main_answer.replace("\n", "<br>")
-
         # 生成推薦問題 (此部分邏輯不變)
         recommended_questions = []
         should_recommend = self.config.get("dynamic_recommendations_enabled", False)
