@@ -718,10 +718,6 @@ class ChatbotInstance:
                 except Exception as log_error:
                     logger.error(f"❌ 記錄對話失敗（機器人：{self.bot_name}）: {log_error}")
 
-                # ✨✨✨ 最終偵錯：將偵錯資訊直接加入到回覆中 ✨✨✨
-                debug_info = f"[DEBUG] History items received: {len(history)}. -- This message proves the new chatbot_instance.py code is running."
-                response_text = f"{debug_info}\n\n---\n\n{response_text}"
-
                 logger.info(f"📤 機器人 '{self.bot_name}' API 回應偵錯:")
                 logger.info(f"  - response_text 長度: {len(response_text)}")
                 logger.info(f"  - recommended_questions: {recommended_questions}")
