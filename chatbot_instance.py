@@ -890,6 +890,21 @@ class ChatbotInstance:
 使用者問題：{query}""" )
         )
 
+        # ✨ 關鍵偵錯：顯示發送給 LLM 的完整訊息
+        try:
+            loggable_messages = []
+            for msg in main_answer_messages:
+                # 處理不同類型的 Message 物件
+                loggable_messages.append({
+                    "type": msg.type,
+                    "content": msg.content
+                })
+            logger.info(f"\n{'-'*20} LLM Request Body {'-'*20}\n" \
+                        f"{json.dumps(loggable_messages, indent=2, ensure_ascii=False)}\n" \
+                        f"{'-'*58}")
+        except Exception as e:
+            logger.error(f"記錄 LLM 訊息時出錯: {e}")
+
         main_response = llm.invoke(main_answer_messages)
         main_answer = main_response.content.strip()
 
