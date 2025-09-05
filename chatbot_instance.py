@@ -202,8 +202,7 @@ class ChatbotInstance:
             username=f"anonymous_{client_ip}", 
             role="anonymous", 
             email="anonymous@example.com", 
-            is_active=True,
-            password_hash=""
+            is_active=True
         )
 
     def get_user_identifier(self, user: Optional[User], session_id: str) -> str:
