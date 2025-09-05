@@ -21,7 +21,7 @@ load_dotenv()
 # --- Project-level Imports ---
 from config import app_config
 from auth_middleware import AdminAuth, User, auth_response, JWTManager
-from user_manager import user_manager, User as ModelUser # Rename to avoid conflict
+from user_manager import user_manager
 from bot_service_manager import bot_manager, global_bot_instances
 from conversation_logger_simple import create_logger_instance
 from vector_builder_langchain import OptimizedVectorSystem
@@ -108,22 +108,21 @@ async def create_user(request: Request, current_user: User = Depends(AdminAuth))
     if not all([username, email, password]):
         raise HTTPException(status_code=400, detail="Username, email, and password are required.")
 
-    if user_manager.get_user_by_username(username) or user_manager.get_user_by_email(email):
-        raise HTTPException(status_code=400, detail="User or email already exists.")
+    # The new user_manager.create_user expects a dictionary and handles checks and hashing internally.
+    user_data = {
+        "username": username,
+        "email": email,
+        "password": password,
+        "role": role
+    }
+    
+    new_user = user_manager.create_user(user_data)
 
-    hashed_password = user_manager.hash_password(password)
-    new_user = ModelUser(
-        username=username,
-        email=email,
-        password_hash=hashed_password,
-        role=role
-    )
-    user_id = user_manager.create_user(new_user)
-
-    if user_id:
-        return {"success": True, "message": "User created successfully", "user_id": user_id}
+    if new_user:
+        return {"success": True, "message": "User created successfully", "user_id": new_user.id}
     else:
-        raise HTTPException(status_code=500, detail="Failed to create user.")
+        # The user_manager now returns None if the user exists, so we can provide a better error.
+        raise HTTPException(status_code=400, detail="User or email already exists, or another error occurred.")
 
 @app.put("/api/users/{user_id}")
 async def update_user(user_id: int, request: Request, current_user: User = Depends(AdminAuth)):
