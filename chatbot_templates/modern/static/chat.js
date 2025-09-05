@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let isLoading = false;
     let isTyping = false;
     let currentTypingTimeout = null;
+    let conversationHistory = []; // ✨ 新增：用來儲存對話歷史
     let sessionId = localStorage.getItem('chat_session_id');
     if (!sessionId) {
         sessionId = `session_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
@@ -416,8 +417,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 主要函數
     const handleSendMessage = async () => {
+        console.log("正在執行【對話歷史紀錄】版本 v2 的 chat.js"); // ✨ 新增測試日誌
         const message = chatInput.value.trim();
         if (!message || isLoading || isTyping) return;
+
+        // ✨ 步驟 1: 將用戶訊息添加到歷史紀錄
+        conversationHistory.push({ role: 'user', content: message });
 
         // Add user message to UI
         addMessage(message, 'user');
@@ -429,10 +434,18 @@ document.addEventListener('DOMContentLoaded', () => {
         setLoading(true);
 
         try {
+            // ✨ 步驟 2: 發送包含歷史紀錄的請求
+            // 我們只發送最近10則訊息以避免請求過大
+            const historyToSend = conversationHistory.slice(-10);
+
             const response = await fetch('api/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message, session_id: sessionId })
+                body: JSON.stringify({ 
+                    message, 
+                    history: historyToSend, // ✨ 發送歷史
+                    session_id: sessionId 
+                })
             });
 
             if (!response.ok) {
@@ -441,13 +454,19 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const data = await response.json();
+
+            // ✨ 步驟 3: 將機器人回應添加到歷史紀錄
+            conversationHistory.push({ role: 'assistant', content: data.response });
+
+            // ✨ 步驟 4: 管理歷史紀錄長度，避免無限增長
+            if (conversationHistory.length > 20) { // 保留最近的20則訊息
+                conversationHistory = conversationHistory.slice(-20);
+            }
             
             // 使用智能打字效果渲染回應
             renderBotMessageWithTyping(botMessageElement, data.response, () => {
-            // 🔧 關鍵：無論如何都調用，避免參考連結沒有配套處理
-            displayRecommendedQuestions(data.recommended_questions || []);
-        });
-
+                displayRecommendedQuestions(data.recommended_questions || []);
+            });
 
         } catch (error) {
             // 錯誤消息不使用打字效果
