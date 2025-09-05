@@ -17,13 +17,6 @@ from chatbot_instance import ChatbotInstance
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-# --- Global Variables & Paths ---
-ROOT_DIR = Path(__file__).parent
-BOT_CONFIGS_DIR = ROOT_DIR / "bot_configs"
-
-# Ensure directories exist
-BOT_CONFIGS_DIR.mkdir(exist_ok=True)
-
 # --- In-memory State for Bot Instances ---
 global_bot_instances: Dict[str, ChatbotInstance] = {}
 
@@ -31,50 +24,32 @@ class BotManager:
     """Manages bot instances in-memory within a single process."""
 
     def __init__(self):
-        logger.info("✅ In-Memory BotManager class initialized.")
-
-    def get_all_bots(self) -> List[Dict]:
-        bots = []
-        for config_file in sorted(BOT_CONFIGS_DIR.glob("*.json")):
-            bot_name = config_file.stem
-            try:
-                with open(config_file, "r", encoding="utf-8") as f:
-                    config = json.load(f)
-                
-                status = "running" if bot_name in global_bot_instances else "stopped"
-                display_name = config.get("display_name") or bot_name
-                
-                bots.append({
-                    "name": bot_name,
-                    "display_name": display_name,
-                    "port": config.get("port"), # Port is now conceptual
-                    "status": status,
-                })
-            except Exception as e:
-                logger.error(f"Failed to read bot config {bot_name}: {e}")
-                continue
-        bots.sort(key=lambda b: (b["status"] != "running", b["name"]))
-        return bots
-
-    def get_bot_config(self, bot_name: str) -> Optional[Dict]:
-        config_path = BOT_CONFIGS_DIR / f"{bot_name}.json"
-        if not config_path.exists():
-            return None
-        with open(config_path, 'r', encoding='utf-8') as f:
-            return json.load(f)
+        logger.info("✅ In-Memory BotManager class initialized (DB-Integrated).")
 
     def start_bot(self, bot_name: str, main_app) -> Dict:
+        # ✨ 關鍵更動：延遲導入以解決循環依賴
+        try:
+            from gateway_server import db_bot_manager
+        except ImportError:
+            logger.error("Could not import db_bot_manager from gateway_server. This indicates a serious issue.")
+            return {"success": False, "message": "Internal server error: Cannot access bot configuration."}
+
         if bot_name in global_bot_instances:
             return {"success": False, "message": "Bot is already running."}
 
-        config = self.get_bot_config(bot_name)
+        # 從資料庫獲取設定
+        config = db_bot_manager.get_bot_config(bot_name)
+        
         if not config:
-            return {"success": False, "message": "Bot config not found."}
+            logger.error(f"Attempted to start bot '{bot_name}', but config was not found in the database.")
+            return {"success": False, "message": "Bot config not found in database."}
         
         try:
-            logger.info(f"Starting bot '{bot_name}' in-memory...")
-            # Create the bot instance
-            bot_instance = ChatbotInstance(bot_name)
+            logger.info(f"Starting bot '{bot_name}' in-memory with DB config...")
+            
+            # ✨ 關鍵更動：將完整的 config 字典傳遞給 ChatbotInstance
+            bot_instance = ChatbotInstance(config=config)
+            
             # Store the instance
             global_bot_instances[bot_name] = bot_instance
             # Mount the bot's FastAPI app onto the main gateway app
@@ -89,20 +64,28 @@ class BotManager:
         if bot_name not in global_bot_instances:
             return {"success": False, "message": "Bot not running."}
 
-        # Unmount the routes. This is tricky in FastAPI. A simple approach is to just remove the instance.
-        # For a real production system, you might need a more robust unmounting mechanism.
-        # We will remove it from our dictionary, effectively making it inactive.
+        # Remove the instance from our dictionary, effectively making it inactive.
         del global_bot_instances[bot_name]
         
-        # To truly unmount, we would need to rebuild the app's routes, which is complex.
-        # A simpler solution for now is that a stopped bot's routes will still exist but will fail if accessed.
-        # Or better, we can add a middleware to check if the bot is active.
-        logger.info(f"Bot '{bot_name}' instance removed. Routes are still active but will be inaccessible.")
+        logger.info(f"Bot '{bot_name}' instance removed.")
+        
         # A proper garbage collection would be needed here in a long-running application.
         import gc
         gc.collect()
 
-        return {"success": True, "message": f"Bot {bot_name} stopped."}
+        # Remove the mounted routes from the main application
+        routes_to_remove = [
+            route for route in main_app.routes 
+            if hasattr(route, 'path') and route.path.startswith(f"/{bot_name}")
+        ]
+        if routes_to_remove:
+            for route in routes_to_remove:
+                main_app.routes.remove(route)
+                logger.info(f"Removed route: {getattr(route, 'path', 'N/A')}")
+        else:
+            logger.warning(f"Could not find routes to unmount for bot '{bot_name}'. They might have been removed already.")
+
+        return {"success": True, "message": f"Bot {bot_name} stopped and unmounted."}
 
 # A single instance that can be imported by other modules
 bot_manager = BotManager()

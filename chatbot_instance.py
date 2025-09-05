@@ -4,6 +4,8 @@
 chatbot_instance.py - (API相容版)
 
 修復內容：
+- __init__ 方法現在直接接收一個 config 字典，而不是 bot_name。
+- 移除了從檔案系統讀取 JSON 設定的 _load_config 方法。
 
 """
 
@@ -67,12 +69,20 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 ROOT_DIR = Path(__file__).parent
-BOT_CONFIGS_DIR = ROOT_DIR / "bot_configs"
+# 🗑️ 移除：不再需要從檔案系統讀取設定
+# BOT_CONFIGS_DIR = ROOT_DIR / "bot_configs"
 
 class ChatbotInstance:
-    def __init__(self, bot_name: str, **kwargs):
-        self.bot_name = bot_name
-        self.config = self._load_config()
+    # ✨ 關鍵更動：__init__ 現在接收一個完整的 config 字典
+    def __init__(self, config: dict, **kwargs):
+        if not config or not isinstance(config, dict):
+            raise ValueError("A valid configuration dictionary must be provided.")
+        
+        self.config = config
+        self.bot_name = self.config.get("bot_name")
+        if not self.bot_name:
+            raise ValueError("Config dictionary must contain a 'bot_name'.")
+
         self.collection_name = f"collection_{self.bot_name}"
         
         # 🔧 向量API配置
@@ -87,7 +97,7 @@ class ChatbotInstance:
         if VECTOR_SYSTEM_AVAILABLE:
             try:
                 self.vector_system = OptimizedVectorSystem()
-                logger.info(f"✅ 向量系統初始化成功 (機器人: {bot_name})")
+                logger.info(f"✅ 向量系統初始化成功 (機器人: {self.bot_name})")
             except Exception as e:
                 logger.error(f"向量系統初始化失敗: {e}")
                 self.vector_system = None
@@ -162,26 +172,9 @@ class ChatbotInstance:
         self.setup_routes()
         logger.info(f"✅ 機器人實例 '{self.bot_name}' 初始化完成，對話記錄資料庫配置類型：{db_config.get('type')}")
 
-    def _load_config(self) -> dict:
-        """載入機器人配置"""
-        config_path = BOT_CONFIGS_DIR / f"{self.bot_name}.json"
-        if not config_path.exists():
-            raise FileNotFoundError(f"機器人設定檔案不存在: {config_path}")
-        
-        with open(config_path, 'r', encoding='utf-8-sig') as f:
-            config = json.load(f)
-        
-        # 向後相容：如果沒有 display_name，自動新增
-        if "display_name" not in config:
-            config["display_name"] = config.get("bot_name", self.bot_name)
-            try:
-                with open(config_path, 'w', encoding='utf-8') as f:
-                    json.dump(config, f, ensure_ascii=False, indent=4)
-                logger.info(f"為機器人 {self.bot_name} 自動新增顯示名稱: {config['display_name']}")
-            except Exception as e:
-                logger.warning(f"自動儲存顯示名稱失敗: {e}")
-        
-        return config
+    # 🗑️ 移除：不再需要從檔案系統讀取設定
+    # def _load_config(self) -> dict:
+    #     ...
 
     def _get_db_config(self) -> dict:
         """
@@ -258,8 +251,8 @@ class ChatbotInstance:
                 )
                 
                 if response.status_code == 200:
-                    response_data = response.json()
-                    api_results = response_data.get("results", []) # Safely get the list
+                    response_data = response.json() # Safely get the list
+                    api_results = response_data.get("results", []) 
                     
                     # 轉換為相容原有程式碼的文件格式
                     documents = []
@@ -672,14 +665,19 @@ class ChatbotInstance:
                 )
                 
                 # 處理引用來源
+                logger.info(f"[Cite Sources] Checking... Enabled: {self.config.get('cite_sources_enabled', False)}, Docs found: {bool(context_docs)}")
                 if self.config.get("cite_sources_enabled", False) and context_docs:
                     all_sources = self._extract_source_urls(context_docs)
+                    logger.info(f"[Cite Sources] _extract_source_urls returned {len(all_sources)} potential sources.")
+
                     # 只處理包含真實URL的來源
                     url_sources = [s for s in all_sources if s.get("url")]
+                    logger.info(f"[Cite Sources] Found {len(url_sources)} items with a 'url' key.")
                     
                     if url_sources:
                         # 過濾重複連線
                         url_sources = self._filter_duplicate_links(url_sources, session_id)
+                        logger.info(f"[Cite Sources] After filtering duplicates, {len(url_sources)} sources remain.")
                         
                         if url_sources:  # 確保過濾後還有連線
                             response_text += self._format_source_links(url_sources)
@@ -822,7 +820,7 @@ class ChatbotInstance:
                     "bot_name": self.bot_name,
                     "display_name": self.config.get("display_name", self.bot_name),
                     "collection_name": self.collection_name,
-                    "conversation_db_path": self.conversation_db_path,
+                    "db_type": "postgresql",
                     "search_mode": self.search_mode,
                     "vector_api_url": self.vector_api_url if self.search_mode == "api" else None,
                     "session_stats": {
@@ -917,7 +915,8 @@ class ChatbotInstance:
                 logger.info(f"🤖 機器人 '{self.bot_name}' LLM 原始回應:")
                 logger.info(f"'{questions_text}'")
                 
-                recommended_questions = [q.strip() for q in questions_text.split('\n') if q.strip()]
+                questions_list = [q.strip() for q in questions_text.split('\n') if q.strip()]
+                recommended_questions = list(dict.fromkeys(questions_list))
                 
                 logger.info(f"📝 機器人 '{self.bot_name}' 解析後的推薦問題: {recommended_questions}")
                 
@@ -934,12 +933,12 @@ class ChatbotInstance:
         links = []
         seen_urls = set()  # 🔧 新增：URL去重集合
         
-        # 正規表示式樣版符合各種連結格式
+        #正規表示式樣版符合各種連結格式
         patterns = [
             # Markdown格式: [標題](URL) -> (title, url)
             r'\[([^\]]+)\]\((https?://[^\s)]+)\)',
             # HTML格式: <a href="URL">標題</a> -> (url, title)
-            r'<a[^>]+href=["\\]([^"\\]+)["\\][^>]*>([^<]+)</a>',
+            r'<a[^>]+href=["\\]([^\"\\]+)["\\][^>]*>([^<]+)</a>',
             # 純文字格式: 標題: URL  -> (title, url)
             r'([^:\n]+):\s*(https?://[^\s]+)',
             # 純文字格式: 標題 - URL  -> (title, url)
@@ -1115,7 +1114,7 @@ class ChatbotInstance:
                 
                 # 🆕 方法2.5: 如果沒有找到格式化連線，則從內容中提取原始URL
                 if not extracted_links:
-                    raw_urls = re.findall(r'https?://[^\s<>"\\\)+]', doc_content)
+                    raw_urls = re.findall(r'https?://[^\s<>"\\]+', doc_content)
                     for url in raw_urls:
                         if url not in seen_urls:
                             title = self._generate_smart_title(metadata, url)
@@ -1146,6 +1145,18 @@ class ChatbotInstance:
 
         logger.info(f"從元資料中提取到 {len(sources)} 個連線")
         return sources
+
+    def _is_valid_url(self, url: str) -> bool:
+        try:
+            from urllib.parse import urlparse
+            parsed = urlparse(url)
+            return (parsed.scheme in ['http', 'https'] and 
+                    parsed.netloc and 
+                    '.' in parsed.netloc and
+                    len(url) > 10)
+        except:
+            return False
+
 
     def _extract_domain_from_url(self, url: str) -> str:
         """從URL中提取域名作為標題"""
@@ -1181,8 +1192,8 @@ class ChatbotInstance:
         if not sources:
             return ""
         
-        # 🔧 修正：確保機器人回答和推薦區塊之間有空行
-        source_links = "\n\n💡 你可能想知道\n"  # 兩個\n確保空行，最後一個\n讓標題單獨一行
+        # ✅ 修正：在開頭增加一個額外的換行符，來產生更多間距
+        source_links = "\n\n\n💡 你可能想知道\n\n"  # 簡化版本
         
         formatted_items = []
         for source in sources:
@@ -1223,15 +1234,29 @@ class ChatbotInstance:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="啟動一個獨立的聊天機器人實例。 সন")
+    # ✨ 關鍵更動：獨立啟動時需要從資料庫加載設定
+    parser = argparse.ArgumentParser(description="啟動一個獨立的聊天機器人實例。")
     parser.add_argument("--bot-name", type=str, required=True, help="要啟動的機器人名稱")
     args = parser.parse_args()
 
     try:
-        instance = ChatbotInstance(args.bot_name)
+        # 獨立啟動時，需要一個方法來從DB獲取設定
+        # 這需要 BotConfigManager 的一個實例
+        from bot_config_manager import BotConfigManager
+        database_url = os.getenv("DATABASE_URL")
+        if not database_url:
+            raise ValueError("DATABASE_URL environment variable not set.")
+        
+        config_manager = BotConfigManager(database_url)
+        config = config_manager.get_bot_config(args.bot_name)
+        
+        if not config:
+            raise ValueError(f"Bot '{args.bot_name}' not found in the database.")
+
+        instance = ChatbotInstance(config=config)
         port = instance.config.get("port")
         if not port:
-            raise ValueError(f"設定檔案 '{args.bot_name}.json' 中未指定連接埠")
+            raise ValueError(f"Port not specified in the config for bot '{args.bot_name}'.")
         
         logger.info(f"🤖 機器人 '{instance.bot_name}' 正在 http://localhost:{port} 上啟動")
         logger.info(f"📊 對話記錄資料庫已在實例中配置。")

@@ -142,6 +142,261 @@ class OptimizedVectorSystem(VectorOperationsCore):
             logger.error(f"搜索失敗: {e}")
             return []
     
+    def get_collection_documents_paginated(self, collection_name: str, page: int = 1, limit: int = 20, search: str = "") -> Dict:
+        """🆕 新增：真正的分頁文檔查詢"""
+        try:
+            vectorstore = self.get_or_create_vectorstore(collection_name)
+            
+            if self.use_postgres:
+                return self._get_documents_paginated_pgvector(vectorstore, collection_name, page, limit, search)
+            else:
+                return self._get_documents_paginated_chroma(vectorstore, collection_name, page, limit, search)
+                
+        except Exception as e:
+            logger.error(f"分頁查詢失敗: {e}")
+            return self._create_error_response(page, limit, str(e))
+        
+    # 🆕 新增：PostgreSQL真正分頁實作（修正版）
+    def _get_documents_paginated_pgvector(self, vectorstore, collection_name: str, page: int, limit: int, search: str) -> Dict:
+        """🆕 PostgreSQL分頁查詢 - 修正參數重複問題"""
+        try:
+            import psycopg
+            database_url = os.getenv("DATABASE_URL")
+            
+            if not database_url:
+                raise Exception("DATABASE_URL 未設置")
+            
+            with psycopg.connect(database_url) as conn:
+                with conn.cursor() as cur:
+                    # Step 1: 獲取集合UUID
+                    cur.execute("SELECT uuid FROM langchain_pg_collection WHERE name = %s", (collection_name,))
+                    collection_row = cur.fetchone()
+                    
+                    if not collection_row:
+                        return self._create_empty_response(page, limit, f"集合 {collection_name} 不存在")
+                    
+                    collection_uuid = collection_row[0]
+                    
+                    # Step 2: ✅ 修正 - 分別構建搜索條件和參數
+                    base_where = "collection_id = %s AND COALESCE(cmetadata->>'original_filename', cmetadata->>'filename') != 'unknown'"
+                    base_params = [collection_uuid]
+                    
+                    if search:
+                        search_where = """AND (
+                            cmetadata->>'filename' ILIKE %s OR 
+                            cmetadata->>'original_filename' ILIKE %s OR
+                            document ILIKE %s
+                        )"""
+                        search_term = f"%{search}%"
+                        search_params = [search_term, search_term, search_term]
+                    else:
+                        search_where = ""
+                        search_params = []
+                    
+                    # Step 3: 統計總文件數
+                    count_sql = f"""
+                        SELECT COUNT(DISTINCT COALESCE(cmetadata->>'original_filename', cmetadata->>'filename'))
+                        FROM langchain_pg_embedding 
+                        WHERE {base_where} {search_where}
+                    """
+                    count_params = base_params + search_params
+                    cur.execute(count_sql, count_params)
+                    total_files = cur.fetchone()[0] or 0
+                    
+                    if total_files == 0:
+                        return self._create_empty_response(page, limit)
+                    
+                    # Step 4: 計算分頁
+                    total_pages = (total_files + limit - 1) // limit
+                    offset = (page - 1) * limit
+                    
+                    # Step 5: ✅ 修正 - 重新構建查詢參數
+                    query_sql = f"""
+                        WITH file_stats AS (
+                            SELECT 
+                                COALESCE(cmetadata->>'original_filename', cmetadata->>'filename') as filename,
+                                COUNT(*) as chunks,
+                                MAX(cmetadata->>'uploaded_by') as uploader,
+                                MAX(cmetadata->>'upload_timestamp') as upload_timestamp,
+                                MAX(cmetadata->>'file_extension') as file_extension,
+                                MAX(cmetadata->>'source') as source
+                            FROM langchain_pg_embedding 
+                            WHERE {base_where} {search_where}
+                            GROUP BY COALESCE(cmetadata->>'original_filename', cmetadata->>'filename')
+                            ORDER BY MAX(cmetadata->>'upload_timestamp') DESC NULLS LAST
+                            LIMIT %s OFFSET %s
+                        )
+                        SELECT filename, chunks, uploader, upload_timestamp, file_extension, source
+                        FROM file_stats
+                    """
+                    
+                    # ✅ 修正 - 正確的參數順序
+                    query_params = base_params + search_params + [limit, offset]
+                    cur.execute(query_sql, query_params)
+                    
+                    # Step 6: 處理結果
+                    documents = []
+                    for row in cur.fetchall():
+                        filename, chunks, uploader, upload_timestamp, file_extension, source = row
+                        documents.append(self._format_document_info(filename, chunks, uploader, upload_timestamp, file_extension, source, collection_name))
+                    
+                    return {
+                        "success": True,
+                        "documents": documents,
+                        "total": total_files,
+                        "page": page,
+                        "limit": limit,
+                        "total_pages": total_pages
+                    }
+                    
+        except Exception as e:
+            logger.error(f"PostgreSQL分頁查詢失敗: {e}")
+            return self._create_error_response(page, limit, str(e))
+        
+
+    def _get_documents_paginated_chroma(self, vectorstore, collection_name: str, page: int, limit: int, search: str) -> Dict:
+        """🆕 ChromaDB分頁查詢 - 內存分頁但功能一致"""
+        try:
+            # 獲取所有元數據（ChromaDB限制）
+            all_docs_raw = vectorstore.get()
+            
+            if not all_docs_raw or not all_docs_raw.get('metadatas'):
+                return self._create_empty_response(page, limit)
+            
+            # 按文件名分組和過濾
+            file_stats = {}
+            for metadata in all_docs_raw.get('metadatas', []):
+                filename = metadata.get('original_filename', metadata.get('filename', 'unknown'))
+                if filename == 'unknown':
+                    continue
+                
+                # 搜索過濾
+                if search and search.lower() not in filename.lower():
+                    continue
+                
+                if filename not in file_stats:
+                    file_stats[filename] = {
+                        'filename': filename,
+                        'chunks': 0,
+                        'upload_timestamp': metadata.get('upload_timestamp', 0),
+                        'uploader': metadata.get('uploaded_by', 'unknown'),
+                        'file_extension': metadata.get('file_extension', ''),
+                        'source': metadata.get('source', 'unknown')
+                    }
+                
+                file_stats[filename]['chunks'] += 1
+            
+            # 轉換為列表並排序
+            documents_list = list(file_stats.values())
+            documents_list.sort(key=lambda x: x.get('upload_timestamp', 0), reverse=True)
+            
+            # 格式化文檔信息
+            for doc in documents_list:
+                doc.update(self._format_document_display(doc))
+            
+            # 分頁處理
+            total_files = len(documents_list)
+            total_pages = (total_files + limit - 1) // limit if total_files > 0 else 1
+            
+            start = (page - 1) * limit
+            end = start + limit
+            page_documents = documents_list[start:end]
+            
+            return {
+                "success": True,
+                "documents": page_documents,
+                "total": total_files,
+                "page": page,
+                "limit": limit,
+                "total_pages": total_pages
+            }
+            
+        except Exception as e:
+            logger.error(f"ChromaDB分頁查詢失敗: {e}")
+            return self._create_error_response(page, limit, str(e))
+        
+    def _create_empty_response(self, page: int, limit: int, message: str = ""):
+        return {
+            "success": True,
+            "documents": [],
+            "total": 0,
+            "page": page,
+            "limit": limit,
+            "total_pages": 0,
+            "message": message
+        }
+
+    def _create_error_response(self, page: int, limit: int, error: str):
+        return {
+            "success": False,
+            "error": error,
+            "documents": [],
+            "total": 0,
+            "page": page,
+            "limit": limit,
+            "total_pages": 0
+        }
+    
+    def _format_document_info(self, filename, chunks, uploader, upload_timestamp, file_extension, source, collection_name):
+        """格式化文檔信息"""
+        # 處理上傳時間
+        upload_time_formatted = '未知'
+        if upload_timestamp:
+            try:
+                timestamp_float = float(upload_timestamp)
+                upload_time_formatted = datetime.fromtimestamp(timestamp_float).strftime('%Y-%m-%d %H:%M:%S')
+            except (ValueError, TypeError):
+                upload_time_formatted = '格式錯誤'
+        
+        # 處理上傳者
+        uploader_display = '未知'
+        if uploader:
+            if uploader in ['upload_interface', 'upload']:
+                uploader_display = '管理介面'
+            elif uploader == 'sync':
+                uploader_display = '同步'
+            else:
+                uploader_display = str(uploader)
+        
+        return {
+            'filename': filename or 'unknown',
+            'chunks': int(chunks) if chunks else 0,
+            'uploader': uploader_display,
+            'upload_time_formatted': upload_time_formatted,
+            'file_extension': file_extension or '',
+            'source': source or f'postgresql://{collection_name}',
+            'stored_in': 'postgresql'
+        }
+    
+    def _format_document_display(self, doc):
+        """格式化顯示信息"""
+        try:
+            if doc['upload_timestamp'] and doc['upload_timestamp'] > 0:
+                doc['upload_time_formatted'] = datetime.fromtimestamp(doc['upload_timestamp']).strftime('%Y-%m-%d %H:%M:%S')
+            else:
+                doc['upload_time_formatted'] = '未知'
+        except Exception:
+            doc['upload_time_formatted'] = '未知'
+        
+        # 處理上傳者顯示
+        uploader = doc.get('uploader', 'unknown')
+        if uploader in ['upload_interface', 'upload']:
+            doc['uploader'] = '管理介面'
+        elif uploader == 'sync':
+            doc['uploader'] = '同步'  
+        elif uploader in ['unknown', 'None', '']:
+            doc['uploader'] = '未知'
+        else:
+            doc['uploader'] = str(uploader)
+        
+        doc['stored_in'] = 'chromadb'
+        return doc
+    
+    # 🔧 修改：原有方法保持相容性，內部調用新方法
+    def get_collection_documents(self, collection_name: str, page: int = 1, limit: int = 20, search: str = "") -> Dict:
+        """🔧 修改：保持原有接口，內部調用分頁版本"""
+        return self.get_collection_documents_paginated(collection_name, page, limit, search)
+
     # ==================== 📤 文件上傳相關 (1個方法) ====================
     
     def upload_single_file(self, file_content: bytes, filename: str, collection_name: str) -> Dict:

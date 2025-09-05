@@ -84,7 +84,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const parts = text.split(referencePattern);
             
             for (let i = 0; i < parts.length; i++) {
-                const part = parts[i].trim();
+                const part = parts[i]; // 關鍵修正：移除 .trim()
                 if (!part) continue;
                 
                 if (part.includes('💡 你可能想了解')) {

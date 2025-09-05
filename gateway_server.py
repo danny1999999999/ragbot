@@ -12,7 +12,8 @@ from fastapi.responses import JSONResponse, HTMLResponse, PlainTextResponse
 from fastapi.templating import Jinja2Templates
 from dotenv import load_dotenv
 import urllib.parse
-
+import tempfile
+from bot_config_manager import DatabaseBotManager, initialize_database_bot_configs
 
 # Load environment variables at the very top
 load_dotenv()
@@ -20,7 +21,7 @@ load_dotenv()
 # --- Project-level Imports ---
 from config import app_config
 from auth_middleware import AdminAuth, User, auth_response, JWTManager
-from user_manager import user_manager, User as ModelUser # Rename to avoid conflict
+from user_manager import user_manager
 from bot_service_manager import bot_manager, global_bot_instances
 from conversation_logger_simple import create_logger_instance
 from vector_builder_langchain import OptimizedVectorSystem
@@ -31,13 +32,26 @@ logger = logging.getLogger("gateway")
 
 # --- Global Variables & Paths ---
 ROOT_DIR = Path(__file__).resolve().parent
-BOT_CONFIGS_DIR = ROOT_DIR / "bot_configs"
-BOT_CONFIGS_DIR.mkdir(exist_ok=True)
+#BOT_CONFIGS_DIR = ROOT_DIR / "bot_configs"
+#BOT_CONFIGS_DIR.mkdir(exist_ok=True)
+db_bot_manager = None
 
+SUPPORTED_EXTENSIONS = {
+    '.txt', '.md', '.pdf', '.csv', '.json', '.py', '.js', 
+    '.docx', '.doc', '.rst', '.org', '.epub'
+}
 
 # --- FastAPI App Initialization ---
 app = FastAPI(title="Unified API Gateway", version="3.0")
 templates = Jinja2Templates(directory=str(ROOT_DIR))
+
+
+try:
+    db_bot_manager = initialize_database_bot_configs()
+    logger.info("資料庫機器人設定系統初始化成功")
+except Exception as e:
+    logger.error(f"資料庫機器人設定系統初始化失敗: {e}")
+    raise
 
 # --- Service Initialization ---
 vector_system = OptimizedVectorSystem()
@@ -94,22 +108,21 @@ async def create_user(request: Request, current_user: User = Depends(AdminAuth))
     if not all([username, email, password]):
         raise HTTPException(status_code=400, detail="Username, email, and password are required.")
 
-    if user_manager.get_user_by_username(username) or user_manager.get_user_by_email(email):
-        raise HTTPException(status_code=400, detail="User or email already exists.")
+    # The new user_manager.create_user expects a dictionary and handles checks and hashing internally.
+    user_data = {
+        "username": username,
+        "email": email,
+        "password": password,
+        "role": role
+    }
+    
+    new_user = user_manager.create_user(user_data)
 
-    hashed_password = user_manager.hash_password(password)
-    new_user = ModelUser(
-        username=username,
-        email=email,
-        password_hash=hashed_password,
-        role=role
-    )
-    user_id = user_manager.create_user(new_user)
-
-    if user_id:
-        return {"success": True, "message": "User created successfully", "user_id": user_id}
+    if new_user:
+        return {"success": True, "message": "User created successfully", "user_id": new_user.id}
     else:
-        raise HTTPException(status_code=500, detail="Failed to create user.")
+        # The user_manager now returns None if the user exists, so we can provide a better error.
+        raise HTTPException(status_code=400, detail="User or email already exists, or another error occurred.")
 
 @app.put("/api/users/{user_id}")
 async def update_user(user_id: int, request: Request, current_user: User = Depends(AdminAuth)):
@@ -157,7 +170,10 @@ async def handle_logout():
 
 @app.get("/api/bots")
 async def get_all_bots(current_user: User = Depends(AdminAuth)):
-    return JSONResponse(bot_manager.get_all_bots())
+    # ✨ 關鍵更動：直接返回列表，讓 FastAPI 自動處理序列化
+    # 這樣可以確保前端總是收到一個 JSON 陣列
+    bots_list = db_bot_manager.get_all_bots()
+    return bots_list
 
 @app.post("/api/bots/{bot_name}/start")
 async def start_bot(bot_name: str, current_user: User = Depends(AdminAuth)):
@@ -169,11 +185,10 @@ async def stop_bot(bot_name: str, current_user: User = Depends(AdminAuth)):
 
 @app.get("/api/bots/{bot_name}/config")
 async def get_bot_config(bot_name: str, current_user: User = Depends(AdminAuth)):
-    config = bot_manager.get_bot_config(bot_name)
+    config = db_bot_manager.get_bot_config(bot_name)
     if config:
         return JSONResponse({"success": True, "config": config})
     return JSONResponse({"success": False, "message": "Config not found"}, status_code=404)
-
 
 @app.post("/api/bots/create")
 async def create_bot(request: Request, current_user: User = Depends(AdminAuth)):
@@ -186,72 +201,184 @@ async def create_bot(request: Request, current_user: User = Depends(AdminAuth)):
     if not bot_name or not port:
         raise HTTPException(status_code=400, detail="Bot name and port are required.")
 
-    config_path = BOT_CONFIGS_DIR / f"{bot_name}.json"
-    if config_path.exists():
-        raise HTTPException(status_code=400, detail="Bot with this name already exists.")
-
-    new_config = {
+    config_data = {
         "bot_name": bot_name,
         "display_name": display_name,
         "port": port,
         "system_role": system_role,
-        "created_by": current_user.username,
-        "created_at": datetime.now().isoformat(),
-        "updated_at": datetime.now().isoformat(),
+        "created_by": current_user.username
     }
 
-    with open(config_path, "w", encoding="utf-8") as f:
-        json.dump(new_config, f, indent=4, ensure_ascii=False)
-
-    return {"success": True, "message": f"Bot {bot_name} created successfully."}
+    result = db_bot_manager.create_bot(config_data)
+    if result["success"]:
+        return JSONResponse(result)
+    else:
+        raise HTTPException(status_code=400, detail=result["message"])
 
 
 @app.post("/api/bots/{bot_name}/config")
 async def update_bot_config(bot_name: str, request: Request, current_user: User = Depends(AdminAuth)):
-    config_path = BOT_CONFIGS_DIR / f"{bot_name}.json"
-    if not config_path.exists():
-        raise HTTPException(status_code=404, detail="Bot not found.")
-
-    with open(config_path, "r", encoding="utf-8") as f:
-        config = json.load(f)
-
     update_data = await request.json()
+    result = db_bot_manager.update_bot_config(bot_name, update_data)
     
-    # Update only the allowed fields
-    allowed_updates = [
-        "display_name", "system_role", "temperature", "max_tokens", 
-        "port", "dynamic_recommendations_enabled", 
-        "dynamic_recommendations_count", "cite_sources_enabled"
-    ]
-    
-    for key in allowed_updates:
-        if key in update_data:
-            config[key] = update_data[key]
+    if result["success"]:
+        return JSONResponse(result)
+    else:
+        raise HTTPException(status_code=500, detail=result["message"])
+
+
+@app.post("/api/bots/{bot_name}/knowledge/upload-batch")
+async def upload_knowledge_files_batch(
+    bot_name: str, 
+    files: List[UploadFile] = File(...),  # 支援多檔案
+    current_user: User = Depends(AdminAuth)
+):
+    """批次上傳多個知識庫檔案"""
+    try:
+        collection_name = f"collection_{bot_name}"
+        results = []
+        
+        # 建立臨時目錄存放檔案
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_dir_path = Path(temp_dir)
+            file_paths = []
             
-    config["updated_at"] = datetime.now().isoformat()
+            # 儲存所有上傳的檔案
+            for file in files:
+                if not file.filename:
+                    continue
+                    
+                file_path = temp_dir_path / file.filename
+                
+                # 檢查檔案格式
+                if file_path.suffix.lower() not in SUPPORTED_EXTENSIONS:
+                    results.append({
+                        "filename": file.filename,
+                        "success": False,
+                        "message": f"不支援的檔案格式: {file_path.suffix}"
+                    })
+                    continue
+                
+                # 寫入檔案
+                try:
+                    content = await file.read()
+                    with open(file_path, 'wb') as f:
+                        f.write(content)
+                    file_paths.append(file_path)
+                    
+                except Exception as e:
+                    results.append({
+                        "filename": file.filename,
+                        "success": False,
+                        "message": f"檔案寫入失敗: {str(e)}"
+                    })
+                    continue
+            
+            if not file_paths:
+                return JSONResponse({
+                    "success": False,
+                    "message": "沒有有效的檔案可以處理",
+                    "results": results
+                }, status_code=400)
+            
+            # 使用向量系統批次處理
+            try:
+                # 載入所有文檔
+                all_documents = []
+                for file_path in file_paths:
+                    try:
+                        documents = vector_system.load_document(file_path)
+                        if documents:
+                            all_documents.extend(documents)
+                            results.append({
+                                "filename": file_path.name,
+                                "success": True,
+                                "message": f"成功載入 {len(documents)} 個分塊",
+                                "chunks": len(documents)
+                            })
+                        else:
+                            results.append({
+                                "filename": file_path.name,
+                                "success": False,
+                                "message": "檔案載入後無有效內容"
+                            })
+                    except Exception as e:
+                        results.append({
+                            "filename": file_path.name,
+                            "success": False,
+                            "message": f"載入失敗: {str(e)}"
+                        })
+                
+                if not all_documents:
+                    return JSONResponse({
+                        "success": False,
+                        "message": "所有檔案載入失敗",
+                        "results": results
+                    }, status_code=400)
+                
+                # 批次向量化
+                vectorstore = vector_system.get_or_create_vectorstore(collection_name)
+                
+                # 使用批次處理器
+                batches = vector_system.batch_processor.create_smart_batches(all_documents)
+                success_count = vector_system._process_batches(vectorstore, batches)
+                
+                # 計算總數據
+                total_files = len([r for r in results if r["success"]])
+                total_chunks = sum(r.get("chunks", 0) for r in results if r["success"])
+                
+                return JSONResponse({
+                    "success": success_count > 0,
+                    "message": f"批次上傳完成: {total_files} 個檔案, {total_chunks} 個分塊, {success_count} 個成功向量化",
+                    "results": results,
+                    "stats": {
+                        "total_files": len(files),
+                        "successful_files": total_files,
+                        "total_chunks": total_chunks,
+                        "vectorized_chunks": success_count
+                    }
+                })
+                
+            except Exception as e:
+                logger.error(f"批次向量化失敗: {e}")
+                return JSONResponse({
+                    "success": False,
+                    "message": f"批次處理失敗: {str(e)}",
+                    "results": results
+                }, status_code=500)
+                
+    except Exception as e:
+        logger.error(f"批次上傳失敗: {e}")
+        return JSONResponse({
+            "success": False,
+            "message": f"批次上傳失敗: {str(e)}"
+        }, status_code=500)
 
-    with open(config_path, "w", encoding="utf-8") as f:
-        json.dump(config, f, indent=4, ensure_ascii=False)
-
-    return {"success": True, "message": "Configuration updated successfully."}
 
 
 @app.delete("/api/bots/{bot_name}")
 async def delete_bot(bot_name: str, current_user: User = Depends(AdminAuth)):
-    # First, stop the bot if it is running
-    if bot_name in global_bot_instances:
-        bot_manager.stop_bot(bot_name, app)
+    """刪除指定的機器人"""
+    try:
+        # 如果機器人正在運行，先停止它
+        if bot_name in global_bot_instances:
+            logger.info(f"正在停止運行中的機器人: {bot_name}")
+            bot_manager.stop_bot(bot_name, app)
 
-    # Delete the config file
-    config_path = BOT_CONFIGS_DIR / f"{bot_name}.json"
-    if not config_path.exists():
-        raise HTTPException(status_code=404, detail="Bot not found.")
-    
-    os.remove(config_path)
+        # 從資料庫刪除配置
+        result = db_bot_manager.delete_bot(bot_name)
+        
+        if result["success"]:
+            logger.info(f"機器人 {bot_name} 已成功刪除 (用戶: {current_user.username})")
+            return JSONResponse(result)
+        else:
+            logger.warning(f"刪除機器人失敗: {result['message']}")
+            raise HTTPException(status_code=404, detail=result["message"])
+            
+    except Exception as e:
+        logger.error(f"刪除機器人時發生錯誤: {e}")
+        raise HTTPException(status_code=500, detail=f"刪除失敗: {str(e)}")
 
-    # Here you could add more cleanup logic, e.g., deleting conversation logs or knowledge base files.
-    
-    return {"success": True, "message": f"Bot {bot_name} deleted successfully."}
 
 
 @app.delete("/api/bots/{bot_name}/conversations")
@@ -335,18 +462,57 @@ async def get_file_details(bot_name: str, filename: str, current_user: User = De
 
 
 @app.get("/api/bots/{bot_name}/knowledge/files")
-async def get_knowledge_files(bot_name: str, current_user: User = Depends(AdminAuth)):
+async def get_knowledge_files(
+    bot_name: str, 
+    page: int = 1,           # 🆕 新增參數，默認值保持相容
+    limit: int = 20,         # 🆕 新增參數，默認值保持相容
+    search: str = "",        # 🆕 新增參數，默認值保持相容
+    current_user: User = Depends(AdminAuth)
+):
+    """🔧 修改：在現有端點添加分頁參數，保持向後相容性"""
     try:
+        # ✅ 參數驗證和清理
+        page = max(1, page)
+        limit = max(1, min(limit, 100))  # 限制最大值防止性能問題
+        search = search.strip() if search else ""
+        
         collection_name = f"collection_{bot_name}"
-        docs_result = vector_system.get_collection_documents(collection_name)
+        
+        # 🆕 調用新的分頁方法
+        docs_result = vector_system.get_collection_documents_paginated(
+            collection_name=collection_name,
+            page=page, 
+            limit=limit,
+            search=search
+        )
+        
         return JSONResponse(docs_result)
+        
     except Exception as e:
-        return JSONResponse({"success": False, "message": str(e)}, status_code=500)
+        logger.error(f"獲取文件清單失敗: {e}")
+        return JSONResponse({
+            "success": False,
+            "message": str(e),
+            "documents": [],
+            "total": 0,
+            "page": page,
+            "limit": limit, 
+            "total_pages": 0
+        }, status_code=500)
 
 @app.get("/api/bots/{bot_name}/conversations")
 async def get_conversations(bot_name: str, page: int = 1, limit: int = 20, search: str = "", current_user: User = Depends(AdminAuth)):
     conv_logger = get_conversation_logger(bot_name)
-    conversations, total = conv_logger.get_conversations(limit=limit, offset=(page - 1) * limit, search=search if search else None)
+    # 將機器人名稱轉換為 collection 名稱格式
+    collection_name = f"collection_{bot_name}"
+    
+    conversations, total = conv_logger.get_conversations(
+        limit=limit, 
+        offset=(page - 1) * limit, 
+        search=search if search else None,
+        collection=collection_name  # 添加這個參數來過濾
+    )
+    
     logger.info(f"Conversations data for bot '{bot_name}': {conversations}")
     total_pages = (total + limit - 1) // limit if total > 0 else 1
     return JSONResponse({
