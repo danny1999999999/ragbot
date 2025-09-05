@@ -665,14 +665,19 @@ class ChatbotInstance:
                 )
                 
                 # 處理引用來源
+                logger.info(f"[Cite Sources] Checking... Enabled: {self.config.get('cite_sources_enabled', False)}, Docs found: {bool(context_docs)}")
                 if self.config.get("cite_sources_enabled", False) and context_docs:
                     all_sources = self._extract_source_urls(context_docs)
+                    logger.info(f"[Cite Sources] _extract_source_urls returned {len(all_sources)} potential sources.")
+
                     # 只處理包含真實URL的來源
                     url_sources = [s for s in all_sources if s.get("url")]
+                    logger.info(f"[Cite Sources] Found {len(url_sources)} items with a 'url' key.")
                     
                     if url_sources:
                         # 過濾重複連線
                         url_sources = self._filter_duplicate_links(url_sources, session_id)
+                        logger.info(f"[Cite Sources] After filtering duplicates, {len(url_sources)} sources remain.")
                         
                         if url_sources:  # 確保過濾後還有連線
                             response_text += self._format_source_links(url_sources)
