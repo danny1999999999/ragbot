@@ -59,7 +59,7 @@ except ImportError:
 
 try:
     from langchain_openai import ChatOpenAI
-    from langchain_core.messages import HumanMessage, SystemMessage
+    from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
     OPENAI_AVAILABLE = True
 except ImportError:
     OPENAI_AVAILABLE = False
@@ -590,6 +590,7 @@ class ChatbotInstance:
             try:
                 data = await request.json()
                 query = data.get("message")
+                history = data.get("history", []) # ✨ 新增：接收對話歷史
                 session_id = data.get("session_id", "default_session")
                 
                 if not query:
@@ -608,6 +609,7 @@ class ChatbotInstance:
                 self.session_counters[session_id] += 1
                 self._current_query = query
                 logger.info(f"📩 機器人 '{self.bot_name}' 收到查詢 [{user_identifier}]: {query[:50]}...")
+                logger.info(f"📜 收到 {len(history)} 則對話歷史")
 
                 # 🔧 修改：使用智慧向量搜尋
                 context_docs = await self._search_vectors_smart(query, k=3)
@@ -658,10 +660,10 @@ class ChatbotInstance:
 
                 logger.info(f"🔍 機器人 '{self.bot_name}' 檢索結果: {len(context_docs)} 個文件, chunk_refs: {len(chunk_references)}")
                 
-                # 生成回應
+                # ✨ 修改：傳遞歷史紀錄給生成器
                 system_prompt = self.config.get("system_role", "你是一個樂於助人的 AI 助理。")
                 response_text, recommended_questions = self._generate_response(
-                    query, context, system_prompt, session_id
+                    query, context, system_prompt, session_id, history
                 )
                 
                 # 處理引用來源
@@ -853,8 +855,8 @@ class ChatbotInstance:
                 "conversation_count": self.total_conversations
             })
 
-    def _generate_response(self, query: str, context: str, system_prompt: str, session_id: str) -> Tuple[str, List[str]]:
-        """生成回應"""
+    def _generate_response(self, query: str, context: str, system_prompt: str, session_id: str, history: List[Dict] = []) -> Tuple[str, List[str]]:
+        """生成回應 - ✨ 新增 history 參數"""
         if not OPENAI_AVAILABLE:
             return "系統 AI 模組未載入。", []
 
@@ -868,18 +870,30 @@ class ChatbotInstance:
             api_key=openai_key
         )
 
-        # 生成主要回答
-        main_answer_messages = [
-            SystemMessage(content=system_prompt),
+        # ✨ 關鍵更動：動態建立對話歷史
+        main_answer_messages = [SystemMessage(content=system_prompt)]
+        
+        # 添加歷史訊息
+        for message in history:
+            role = message.get("role")
+            content = message.get("content")
+            if role == "user":
+                main_answer_messages.append(HumanMessage(content=content))
+            elif role == "assistant":
+                main_answer_messages.append(AIMessage(content=content))
+
+        # 添加當前問題
+        main_answer_messages.append(
             HumanMessage(content=f"""參考資料：
 {context}
 
 使用者問題：{query}""" )
-        ]
+        )
+
         main_response = llm.invoke(main_answer_messages)
         main_answer = main_response.content.strip()
 
-        # 生成推薦問題
+        # 生成推薦問題 (此部分邏輯不變)
         recommended_questions = []
         should_recommend = self.config.get("dynamic_recommendations_enabled", False)
         recommend_count = self.config.get("dynamic_recommendations_count", 0)
