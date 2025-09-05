@@ -589,6 +589,9 @@ class ChatbotInstance:
             
             try:
                 data = await request.json()
+                # ✨ 新增偵錯日誌：印出收到的最原始的資料
+                logger.info(f"[Request Body] 收到的原始請求資料: {data}")
+
                 query = data.get("message")
                 history = data.get("history", []) # ✨ 新增：接收對話歷史
                 session_id = data.get("session_id", "default_session")
@@ -714,6 +717,10 @@ class ChatbotInstance:
                     
                 except Exception as log_error:
                     logger.error(f"❌ 記錄對話失敗（機器人：{self.bot_name}）: {log_error}")
+
+                # ✨✨✨ 最終偵錯：將偵錯資訊直接加入到回覆中 ✨✨✨
+                debug_info = f"[DEBUG] History items received: {len(history)}. -- This message proves the new chatbot_instance.py code is running."
+                response_text = f"{debug_info}\n\n---\n\n{response_text}"
 
                 logger.info(f"📤 機器人 '{self.bot_name}' API 回應偵錯:")
                 logger.info(f"  - response_text 長度: {len(response_text)}")
@@ -867,6 +874,7 @@ class ChatbotInstance:
         llm = ChatOpenAI(
             model=self.config.get("model", "gpt-4o-mini"), 
             temperature=self.config.get("temperature", 0.7), 
+            max_tokens=self.config.get("max_tokens", 2000), # ✨ 修正：傳遞 max_tokens 參數
             api_key=openai_key
         )
 
