@@ -1,4 +1,30 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // Safari 移動端修復
+function setVH() {
+    let vh = window.innerHeight * 0.01;
+    document.documentElement.style.setProperty('--vh', `${vh}px`);
+}
+
+function isMobileSafari() {
+    return /iPad|iPhone|iPod/.test(navigator.userAgent);
+}
+
+if (window.innerWidth <= 768 || isMobileSafari()) {
+    setVH();
+    
+    window.addEventListener('resize', setVH);
+    window.addEventListener('orientationchange', () => {
+        setTimeout(setVH, 500);
+    });
+    
+    const chatInput = document.getElementById('chat-input');
+    if (chatInput) {
+        chatInput.addEventListener('focus', () => {
+            setTimeout(setVH, 300);
+        });
+    }
+}
+    
     // Element references
     const chatMessages = document.getElementById('chat-messages');
     const chatInput = document.getElementById('chat-input');
