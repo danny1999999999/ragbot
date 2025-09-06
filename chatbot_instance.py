@@ -582,19 +582,21 @@ class ChatbotInstance:
 
         @self.app.post("/api/chat")
         async def chat(request: Request, user: User = Depends(OptionalAuth)):
-            """聊天API端點 - 支援API和直接兩種模式"""
+            """聊天API端點 - 支援格式化請求"""
             start_time = time.time()
             conversation_id = None
             chunk_references = []
             
             try:
                 data = await request.json()
-                # ✨ 新增偵錯日誌：印出收到的最原始的資料
+                # ✨ 新增調試日誌：印出收到的最原始的資料
                 logger.info(f"[Request Body] 收到的原始請求資料: {data}")
 
                 query = data.get("message")
                 history = data.get("history", []) # ✨ 新增：接收對話歷史
                 session_id = data.get("session_id", "default_session")
+                # 🔥 新增：讀取格式化請求參數
+                format_for_frontend = data.get("format_for_frontend", False)
                 
                 if not query:
                     raise HTTPException(status_code=400, detail="Message cannot be empty")
@@ -613,11 +615,13 @@ class ChatbotInstance:
                 self._current_query = query
                 logger.info(f"📩 機器人 '{self.bot_name}' 收到查詢 [{user_identifier}]: {query[:50]}...")
                 logger.info(f"📜 收到 {len(history)} 則對話歷史")
+                # 🔥 新增：記錄格式化請求
+                logger.info(f"🎨 格式化請求: {format_for_frontend}")
 
                 # 🔧 修改：使用智慧向量搜尋
                 context_docs = await self._search_vectors_smart(query, k=3)
                 
-                # 詳細偵錯檢索結果
+                # 詳細調試檢索結果
                 logger.info(f"🔍 目前查詢: {query}")
                 logger.info(f"📄 檢索到 {len(context_docs) if context_docs else 0} 個文件")
 
@@ -629,7 +633,7 @@ class ChatbotInstance:
                         
                         logger.info(f"📄 文件 {i+1}:")
                         logger.info(f"  內容預覽: {content_preview}")
-                        logger.info(f"  包含連線: {contained_urls}")
+                        logger.info(f"  包含連結: {contained_urls}")
                         logger.info(f"  來源檔案: {metadata.get('filename', 'unknown')}")
 
                 context = "\n".join([self._get_document_content(doc) for doc in context_docs]) if context_docs else ""
@@ -663,10 +667,11 @@ class ChatbotInstance:
 
                 logger.info(f"🔍 機器人 '{self.bot_name}' 檢索結果: {len(context_docs)} 個文件, chunk_refs: {len(chunk_references)}")
                 
-                # ✨ 修改：傳遞歷史紀錄給生成器
+                # ✨ 修改：傳遞歷史記錄和格式化參數給生成器
                 system_prompt = self.config.get("system_role", "你是一個樂於助人的 AI 助理。")
+                # 🔥 關鍵修改：傳遞 format_for_frontend 參數
                 response_text, recommended_questions = self._generate_response(
-                    query, context, system_prompt, session_id, history
+                    query, context, system_prompt, session_id, history, format_for_frontend
                 )
                 
                 # 處理引用來源
@@ -680,17 +685,17 @@ class ChatbotInstance:
                     logger.info(f"[Cite Sources] Found {len(url_sources)} items with a 'url' key.")
                     
                     if url_sources:
-                        # 過濾重複連線
+                        # 過濾重複連結
                         url_sources = self._filter_duplicate_links(url_sources, session_id)
                         logger.info(f"[Cite Sources] After filtering duplicates, {len(url_sources)} sources remain.")
                         
-                        if url_sources:  # 確保過濾後還有連線
+                        if url_sources:  # 確保過濾後還有連結
                             response_text += self._format_source_links(url_sources)
                             logger.info(f"🔗 新增了 {len(url_sources)} 個參考連結")
                         else:
-                            logger.info("🔄 所有連線都是重複的，跳過顯示")
+                            logger.info(f"📄 所有連結都是重複的，跳過顯示")
                     else:
-                        logger.info("📝 未在文件內容中找到可引用的URL")
+                        logger.info(f"🔍 未在文件內容中找到可引用的URL")
 
                 processing_time_ms = int((time.time() - start_time) * 1000)
                 
@@ -718,12 +723,14 @@ class ChatbotInstance:
                 except Exception as log_error:
                     logger.error(f"❌ 記錄對話失敗（機器人：{self.bot_name}）: {log_error}")
 
-                logger.info(f"📤 機器人 '{self.bot_name}' API 回應偵錯:")
+                logger.info(f"📤 機器人 '{self.bot_name}' API 回應調試:")
                 logger.info(f"  - response_text 長度: {len(response_text)}")
                 logger.info(f"  - recommended_questions: {recommended_questions}")
                 logger.info(f"  - 找到文件數量: {len(context_docs) if context_docs else 0}")
                 logger.info(f"  - chunk_references: {len(chunk_references)}")
                 logger.info(f"  - 處理時間: {processing_time_ms}ms")
+                # 🔥 新增：記錄是否使用了格式化
+                logger.info(f"  - 使用LLM格式化: {format_for_frontend}")
 
                 return JSONResponse({
                     "response": response_text,
@@ -736,7 +743,9 @@ class ChatbotInstance:
                         "documents_found": len(context_docs) if context_docs else 0,
                         "conversation_id": conversation_id,
                         "chunk_count": len(chunk_references),
-                        "search_mode": self.search_mode
+                        "search_mode": self.search_mode,
+                        # 🔥 新增：回傳格式化狀態給前端
+                        "formatted_by_llm": format_for_frontend
                     }
                 })
 
@@ -811,9 +820,12 @@ class ChatbotInstance:
                         "bot_name": self.bot_name,
                         "processing_time_ms": processing_time_ms,
                         "conversation_id": conversation_id,
-                        "search_mode": self.search_mode
+                        "search_mode": self.search_mode,
+                        "formatted_by_llm": False
                     }
                 }, status_code=500)
+
+
 
         @self.app.get("/api/stats")
         async def get_bot_stats():
@@ -858,8 +870,10 @@ class ChatbotInstance:
                 "conversation_count": self.total_conversations
             })
 
-    def _generate_response(self, query: str, context: str, system_prompt: str, session_id: str, history: List[Dict] = []) -> Tuple[str, List[str]]:
-        """生成回應 - ✨ 新增 history 參數"""
+    def _generate_response(self, query: str, context: str, system_prompt: str, session_id: str, history: List[Dict] = [], format_for_frontend: bool = False) -> Tuple[str, List[str]]:
+        """
+        生成回應 - 新增 format_for_frontend 參數支援前端格式化
+        """
         if not OPENAI_AVAILABLE:
             return "系統 AI 模組未載入。", []
 
@@ -870,11 +884,11 @@ class ChatbotInstance:
         llm = ChatOpenAI(
             model=self.config.get("model", "gpt-4o-mini"), 
             temperature=self.config.get("temperature", 0.7), 
-            max_tokens=self.config.get("max_tokens", 2000), # ✨ 修正：傳遞 max_tokens 參數
+            max_tokens=self.config.get("max_tokens", 2000),
             api_key=openai_key
         )
 
-        # ✨ 關鍵更動：動態建立對話歷史
+        # 🔥 關鍵更動：動態建立對話歷史
         main_answer_messages = [SystemMessage(content=system_prompt)]
         
         # 添加歷史訊息
@@ -887,18 +901,17 @@ class ChatbotInstance:
                 main_answer_messages.append(AIMessage(content=content))
 
         # 添加當前問題
-        main_answer_messages.append(
-            HumanMessage(content=f"""參考資料：
-{context}
+        current_query_content = f"""參考資料：
+    {context}
 
-使用者問題：{query}""" )
-        )
+    使用者問題：{query}"""
 
-        # ✨ 關鍵偵錯：顯示發送給 LLM 的完整訊息
+        main_answer_messages.append(HumanMessage(content=current_query_content))
+
+        # 🔥 關鍵調試：顯示發送給 LLM 的完整訊息
         try:
             loggable_messages = []
             for msg in main_answer_messages:
-                # 處理不同類型的 Message 物件
                 loggable_messages.append({
                     "type": msg.type,
                     "content": msg.content
@@ -909,21 +922,70 @@ class ChatbotInstance:
         except Exception as e:
             logger.error(f"記錄 LLM 訊息時出錯: {e}")
 
+        # 第一步：生成主要回答
         main_response = llm.invoke(main_answer_messages)
         main_answer = main_response.content.strip()
-        main_answer = re.sub(r'([。！？])(\d+\.\s*)', r'\1\n\n\2', main_answer)
 
-        # ✨ 最終修正：使用正規表示式，僅修正格式錯誤的數字列表，確保不影響正常內容
-        # 這個表達式會尋找前面緊跟著非空白字符的數字列表項 (如 "文字1.")，並在它們前面插入換行
-        #main_answer = re.sub(r'([。！？])\s*(\d+\.)\s*', r'\1\n\n\2 ', main_answer)
+        # 🔥 新功能：如果前端要求格式化，則進行 LLM 格式化
+        if format_for_frontend:
+            logger.info(f"🎨 前端請求格式化，開始 LLM 格式化處理...")
+            
+            format_prompt = f"""請將以下AI回應格式化為適合網頁顯示的HTML格式：
 
-        # 生成推薦問題 (此部分邏輯不變)
+    回應內容：
+    {main_answer}
+
+    格式化規則：
+    1. 數字列表項目前必須有雙換行分隔：
+    - 錯誤：「文字。1. 列表項」
+    - 正確：「文字。\\n\\n1. 列表項」
+
+    2. 轉換 Markdown 語法：
+    - 鏈接：[文字](URL) → <a href="URL" target="_blank" rel="noopener noreferrer" class="source-link">文字</a>
+    - 粗體：**文字** → <strong>文字</strong>
+
+    3. 段落處理：
+    - 普通段落間用單換行分隔
+    - 數字列表前用雙換行分隔
+    - 「💡 您可能想了解」區塊前用雙換行分隔
+
+    4. 保持內容完整，不要遺漏任何信息
+
+    5. 直接返回格式化後的HTML內容，不要添加說明文字或包裝標籤。
+
+    格式化後的內容："""
+
+            try:
+                format_messages = [HumanMessage(content=format_prompt)]
+                formatted_response = llm.invoke(format_messages)
+                formatted_answer = formatted_response.content.strip()
+                
+                # 驗證格式化結果
+                if len(formatted_answer) > 10 and not formatted_answer.startswith("我無法"):
+                    logger.info(f"✅ LLM 格式化成功，原長度: {len(main_answer)}, 格式化後長度: {len(formatted_answer)}")
+                    logger.debug(f"格式化前: {main_answer[:200]}...")
+                    logger.debug(f"格式化後: {formatted_answer[:200]}...")
+                    main_answer = formatted_answer
+                else:
+                    logger.warning(f"⚠️ LLM 格式化失敗，使用原始回答")
+                    
+            except Exception as format_error:
+                logger.error(f"❌ LLM 格式化過程出錯: {format_error}")
+                # 格式化失敗時使用原始回答
+                pass
+
+        # 🔥 基本修正：確保數字列表格式正確（作為備用機制）
+        if not format_for_frontend:
+            # 只有在未進行 LLM 格式化時才執行基本修正
+            main_answer = re.sub(r'([。！？])(\d+\.)\s*', r'\1\n\n\2 ', main_answer)
+
+        # 生成推薦問題
         recommended_questions = []
         should_recommend = self.config.get("dynamic_recommendations_enabled", False)
         recommend_count = self.config.get("dynamic_recommendations_count", 0)
         conversation_count = self.session_counters.get(session_id, 1)
 
-        logger.info(f"🔍 機器人 '{self.bot_name}' 推薦問題偵錯:")
+        logger.info(f"🔍 機器人 '{self.bot_name}' 推薦問題調試:")
         logger.info(f"  - should_recommend: {should_recommend}")
         logger.info(f"  - recommend_count: {recommend_count}")
         logger.info(f"  - conversation_count: {conversation_count}")
@@ -932,18 +994,18 @@ class ChatbotInstance:
             logger.info(f"✅ 機器人 '{self.bot_name}' 開始生成推薦問題...")
             
             recommend_prompt = f"""
-**原始對話**
-使用者問：「{query}」
-你的回答：「{main_answer}」
+    **原始對話**
+    使用者問：「{query}」
+    你的回答：「{main_answer}」
 
----
-**指令**
-根據以上對話，生成三個相關的延伸問題。
+    ---
+    **指令**
+    根據以上對話，生成三個相關的延伸問題。
 
-**格式**
-- 每個問題一行
-- 不要編號
-- 不要包含任何其他文字"""
+    **格式**
+    - 每個問題一行
+    - 不要編號
+    - 不要包含任何其他文字"""
             
             try:
                 recommend_messages = [HumanMessage(content=recommend_prompt)]
@@ -956,7 +1018,7 @@ class ChatbotInstance:
                 questions_list = [q.strip() for q in questions_text.split('\n') if q.strip()]
                 recommended_questions = list(dict.fromkeys(questions_list))
                 
-                logger.info(f"📝 機器人 '{self.bot_name}' 解析後的推薦問題: {recommended_questions}")
+                logger.info(f"🔍 機器人 '{self.bot_name}' 解析後的推薦問題: {recommended_questions}")
                 
             except Exception as e:
                 logger.error(f"❌ 機器人 '{self.bot_name}' 生成推薦問題時發生錯誤: {e}", exc_info=True)
@@ -965,6 +1027,8 @@ class ChatbotInstance:
             logger.info(f"❌ 機器人 '{self.bot_name}' 推薦問題未啟用或超出限制")
 
         return main_answer, recommended_questions
+
+
     
     def _extract_links_from_content(self, content: str) -> List[dict]:
         """從文件內容中提取連結和標題（穩健判定 URL/標題順序）- 修復版本"""
