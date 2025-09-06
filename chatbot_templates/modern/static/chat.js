@@ -65,19 +65,37 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // 新增 安全修復數字列表格式
-        
         fixNumberedListSafely(text) {
-            try {
-                // 🔧 修正：不要求數字後面必須有空格
-                if (/[。！？]\d+\./.test(text)) {
-                    return text.replace(/([。！？])(\d+\.)/g, '$1\n\n$2 ');
+        console.log('🔍 SmartTextParser 收到文本:', text.substring(0, 200));
+        
+        try {
+            // 強制執行修復，不做條件檢查
+            let fixed = text.replace(/([。！？])(\d+\.)/g, '$1\n\n$2 ');
+            
+            // 額外修復：處理任何緊挨著的數字列表
+            fixed = fixed.replace(/([^\n\s])(\d+\.\s)/g, (match, char, number) => {
+                if (/[。！？]/.test(char)) {
+                    return char + '\n\n' + number;
                 }
-                return text;
-            } catch (error) {
-                console.warn('數字列表修復失敗，使用原文本:', error);
-                return text;
+                return match;
+            });
+            
+            if (fixed !== text) {
+                console.log('✅ SmartTextParser 執行了修復');
+                console.log('修復前:', text.substring(0, 200));
+                console.log('修復後:', fixed.substring(0, 200));
+            } else {
+                console.log('❌ SmartTextParser 沒有檢測到需要修復的內容');
             }
+            
+            return fixed;
+        } catch (error) {
+            console.error('❌ 修復失敗:', error);
+            return text;
         }
+}
+
+
 
         parseText() {
             let text = this.preprocessedText; // 使用修復後的文本
@@ -340,7 +358,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // 添加內容
             if (token.type === 'html' || token.type === 'linebreak') {
-                // HTML 標籤和換行符一次性添加  
+                // HTML 標籤和換行符一次性添加   
                 this.element.insertAdjacentHTML('beforeend', token.content);
                 
                 // 如果是連結，立即綁定事件
@@ -348,7 +366,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     this.bindLinkEvents();
                 }
             } else {
-                // 普通文字逐字添加  
+                // 普通文字逐字添加   
                 const textNode = document.createTextNode(token.content);
                 this.element.appendChild(textNode);
             }
@@ -522,78 +540,99 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 帶打字效果的機器人回應渲染
     const renderBotMessageWithTyping = (element, text, onComplete) => {
-        // 解析文本
-        const parser = new SmartTextParser(text);
-        const tokens = parser.getTokens();
-        
-        // 停止任何正在進行的打字效果
-        if (currentTypingTimeout) {
-            currentTypingTimeout.stop();
+    // 強制修復：無條件執行數字列表修復
+    console.log('🎭 原始文本:', text.substring(0, 300));
+    
+    // 方法1：修復句號後緊跟數字的情況
+    text = text.replace(/([。！？])(\d+\.)/g, '$1\n\n$2 ');
+    
+    // 方法2：修復任何非換行字符後緊跟數字的情況（更強力）
+    text = text.replace(/([^\n])(\d+\.\s)/g, (match, char, number) => {
+        // 如果前面的字符是句號、感嘆號或問號，插入雙換行
+        if (/[。！？]/.test(char)) {
+            return char + '\n\n' + number;
         }
-        
-        // 開始新的打字效果
-        currentTypingTimeout = new TypingRenderer(element, tokens, onComplete);
-        currentTypingTimeout.start();
-    };
+        // 否則保持原樣
+        return match;
+    });
+    
+    console.log('🔧 修復後文本:', text.substring(0, 300));
+    
+    // 解析文本
+    const parser = new SmartTextParser(text);
+    const tokens = parser.getTokens();
+    
+    // 停止任何正在進行的打字效果
+    if (currentTypingTimeout) {
+        currentTypingTimeout.stop();
+    }
+    
+    // 開始新的打字效果
+    currentTypingTimeout = new TypingRenderer(element, tokens, onComplete);
+    currentTypingTimeout.start();
+};
 
     // 即時渲染函數（用於錯誤訊息等）
     const renderBotMessage = (element, text) => {
-    element.classList.remove('thinking');
-    
-    // 🔧 修正的數字列表修復：不要求數字後面必須有空格
-    if (/[。！？]\d+\./.test(text)) {
-        text = text.replace(/([。！？])(\d+\.)/g, '$1\n\n$2 ');
-    }
-    
-    // 改進的連結渲染邏輯
-    let processedText = text;
-    
-    // 處理markdown格式的連結: [文本](URL)
-    const linkRegex = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g;
-    processedText = processedText.replace(linkRegex, (match, linkText, url) => {
-        return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="source-link">${linkText}</a>`;
-    });
-    
-    // 處理**加粗**文本
-    processedText = processedText.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-    
-    // 處理換行
-    processedText = processedText.replace(/\n/g, '<br>');
-    
-    // 安全地設置HTML內容
-    element.innerHTML = processedText;
-    
-    // 為連結添加點擊事件和統計
-    const links = element.querySelectorAll('.source-link');
-    links.forEach((link, index) => {
-        link.addEventListener('click', (e) => {
-            console.log(`使用者點擊了參考連結 ${index + 1}:`, link.href);
-            console.log('連結標題:', link.textContent);
+        element.classList.remove('thinking');
+        
+        // 修正的數字列表修復：不要求數字後面必須有空格
+        if (/[。！？]\d+\./.test(text)) {
+            console.log('🔧 renderBotMessage 檢測到數字列表問題，執行修復');
+            console.log('修復前:', text.substring(0, 200));
+            text = text.replace(/([。！？])(\d+\.)/g, '$1\n\n$2 ');
+            console.log('修復後:', text.substring(0, 200));
+        }
+        
+        // 改進的連結渲染邏輯
+        let processedText = text;
+        
+        // 處理markdown格式的連結: [文本](URL)
+        const linkRegex = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g;
+        processedText = processedText.replace(linkRegex, (match, linkText, url) => {
+            return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="source-link">${linkText}</a>`;
+        });
+        
+        // 處理**加粗**文本
+        processedText = processedText.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+        
+        // 處理換行
+        processedText = processedText.replace(/\n/g, '<br>');
+        
+        // 安全地設置HTML內容
+        element.innerHTML = processedText;
+        
+        // 為連結添加點擊事件和統計
+        const links = element.querySelectorAll('.source-link');
+        links.forEach((link, index) => {
+            link.addEventListener('click', (e) => {
+                console.log(`使用者點擊了參考連結 ${index + 1}:`, link.href);
+                console.log('連結標題:', link.textContent);
+                
+                try {
+                    fetch('/api/link_click', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            url: link.href,
+                            title: link.textContent,
+                            timestamp: new Date().toISOString(),
+                            session_id: sessionId
+                        })
+                    }).catch(err => console.log('統計記錄失敗:', err));
+                } catch (err) {
+                    console.log('統計記錄異常:', err);
+                }
+            });
             
-            try {
-                fetch('/api/link_click', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        url: link.href,
-                        title: link.textContent,
-                        timestamp: new Date().toISOString(),
-                        session_id: sessionId
-                    })
-                }).catch(err => console.log('統計記錄失敗:', err));
-            } catch (err) {
-                console.log('統計記錄異常:', err);
-            }
-        });
-        
-        // 添加懸停效果
-        link.addEventListener('mouseenter', () => {
-            link.style.transform = 'translateY(-1px)';
-        });
-        
-        link.addEventListener('mouseleave', () => {
-            link.style.transform = 'translateY(0)';
-        });
+            // 添加懸停效果
+            link.addEventListener('mouseenter', () => {
+                link.style.transform = 'translateY(-1px)';
+            });
+            
+            link.addEventListener('mouseleave', () => {
+                link.style.transform = 'translateY(0)';
+            });
         });
         
         // 檢查是否包含參考區塊並添加相應樣式
@@ -644,7 +683,6 @@ document.addEventListener('DOMContentLoaded', () => {
             // 重要：什麼都不顯示
         }
     };
-
 
     // UI 狀態管理
     const setLoading = (loadingState) => {
@@ -754,4 +792,5 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('聊天機器人界面初始化完成');
     console.log('會話ID:', sessionId);
     console.log('智能打字效果已啟用');
+    console.log('🔧 數字列表修復功能已啟用 - 會在控制台顯示調試信息');
 });
