@@ -911,6 +911,7 @@ class ChatbotInstance:
 
         main_response = llm.invoke(main_answer_messages)
         main_answer = main_response.content.strip()
+        main_answer = re.sub(r'([。！？])(\d+\.\s*)', r'\1\n\n\2', main_answer)
 
         # ✨ 最終修正：使用正規表示式，僅修正格式錯誤的數字列表，確保不影響正常內容
         # 這個表達式會尋找前面緊跟著非空白字符的數字列表項 (如 "文字1.")，並在它們前面插入換行
