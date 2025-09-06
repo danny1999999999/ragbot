@@ -1,29 +1,29 @@
 document.addEventListener('DOMContentLoaded', () => {
     // Safari 移動端修復
-function setVH() {
-    let vh = window.innerHeight * 0.01;
-    document.documentElement.style.setProperty('--vh', `${vh}px`);
-}
-
-function isMobileSafari() {
-    return /iPad|iPhone|iPod/.test(navigator.userAgent);
-}
-
-if (window.innerWidth <= 768 || isMobileSafari()) {
-    setVH();
-    
-    window.addEventListener('resize', setVH);
-    window.addEventListener('orientationchange', () => {
-        setTimeout(setVH, 500);
-    });
-    
-    const chatInput = document.getElementById('chat-input');
-    if (chatInput) {
-        chatInput.addEventListener('focus', () => {
-            setTimeout(setVH, 300);
-        });
+    function setVH() {
+        let vh = window.innerHeight * 0.01;
+        document.documentElement.style.setProperty('--vh', `${vh}px`);
     }
-}
+
+    function isMobileSafari() {
+        return /iPad|iPhone|iPod/.test(navigator.userAgent);
+    }
+
+    if (window.innerWidth <= 768 || isMobileSafari()) {
+        setVH();
+        
+        window.addEventListener('resize', setVH);
+        window.addEventListener('orientationchange', () => {
+            setTimeout(setVH, 500);
+        });
+        
+        const chatInput = document.getElementById('chat-input');
+        if (chatInput) {
+            chatInput.addEventListener('focus', () => {
+                setTimeout(setVH, 300);
+            });
+        }
+    }
     
     // Element references
     const chatMessages = document.getElementById('chat-messages');
@@ -37,7 +37,7 @@ if (window.innerWidth <= 768 || isMobileSafari()) {
     let isLoading = false;
     let isTyping = false;
     let currentTypingTimeout = null;
-    let conversationHistory = []; // ✨ 新增：用來儲存對話歷史
+    let conversationHistory = []; // 新增：用來儲存對話歷史
     let sessionId = localStorage.getItem('chat_session_id');
     if (!sessionId) {
         sessionId = `session_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
@@ -53,16 +53,33 @@ if (window.innerWidth <= 768 || isMobileSafari()) {
         instantTags: ['link', 'strong', 'bold']
     };
 
-    // 智能文本解析器類
+    // 智能文本解析器類別
     class SmartTextParser {
         constructor(htmlText) {
             this.originalText = htmlText;
             this.tokens = [];
+            
+            // 新增 安全的數字列表修復：只在檢測到問題時執行
+            this.preprocessedText = this.fixNumberedListSafely(htmlText);
             this.parseText();
         }
 
+        // 新增 安全修復數字列表格式
+        fixNumberedListSafely(text) {
+            try {
+                // 只處理明確的數字列表問題：句號後直接跟數字
+                if (/[。！？]\d+\.\s/.test(text)) {
+                    return text.replace(/([。！？])(\d+\.\s)/g, '$1\n\n$2');
+                }
+                return text;
+            } catch (error) {
+                console.warn('數字列表修復失敗，使用原文本:', error);
+                return text;
+            }
+        }
+
         parseText() {
-            let text = this.originalText;
+            let text = this.preprocessedText; // 使用修復後的文本
             text = this.preprocessMarkdownLinks(text);
             text = text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
             this.parseHtmlAndText(text);
@@ -106,7 +123,7 @@ if (window.innerWidth <= 768 || isMobileSafari()) {
         splitIntoSections(text) {
             const sections = [];
             
-            // 🔧 關鍵修正：先用正則表達式分割出參考區塊
+            // 關鍵修正：先用正則表達式分割出參考區塊
             const referencePattern = /(\n\n💡 你可能想了解[\s\S]*)/;
             const parts = text.split(referencePattern);
             
@@ -178,7 +195,7 @@ if (window.innerWidth <= 768 || isMobileSafari()) {
             return sections;
         }
 
-        // 🔧 修復後的 addTextTokens 方法 - 支援行內 HTML 標籤
+        // 修復後的 addTextTokens 方法 - 支援行內 HTML 標籤
         addTextTokens(text) {
             if (!text) return;
             
@@ -196,7 +213,7 @@ if (window.innerWidth <= 768 || isMobileSafari()) {
                             pauseAfter: 200
                         });
                     } else {
-                        // 🔧 新增：解析行內 HTML 標籤
+                        // 新增：解析行內 HTML 標籤
                         this.parseLineWithHtmlTags(line);
                     }
                 }
@@ -213,7 +230,7 @@ if (window.innerWidth <= 768 || isMobileSafari()) {
             });
         }
         
-        // 🔧 新增：解析含有 HTML 標籤的行
+        // 新增：解析含有 HTML 標籤的行
         parseLineWithHtmlTags(line) {
             // 定義要處理的 HTML 標籤
             const htmlTagPattern = /(<\/?(strong|b|em|i|u)>)/gi;
@@ -250,7 +267,7 @@ if (window.innerWidth <= 768 || isMobileSafari()) {
             }
         }
         
-        // 🔧 新增：逐字添加文字的輔助方法
+        // 新增：逐字添加文字的輔助方法
         addTextCharByChar(text) {
             for (let i = 0; i < text.length; i++) {
                 const char = text[i];
@@ -289,7 +306,7 @@ if (window.innerWidth <= 768 || isMobileSafari()) {
             this.element.classList.remove('thinking');
             this.element.innerHTML = '';
             
-            // 添加打字游標
+            // 添加打字遊標
             if (TYPING_CONFIG.enableCursor) {
                 this.cursor = document.createElement('span');
                 this.cursor.className = 'typing-cursor';
@@ -315,14 +332,14 @@ if (window.innerWidth <= 768 || isMobileSafari()) {
             const token = this.tokens[this.currentIndex];
             this.currentIndex++;
 
-            // 移除游標
+            // 移除遊標
             if (this.cursor && this.cursor.parentNode) {
                 this.cursor.remove();
             }
 
             // 添加內容
             if (token.type === 'html' || token.type === 'linebreak') {
-                // HTML 標籤和換行符一次性添加 
+                // HTML 標籤和換行符一次性添加  
                 this.element.insertAdjacentHTML('beforeend', token.content);
                 
                 // 如果是連結，立即綁定事件
@@ -330,12 +347,12 @@ if (window.innerWidth <= 768 || isMobileSafari()) {
                     this.bindLinkEvents();
                 }
             } else {
-                // 普通文字逐字添加 
+                // 普通文字逐字添加  
                 const textNode = document.createTextNode(token.content);
                 this.element.appendChild(textNode);
             }
 
-            // 重新添加游標
+            // 重新添加遊標
             if (TYPING_CONFIG.enableCursor && this.currentIndex < this.tokens.length) {
                 this.element.appendChild(this.cursor);
             }
@@ -393,7 +410,7 @@ if (window.innerWidth <= 768 || isMobileSafari()) {
             this.isRunning = false;
             isTyping = false;
             
-            // 移除游標
+            // 移除遊標
             if (this.cursor && this.cursor.parentNode) {
                 this.cursor.remove();
             }
@@ -426,7 +443,7 @@ if (window.innerWidth <= 768 || isMobileSafari()) {
         }
 
         addCursorAnimation() {
-            // 動態添加游標動畫 CSS
+            // 動態添加遊標動畫 CSS
             if (!document.getElementById('typing-cursor-style')) {
                 const style = document.createElement('style');
                 style.id = 'typing-cursor-style';
@@ -443,11 +460,11 @@ if (window.innerWidth <= 768 || isMobileSafari()) {
 
     // 主要函數
     const handleSendMessage = async () => {
-        console.log("正在執行【對話歷史紀錄】版本 v2 的 chat.js"); // ✨ 新增測試日誌
+        console.log("正在執行「對話歷史紀錄」版本 v2 的 chat.js"); // 新增測試日誌
         const message = chatInput.value.trim();
         if (!message || isLoading || isTyping) return;
 
-        // ✨ 步驟 1: 將用戶訊息添加到歷史紀錄
+        // 步驟 1: 將用戶訊息添加到歷史紀錄
         conversationHistory.push({ role: 'user', content: message });
 
         // Add user message to UI
@@ -460,7 +477,7 @@ if (window.innerWidth <= 768 || isMobileSafari()) {
         setLoading(true);
 
         try {
-            // ✨ 步驟 2: 發送包含歷史紀錄的請求
+            // 步驟 2: 發送包含歷史紀錄的請求
             // 我們只發送最近10則訊息以避免請求過大
             const historyToSend = conversationHistory.slice(-10);
 
@@ -469,7 +486,7 @@ if (window.innerWidth <= 768 || isMobileSafari()) {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
                     message, 
-                    history: historyToSend, // ✨ 發送歷史
+                    history: historyToSend, // 發送歷史
                     session_id: sessionId 
                 })
             });
@@ -481,10 +498,10 @@ if (window.innerWidth <= 768 || isMobileSafari()) {
 
             const data = await response.json();
 
-            // ✨ 步驟 3: 將機器人回應添加到歷史紀錄
+            // 步驟 3: 將機器人回應添加到歷史紀錄
             conversationHistory.push({ role: 'assistant', content: data.response });
 
-            // ✨ 步驟 4: 管理歷史紀錄長度，避免無限增長
+            // 步驟 4: 管理歷史紀錄長度，避免無限增長
             if (conversationHistory.length > 20) { // 保留最近的20則訊息
                 conversationHistory = conversationHistory.slice(-20);
             }
@@ -495,7 +512,7 @@ if (window.innerWidth <= 768 || isMobileSafari()) {
             });
 
         } catch (error) {
-            // 錯誤消息不使用打字效果
+            // 錯誤訊息不使用打字效果
             renderBotMessage(botMessageElement, `🚫 錯誤: ${error.message}`);
         } finally {
             setLoading(false);
@@ -518,9 +535,14 @@ if (window.innerWidth <= 768 || isMobileSafari()) {
         currentTypingTimeout.start();
     };
 
-    // 即時渲染函數（用於錯誤消息等）
+    // 即時渲染函數（用於錯誤訊息等）
     const renderBotMessage = (element, text) => {
         element.classList.remove('thinking');
+        
+        // 🆕 安全的數字列表修復：只在檢測到問題時執行
+        if (/[。！？]\d+\.\s/.test(text)) {
+            text = text.replace(/([。！？])(\d+\.\s)/g, '$1\n\n$2');
+        }
         
         // 改進的連結渲染邏輯
         let processedText = text;
@@ -592,14 +614,14 @@ if (window.innerWidth <= 768 || isMobileSafari()) {
         return messageElement;
     };
 
-    // ✅ 完全替換為這個修正版本：
+    // 完全替換為這個修正版本：
     const displayRecommendedQuestions = (questions) => {
-        console.log('🔄 處理推薦問題，數量:', questions ? questions.length : 0);
+        console.log('📄 處理推薦問題，數量:', questions ? questions.length : 0);
         
         const container = document.getElementById('recommended-questions-container');
         container.innerHTML = '';
         
-        // 🔧 修正：只處理推薦問題，完全不檢測參考連結
+        // 修正：只處理推薦問題，完全不檢測參考連結
         if (questions && questions.length > 0) {
             console.log('✅ 顯示推薦問題');
             
@@ -616,7 +638,7 @@ if (window.innerWidth <= 768 || isMobileSafari()) {
             console.log('✅ 推薦問題已顯示');
         } else {
             console.log('❌ 沒有推薦問題，不顯示任何內容');
-            // 🔧 重要：什麼都不顯示
+            // 重要：什麼都不顯示
         }
     };
 
