@@ -65,11 +65,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // 新增 安全修復數字列表格式
+        
         fixNumberedListSafely(text) {
             try {
-                // 只處理明確的數字列表問題：句號後直接跟數字
-                if (/[。！？]\d+\.\s/.test(text)) {
-                    return text.replace(/([。！？])(\d+\.\s)/g, '$1\n\n$2');
+                // 🔧 修正：不要求數字後面必須有空格
+                if (/[。！？]\d+\./.test(text)) {
+                    return text.replace(/([。！？])(\d+\.)/g, '$1\n\n$2 ');
                 }
                 return text;
             } catch (error) {
@@ -537,63 +538,65 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 即時渲染函數（用於錯誤訊息等）
     const renderBotMessage = (element, text) => {
-        element.classList.remove('thinking');
-        
-        // 🆕 安全的數字列表修復：只在檢測到問題時執行
-        if (/[。！？]\d+\.\s/.test(text)) {
-            text = text.replace(/([。！？])(\d+\.\s)/g, '$1\n\n$2');
-        }
-        
-        // 改進的連結渲染邏輯
-        let processedText = text;
-        
-        // 處理markdown格式的連結: [文本](URL)
-        const linkRegex = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g;
-        processedText = processedText.replace(linkRegex, (match, linkText, url) => {
-            return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="source-link">${linkText}</a>`;
+    element.classList.remove('thinking');
+    
+    // 🔧 修正的數字列表修復：不要求數字後面必須有空格
+    if (/[。！？]\d+\./.test(text)) {
+        text = text.replace(/([。！？])(\d+\.)/g, '$1\n\n$2 ');
+    }
+    
+    // 改進的連結渲染邏輯
+    let processedText = text;
+    
+    // 處理markdown格式的連結: [文本](URL)
+    const linkRegex = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g;
+    processedText = processedText.replace(linkRegex, (match, linkText, url) => {
+        return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="source-link">${linkText}</a>`;
+    });
+    
+    // 處理**加粗**文本
+    processedText = processedText.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    
+    // 處理換行
+    processedText = processedText.replace(/\n/g, '<br>');
+    
+    // 安全地設置HTML內容
+    element.innerHTML = processedText;
+    
+    // 為連結添加點擊事件和統計
+    const links = element.querySelectorAll('.source-link');
+    links.forEach((link, index) => {
+        link.addEventListener('click', (e) => {
+            console.log(`使用者點擊了參考連結 ${index + 1}:`, link.href);
+            console.log('連結標題:', link.textContent);
+            
+            try {
+                fetch('/api/link_click', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        url: link.href,
+                        title: link.textContent,
+                        timestamp: new Date().toISOString(),
+                        session_id: sessionId
+                    })
+                }).catch(err => console.log('統計記錄失敗:', err));
+            } catch (err) {
+                console.log('統計記錄異常:', err);
+            }
         });
         
-        // 處理**加粗**文本
-        processedText = processedText.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-        
-        // 處理換行
-        processedText = processedText.replace(/\n/g, '<br>');
-        
-        // 安全地設置HTML內容
-        element.innerHTML = processedText;
-        
-        // 為連結添加點擊事件和統計
-        const links = element.querySelectorAll('.source-link');
-        links.forEach((link, index) => {
-            link.addEventListener('click', (e) => {
-                console.log(`使用者點擊了參考連結 ${index + 1}:`, link.href);
-                console.log('連結標題:', link.textContent);
-                
-                try {
-                    fetch('/api/link_click', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            url: link.href,
-                            title: link.textContent,
-                            timestamp: new Date().toISOString(),
-                            session_id: sessionId
-                        })
-                    }).catch(err => console.log('統計記錄失敗:', err));
-                } catch (err) {
-                    console.log('統計記錄異常:', err);
-                }
-            });
-            
-            link.addEventListener('mouseenter', () => {
-                link.style.transform = 'translateY(-1px)';
-            });
-            
-            link.addEventListener('mouseleave', () => {
-                link.style.transform = 'translateY(0)';
-            });
+        // 添加懸停效果
+        link.addEventListener('mouseenter', () => {
+            link.style.transform = 'translateY(-1px)';
         });
         
+        link.addEventListener('mouseleave', () => {
+            link.style.transform = 'translateY(0)';
+        });
+        });
+        
+        // 檢查是否包含參考區塊並添加相應樣式
         if (processedText.includes('💡 你可能想了解')) {
             element.classList.add('has-references');
         }
