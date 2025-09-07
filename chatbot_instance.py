@@ -1,13 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-chatbot_instance.py - (API相容版)
 
-修復內容：
-- __init__ 方法現在直接接收一個 config 字典，而不是 bot_name。
-- 移除了從檔案系統讀取 JSON 設定的 _load_config 方法。
-
-"""
 
 from dotenv import load_dotenv
 load_dotenv(override=True)
@@ -16,7 +9,6 @@ import os
 import json
 import argparse
 import sys
-import re
 import re
 import time
 from pathlib import Path
@@ -872,7 +864,7 @@ class ChatbotInstance:
 
     def _generate_response(self, query: str, context: str, system_prompt: str, session_id: str, history: List[Dict] = [], format_for_frontend: bool = False) -> Tuple[str, List[str]]:
         """
-        生成回應 - 新增 format_for_frontend 參數支援前端格式化
+        生成回應 - 修復版：處理 LLM 格式化的輸出問題
         """
         if not OPENAI_AVAILABLE:
             return "系統 AI 模組未載入。", []
@@ -930,15 +922,16 @@ class ChatbotInstance:
         if format_for_frontend:
             logger.info(f"🎨 前端請求格式化，開始 LLM 格式化處理...")
             
-            format_prompt = f"""請將以下AI回應格式化為適合網頁顯示的HTML格式：
+            # 🔧 修改格式化提示，避免代碼塊標記
+            format_prompt = f"""請將以下AI回應格式化為適合網頁顯示的內容：
 
     回應內容：
     {main_answer}
 
-    格式化規則：
-    1. 數字列表項目前必須有雙換行分隔：
-    - 錯誤：「文字。1. 列表項」
-    - 正確：「文字。\\n\\n1. 列表項」
+    格式化要求：
+    1. 數字列表項目前必須有雙換行分隔，但數字和內容要在同一行：
+    - 錯誤：「文字。1.\\n內容」
+    - 正確：「文字。\\n\\n1. 內容」
 
     2. 轉換 Markdown 語法：
     - 鏈接：[文字](URL) → <a href="URL" target="_blank" rel="noopener noreferrer" class="source-link">文字</a>
@@ -949,16 +942,18 @@ class ChatbotInstance:
     - 數字列表前用雙換行分隔
     - 「💡 您可能想了解」區塊前用雙換行分隔
 
-    4. 保持內容完整，不要遺漏任何信息
+    4. 重要：不要添加任何代碼塊標記（如 ```html 或 ```），直接返回格式化的內容
+    5. 不要添加解釋文字，只返回格式化後的內容本身
 
-    5. 直接返回格式化後的HTML內容，不要添加說明文字或包裝標籤。
-
-    格式化後的內容："""
+    格式化內容："""
 
             try:
                 format_messages = [HumanMessage(content=format_prompt)]
                 formatted_response = llm.invoke(format_messages)
                 formatted_answer = formatted_response.content.strip()
+                
+                # 🔧 修復：清理 LLM 可能添加的代碼塊標記
+                formatted_answer = self._clean_llm_formatting(formatted_answer)
                 
                 # 驗證格式化結果
                 if len(formatted_answer) > 10 and not formatted_answer.startswith("我無法"):
@@ -979,7 +974,7 @@ class ChatbotInstance:
             # 只有在未進行 LLM 格式化時才執行基本修正
             main_answer = re.sub(r'([。！？])(\d+\.)\s*', r'\1\n\n\2 ', main_answer)
 
-        # 生成推薦問題
+        # 生成推薦問題（保持不變）
         recommended_questions = []
         should_recommend = self.config.get("dynamic_recommendations_enabled", False)
         recommend_count = self.config.get("dynamic_recommendations_count", 0)
@@ -1028,7 +1023,33 @@ class ChatbotInstance:
 
         return main_answer, recommended_questions
 
-
+    def _clean_llm_formatting(self, text: str) -> str:
+        """清理 LLM 格式化輸出中的多餘標記"""
+        try:
+            # 移除代碼塊標記
+            text = re.sub(r'^```html\s*', '', text, flags=re.MULTILINE)
+            text = re.sub(r'^```\s*', '', text, flags=re.MULTILINE)
+            text = re.sub(r'```$', '', text, flags=re.MULTILINE)
+            
+            # 移除開頭的 "html" 標記
+            text = re.sub(r'^html\s*', '', text, flags=re.IGNORECASE)
+            
+            # 修復數字列表格式：確保數字和內容在同一行
+            # 將 "1.\n內容" 改為 "1. 內容"
+            text = re.sub(r'(\d+\.)\s*\n\s*([^\n])', r'\1 \2', text)
+            
+            # 清理多餘的空行
+            text = re.sub(r'\n{3,}', '\n\n', text)
+            
+            # 清理開頭和結尾的空白
+            text = text.strip()
+            
+            logger.debug(f"清理後的內容: {text[:200]}...")
+            return text
+            
+        except Exception as e:
+            logger.error(f"清理 LLM 格式化輸出時出錯: {e}")
+            return text
     
     def _extract_links_from_content(self, content: str) -> List[dict]:
         """從文件內容中提取連結和標題（穩健判定 URL/標題順序）- 修復版本"""
