@@ -122,24 +122,26 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         preprocessForTyping(content) {
-            // 🔥 核心改變：只做最基本的HTML轉換，不修改任何換行
-            let processed = content;
-            
-            // 處理 markdown 鏈接
-            processed = processed.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, 
-                '<a href="$2" target="_blank" rel="noopener noreferrer" class="source-link">$1</a>');
-            
-            // 處理粗體
-            processed = processed.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-
-            // 🔥 簡單修正：在轉換換行前，先修復數字列表
-            processed = processed.replace(/(\d+\.)\s*\n\s*/g, '$1 ');
-            
-            // 轉換換行為HTML - 保持原有格式
-            processed = processed.replace(/\n/g, '<br>');
-            
-            return processed;
-        }
+        let processed = content;
+        
+        // 處理 markdown 鏈接
+        processed = processed.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, 
+            '<a href="$2" target="_blank" rel="noopener noreferrer" class="source-link">$1</a>');
+        
+        // 處理粗體
+        processed = processed.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+        
+        // 🔥 修正：處理HTML標籤後的換行問題
+        processed = processed.replace(/(<\/strong>|<\/[^>]+>)\s*\n\s*/g, '$1 ');
+        
+        // 🔥 也處理純數字後的換行（備用）
+        processed = processed.replace(/(\d+\.)\s*\n\s*/g, '$1 ');
+        
+        // 轉換換行為HTML - 保持原有格式
+        processed = processed.replace(/\n/g, '<br>');
+        
+        return processed;
+    }
 
         addTextTokens(text) {
             if (!text) return;
