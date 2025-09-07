@@ -45,36 +45,32 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // 📝 新方案：簡化的文本渲染器 - 完全信任後端格式化
+    // 📝 新方案：簡化的文本渲染器 - 完全信任後端格式化
     class SimpleTextRenderer {
         constructor(element, htmlContent, onComplete) {
             this.element = element;
-            this.htmlContent = htmlContent; // 直接接收HTML，不做任何修改
+            this.htmlContent = htmlContent;
             this.onComplete = onComplete;
             this.tokens = [];
             this.currentIndex = 0;
             this.timeoutId = null;
             this.isRunning = false;
-            this.speed = 30; // 打字速度
+            this.speed = 30;
         }
 
-        // 解析HTML為打字tokens
         parseHtml() {
             this.tokens = [];
             
-            // 檢查是否包含參考鏈接區塊
             const referencePattern = /(\n\n💡 .*[\s\S]*)/;
             const hasReferences = referencePattern.test(this.htmlContent);
             
             if (hasReferences) {
-                // 分離主要內容和參考區塊
                 const parts = this.htmlContent.split(referencePattern);
                 
-                // 主要內容逐字打字
                 if (parts[0]) {
                     this.parseContentForTyping(parts[0]);
                 }
                 
-                // 參考區塊整體顯示
                 if (parts[1]) {
                     this.tokens.push({
                         type: 'html_block',
@@ -83,28 +79,23 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                 }
             } else {
-                // 沒有參考區塊，全部逐字打字
                 this.parseContentForTyping(this.htmlContent);
             }
         }
 
         parseContentForTyping(content) {
-            // 直接按段落分解，保持HTML結構
             const processedContent = this.preprocessForTyping(content);
             
-            // 簡化邏輯：按HTML標籤和文本分離
             const htmlTagRegex = /<[^>]+>/g;
             let lastIndex = 0;
             let match;
             
             while ((match = htmlTagRegex.exec(processedContent)) !== null) {
-                // 添加標籤前的文本
                 const textBefore = processedContent.substring(lastIndex, match.index);
                 if (textBefore) {
                     this.addTextTokens(textBefore);
                 }
                 
-                // 添加HTML標籤（立即顯示）
                 this.tokens.push({
                     type: 'html',
                     content: match[0],
@@ -114,7 +105,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 lastIndex = match.index + match[0].length;
             }
             
-            // 添加最後剩餘的文本
             const remainingText = processedContent.substring(lastIndex);
             if (remainingText) {
                 this.addTextTokens(remainingText);
@@ -122,56 +112,31 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         preprocessForTyping(content) {
-        let processed = content;
-        
-        // 🔍 調試：顯示原始內容的前200字符
-        console.log('🔍 原始內容:', content.substring(0, 200));
-        console.log('🔍 查找 </strong> \\n 模式:', content.includes('</strong> \n'));
-        
-        // 處理 markdown 鏈接
-        processed = processed.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, 
-            '<a href="$2" target="_blank" rel="noopener noreferrer" class="source-link">$1</a>');
-        
-        // 處理粗體
-        processed = processed.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-        
-        // 🔥 修正：處理HTML標籤後的換行問題
-        const beforeHtmlFix = processed;
-        processed = processed.replace(/(<\/strong>|<\/[^>]+>)\s*\n\s*/g, '$1 ');
-        if (beforeHtmlFix !== processed) {
-            console.log('✅ HTML標籤換行修正生效！修正數量:', (beforeHtmlFix.match(/(<\/strong>|<\/[^>]+>)\s*\n\s*/g) || []).length);
-        } else {
-            console.log('❌ HTML標籤換行修正未生效');
+            let processed = content;
+            
+            // 處理 markdown 鏈接
+            processed = processed.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, 
+                '<a href="$2" target="_blank" rel="noopener noreferrer" class="source-link">$1</a>');
+            
+            // 處理粗體
+            processed = processed.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+            
+            // 修正換行問題
+            processed = processed.replace(/(<\/[^>]+>)\s*\n\s*/g, '$1 ');
+            processed = processed.replace(/(\d+\.)\s*\n\s*/g, '$1 ');
+            
+            // 轉換換行為HTML
+            processed = processed.replace(/\n/g, '<br>');
+            
+            return processed;
         }
-        
-        // 🔥 也處理純數字後的換行（備用）
-        const beforeNumberFix = processed;
-        processed = processed.replace(/(\d+\.)\s*\n\s*/g, '$1 ');
-        if (beforeNumberFix !== processed) {
-            console.log('✅ 數字列表換行修正生效！');
-        } else {
-            console.log('❌ 數字列表換行修正未生效');
-        }
-        
-        // 🔍 調試：顯示處理後的內容
-        console.log('🔍 處理後內容:', processed.substring(0, 200));
-        
-        // 轉換換行為HTML - 保持原有格式
-        processed = processed.replace(/\n/g, '<br>');
-        
-        // 🔍 最終調試：顯示最終內容
-        console.log('🔍 最終內容:', processed.substring(0, 200));
-        
-        return processed;
-    
 
         addTextTokens(text) {
             if (!text) return;
             
-            // 逐字符添加
             for (let i = 0; i < text.length; i++) {
                 const char = text[i];
-                if (char.trim()) { // 跳過純空白字符的打字效果
+                if (char.trim()) {
                     const isPunctuation = /[。！？，、：；「」『』（）]/.test(char);
                     this.tokens.push({
                         type: 'text',
@@ -180,7 +145,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         pauseAfter: isPunctuation ? 100 : 0
                     });
                 } else {
-                    // 空白字符立即顯示
                     this.tokens.push({
                         type: 'text',
                         content: char,
@@ -212,15 +176,12 @@ document.addEventListener('DOMContentLoaded', () => {
             this.currentIndex++;
 
             if (token.type === 'html' || token.type === 'html_block') {
-                // HTML 內容直接插入
                 this.element.insertAdjacentHTML('beforeend', token.content);
                 
-                // 綁定鏈接事件
                 if (token.content.includes('class="source-link"')) {
                     this.bindLinkEvents();
                 }
             } else {
-                // 文字內容
                 const textNode = document.createTextNode(token.content);
                 this.element.appendChild(textNode);
             }
