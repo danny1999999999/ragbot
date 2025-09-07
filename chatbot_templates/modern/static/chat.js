@@ -131,6 +131,9 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // 處理粗體
             processed = processed.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+
+            // 🔥 簡單修正：在轉換換行前，先修復數字列表
+            processed = processed.replace(/(\d+\.)\s*\n\s*/g, '$1 ');
             
             // 轉換換行為HTML - 保持原有格式
             processed = processed.replace(/\n/g, '<br>');
