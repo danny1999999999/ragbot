@@ -124,6 +124,10 @@ document.addEventListener('DOMContentLoaded', () => {
         preprocessForTyping(content) {
         let processed = content;
         
+        // 🔍 調試：顯示原始內容的前200字符
+        console.log('🔍 原始內容:', content.substring(0, 200));
+        console.log('🔍 查找 </strong> \\n 模式:', content.includes('</strong> \n'));
+        
         // 處理 markdown 鏈接
         processed = processed.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, 
             '<a href="$2" target="_blank" rel="noopener noreferrer" class="source-link">$1</a>');
@@ -132,16 +136,34 @@ document.addEventListener('DOMContentLoaded', () => {
         processed = processed.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
         
         // 🔥 修正：處理HTML標籤後的換行問題
+        const beforeHtmlFix = processed;
         processed = processed.replace(/(<\/strong>|<\/[^>]+>)\s*\n\s*/g, '$1 ');
+        if (beforeHtmlFix !== processed) {
+            console.log('✅ HTML標籤換行修正生效！修正數量:', (beforeHtmlFix.match(/(<\/strong>|<\/[^>]+>)\s*\n\s*/g) || []).length);
+        } else {
+            console.log('❌ HTML標籤換行修正未生效');
+        }
         
         // 🔥 也處理純數字後的換行（備用）
+        const beforeNumberFix = processed;
         processed = processed.replace(/(\d+\.)\s*\n\s*/g, '$1 ');
+        if (beforeNumberFix !== processed) {
+            console.log('✅ 數字列表換行修正生效！');
+        } else {
+            console.log('❌ 數字列表換行修正未生效');
+        }
+        
+        // 🔍 調試：顯示處理後的內容
+        console.log('🔍 處理後內容:', processed.substring(0, 200));
         
         // 轉換換行為HTML - 保持原有格式
         processed = processed.replace(/\n/g, '<br>');
         
+        // 🔍 最終調試：顯示最終內容
+        console.log('🔍 最終內容:', processed.substring(0, 200));
+        
         return processed;
-    }
+    
 
         addTextTokens(text) {
             if (!text) return;
