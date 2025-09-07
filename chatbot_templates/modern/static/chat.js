@@ -37,284 +37,130 @@ document.addEventListener('DOMContentLoaded', () => {
     let isLoading = false;
     let isTyping = false;
     let currentTypingTimeout = null;
-    let conversationHistory = []; // 新增：用來儲存對話歷史
+    let conversationHistory = [];
     let sessionId = localStorage.getItem('chat_session_id');
     if (!sessionId) {
         sessionId = `session_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
         localStorage.setItem('chat_session_id', sessionId);
     }
 
-    // 打字效果配置
-    const TYPING_CONFIG = {
-        speed: 30,
-        enableCursor: true,
-        pauseAtPunctuation: 100,
-        pauseAtLineBreak: 200,
-        instantTags: ['link', 'strong', 'bold']
-    };
-
-    // 智能文本解析器類別
-    class SmartTextParser {
-        constructor(htmlText) {
-            this.originalText = htmlText;
-            this.tokens = [];
-            
-            // 新增 安全的數字列表修復：只在檢測到問題時執行
-            this.preprocessedText = this.fixNumberedListSafely(htmlText);
-            this.parseText();
-        }
-
-        // 新增 安全修復數字列表格式
-        fixNumberedListSafely(text) {
-        console.log('🔍 SmartTextParser 收到文本:', text.substring(0, 200));
-        
-        try {
-            // 強制執行修復，不做條件檢查
-            let fixed = text.replace(/([。！？])(\d+\.)/g, '$1\n\n$2 ');
-            
-            // 額外修復：處理任何緊挨著的數字列表
-            fixed = fixed.replace(/([^\n\s])(\d+\.\s)/g, (match, char, number) => {
-                if (/[。！？]/.test(char)) {
-                    return char + '\n\n' + number;
-                }
-                return match;
-            });
-            
-            if (fixed !== text) {
-                console.log('✅ SmartTextParser 執行了修復');
-                console.log('修復前:', text.substring(0, 200));
-                console.log('修復後:', fixed.substring(0, 200));
-            } else {
-                console.log('❌ SmartTextParser 沒有檢測到需要修復的內容');
-            }
-            
-            return fixed;
-        } catch (error) {
-            console.error('❌ 修復失敗:', error);
-            return text;
-        }
-}
-
-
-
-        parseText() {
-            let text = this.preprocessedText; // 使用修復後的文本
-            text = this.preprocessMarkdownLinks(text);
-            text = text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-            this.parseHtmlAndText(text);
-        }
-
-        preprocessMarkdownLinks(text) {
-            const linkRegex = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g;
-            return text.replace(linkRegex, (match, linkText, url) => {
-                return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="source-link">${linkText}</a>`;
-            });
-        }
-
-        parseHtmlAndText(htmlText) {
-            const sections = this.splitIntoSections(htmlText);
-            
-            sections.forEach(section => {
-                if (section.type === 'reference_block') {
-                    // "您可能想知道"區塊作為整體處理
-                    this.tokens.push({
-                        type: 'html',
-                        content: section.content,
-                        instantShow: true
-                    });
-                } else if (section.type === 'list_item') {
-                    // 數字列表項逐字打字
-                    this.addTextTokens(section.content);
-                } else if (section.type === 'paragraph') {
-                    // 普通段落逐字打字
-                    this.addTextTokens(section.content);
-                } else if (section.type === 'html') {
-                    // HTML 標籤整體處理
-                    this.tokens.push({
-                        type: 'html',
-                        content: section.content,
-                        instantShow: true
-                    });
-                }
-            });
-        }
-
-        splitIntoSections(text) {
-            const sections = [];
-            
-            // 關鍵修正：先用正則表達式分割出參考區塊
-            const referencePattern = /(\n\n💡 你可能想了解[\s\S]*)/;
-            const parts = text.split(referencePattern);
-            
-            for (let i = 0; i < parts.length; i++) {
-                const part = parts[i]; // 關鍵修正：移除 .trim()
-                if (!part) continue;
-                
-                if (part.includes('💡 你可能想了解')) {
-                    // 參考區塊整體處理
-                    sections.push({
-                        type: 'reference_block',
-                        content: part
-                    });
-                } else {
-                    // 普通內容按原邏輯處理
-                    const lines = part.split('\n');
-                    let currentSection = '';
-                    let currentType = 'paragraph';
-                    
-                    for (let j = 0; j < lines.length; j++) {
-                        const line = lines[j].trim();
-                        
-                        // 檢測數字列表項
-                        if (/^\d+\.\s*/.test(line)) {
-                            if (currentSection.trim()) {
-                                sections.push({ type: currentType, content: currentSection.trim() });
-                            }
-                            
-                            let listContent = line;
-                            if (j + 1 < lines.length) {
-                                const nextLine = lines[j + 1].trim();
-                                if (nextLine.startsWith('：') || nextLine.startsWith(':')) {
-                                    listContent += ' ' + nextLine;
-                                    j++;
-                                }
-                            }
-                            
-                            sections.push({ type: 'list_item', content: listContent });
-                            currentSection = '';
-                            currentType = 'paragraph';
-                            continue;
-                        }
-
-                        // 檢測 HTML 標籤
-                        if (line.includes('<') && line.includes('>')) {
-                            if (currentSection.trim()) {
-                                sections.push({ type: currentType, content: currentSection.trim() });
-                                currentSection = '';
-                            }
-                            sections.push({ type: 'html', content: line });
-                            continue;
-                        }
-
-                        // 累積段落內容
-                        if (line) {
-                            currentSection = currentSection ? currentSection + '\n' + line : line;
-                        } else if (currentSection) {
-                            sections.push({ type: currentType, content: currentSection.trim() });
-                            currentSection = '';
-                        }
-                    }
-
-                    if (currentSection.trim()) {
-                        sections.push({ type: currentType, content: currentSection.trim() });
-                    }
-                }
-            }
-
-            return sections;
-        }
-
-        // 修復後的 addTextTokens 方法 - 支援行內 HTML 標籤
-        addTextTokens(text) {
-            if (!text) return;
-            
-            const lines = text.split('\n');
-            
-            lines.forEach((line, lineIndex) => {
-                if (line) {
-                    // 檢查是否是"你可能想了解"標題行
-                    if (line.includes('💡 你可能想了解')) {
-                        // 標題行直接添加為一個整體
-                        this.tokens.push({
-                            type: 'text',
-                            content: line,
-                            instantShow: false,
-                            pauseAfter: 200
-                        });
-                    } else {
-                        // 新增：解析行內 HTML 標籤
-                        this.parseLineWithHtmlTags(line);
-                    }
-                }
-                
-                // 添加換行符（除了最後一行）
-                if (lineIndex < lines.length - 1) {
-                    this.tokens.push({
-                        type: 'linebreak',
-                        content: '<br>',
-                        instantShow: true,
-                        pauseAfter: TYPING_CONFIG.pauseAtLineBreak
-                    });
-                }
-            });
-        }
-        
-        // 新增：解析含有 HTML 標籤的行
-        parseLineWithHtmlTags(line) {
-            // 定義要處理的 HTML 標籤
-            const htmlTagPattern = /(<\/?(strong|b|em|i|u)>)/gi;
-            
-            let lastIndex = 0;
-            let match;
-            
-            // 重設正則表達式的 lastIndex
-            htmlTagPattern.lastIndex = 0;
-            
-            // 使用正則表達式找到所有 HTML 標籤
-            while ((match = htmlTagPattern.exec(line)) !== null) {
-                // 添加標籤前的文字（逐字打字）
-                const textBefore = line.substring(lastIndex, match.index);
-                if (textBefore) {
-                    this.addTextCharByChar(textBefore);
-                }
-                
-                // 添加 HTML 標籤（瞬間顯示）
-                this.tokens.push({
-                    type: 'html',
-                    content: match[1],
-                    instantShow: true,
-                    pauseAfter: 0
-                });
-                
-                lastIndex = match.index + match[1].length;
-            }
-            
-            // 添加最後剩餘的文字（逐字打字）
-            const remainingText = line.substring(lastIndex);
-            if (remainingText) {
-                this.addTextCharByChar(remainingText);
-            }
-        }
-        
-        // 新增：逐字添加文字的輔助方法
-        addTextCharByChar(text) {
-            for (let i = 0; i < text.length; i++) {
-                const char = text[i];
-                const isPunctuation = /[。！？，、：；「」『』（）]/.test(char);
-                
-                this.tokens.push({
-                    type: 'text',
-                    content: char,
-                    instantShow: false,
-                    pauseAfter: isPunctuation ? TYPING_CONFIG.pauseAtPunctuation : 0
-                });
-            }
-        }
-
-        getTokens() {
-            return this.tokens;
-        }
-    }
-
-    // 智能打字效果渲染器
-    class TypingRenderer {
-        constructor(element, tokens, onComplete) {
+    // 📝 新方案：簡化的文本渲染器 - 完全信任後端格式化
+    class SimpleTextRenderer {
+        constructor(element, htmlContent, onComplete) {
             this.element = element;
-            this.tokens = tokens;
+            this.htmlContent = htmlContent; // 直接接收HTML，不做任何修改
             this.onComplete = onComplete;
+            this.tokens = [];
             this.currentIndex = 0;
             this.timeoutId = null;
             this.isRunning = false;
+            this.speed = 30; // 打字速度
+        }
+
+        // 解析HTML為打字tokens
+        parseHtml() {
+            this.tokens = [];
+            
+            // 檢查是否包含參考鏈接區塊
+            const referencePattern = /(\n\n💡 .*[\s\S]*)/;
+            const hasReferences = referencePattern.test(this.htmlContent);
+            
+            if (hasReferences) {
+                // 分離主要內容和參考區塊
+                const parts = this.htmlContent.split(referencePattern);
+                
+                // 主要內容逐字打字
+                if (parts[0]) {
+                    this.parseContentForTyping(parts[0]);
+                }
+                
+                // 參考區塊整體顯示
+                if (parts[1]) {
+                    this.tokens.push({
+                        type: 'html_block',
+                        content: parts[1],
+                        instantShow: true
+                    });
+                }
+            } else {
+                // 沒有參考區塊，全部逐字打字
+                this.parseContentForTyping(this.htmlContent);
+            }
+        }
+
+        parseContentForTyping(content) {
+            // 直接按段落分解，保持HTML結構
+            const processedContent = this.preprocessForTyping(content);
+            
+            // 簡化邏輯：按HTML標籤和文本分離
+            const htmlTagRegex = /<[^>]+>/g;
+            let lastIndex = 0;
+            let match;
+            
+            while ((match = htmlTagRegex.exec(processedContent)) !== null) {
+                // 添加標籤前的文本
+                const textBefore = processedContent.substring(lastIndex, match.index);
+                if (textBefore) {
+                    this.addTextTokens(textBefore);
+                }
+                
+                // 添加HTML標籤（立即顯示）
+                this.tokens.push({
+                    type: 'html',
+                    content: match[0],
+                    instantShow: true
+                });
+                
+                lastIndex = match.index + match[0].length;
+            }
+            
+            // 添加最後剩餘的文本
+            const remainingText = processedContent.substring(lastIndex);
+            if (remainingText) {
+                this.addTextTokens(remainingText);
+            }
+        }
+
+        preprocessForTyping(content) {
+            // 🔥 核心改變：只做最基本的HTML轉換，不修改任何換行
+            let processed = content;
+            
+            // 處理 markdown 鏈接
+            processed = processed.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, 
+                '<a href="$2" target="_blank" rel="noopener noreferrer" class="source-link">$1</a>');
+            
+            // 處理粗體
+            processed = processed.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+            
+            // 轉換換行為HTML - 保持原有格式
+            processed = processed.replace(/\n/g, '<br>');
+            
+            return processed;
+        }
+
+        addTextTokens(text) {
+            if (!text) return;
+            
+            // 逐字符添加
+            for (let i = 0; i < text.length; i++) {
+                const char = text[i];
+                if (char.trim()) { // 跳過純空白字符的打字效果
+                    const isPunctuation = /[。！？，、：；「」『』（）]/.test(char);
+                    this.tokens.push({
+                        type: 'text',
+                        content: char,
+                        instantShow: false,
+                        pauseAfter: isPunctuation ? 100 : 0
+                    });
+                } else {
+                    // 空白字符立即顯示
+                    this.tokens.push({
+                        type: 'text',
+                        content: char,
+                        instantShow: true
+                    });
+                }
+            }
         }
 
         start() {
@@ -325,20 +171,7 @@ document.addEventListener('DOMContentLoaded', () => {
             this.element.classList.remove('thinking');
             this.element.innerHTML = '';
             
-            // 添加打字遊標
-            if (TYPING_CONFIG.enableCursor) {
-                this.cursor = document.createElement('span');
-                this.cursor.className = 'typing-cursor';
-                this.cursor.textContent = '|';
-                this.cursor.style.cssText = `
-                    animation: blink 1s infinite;
-                    color: #007bff;
-                    font-weight: bold;
-                `;
-                this.element.appendChild(this.cursor);
-                this.addCursorAnimation();
-            }
-            
+            this.parseHtml();
             this.typeNextToken();
         }
 
@@ -351,36 +184,23 @@ document.addEventListener('DOMContentLoaded', () => {
             const token = this.tokens[this.currentIndex];
             this.currentIndex++;
 
-            // 移除遊標
-            if (this.cursor && this.cursor.parentNode) {
-                this.cursor.remove();
-            }
-
-            // 添加內容
-            if (token.type === 'html' || token.type === 'linebreak') {
-                // HTML 標籤和換行符一次性添加   
+            if (token.type === 'html' || token.type === 'html_block') {
+                // HTML 內容直接插入
                 this.element.insertAdjacentHTML('beforeend', token.content);
                 
-                // 如果是連結，立即綁定事件
+                // 綁定鏈接事件
                 if (token.content.includes('class="source-link"')) {
                     this.bindLinkEvents();
                 }
             } else {
-                // 普通文字逐字添加   
+                // 文字內容
                 const textNode = document.createTextNode(token.content);
                 this.element.appendChild(textNode);
             }
 
-            // 重新添加遊標
-            if (TYPING_CONFIG.enableCursor && this.currentIndex < this.tokens.length) {
-                this.element.appendChild(this.cursor);
-            }
-
-            // 滾動到底部
             scrollToBottom();
 
-            // 設定下一個字符的延遲
-            const delay = token.instantShow ? 0 : TYPING_CONFIG.speed;
+            const delay = token.instantShow ? 0 : this.speed;
             const pauseAfter = token.pauseAfter || 0;
             
             this.timeoutId = setTimeout(() => {
@@ -389,14 +209,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         bindLinkEvents() {
-            // 為新添加的連結綁定事件
             const newLinks = this.element.querySelectorAll('.source-link:not([data-bound])');
             newLinks.forEach((link) => {
                 link.setAttribute('data-bound', 'true');
                 
                 link.addEventListener('click', () => {
-                    console.log('使用者點擊了參考連結:', link.href);
-                    console.log('連結標題:', link.textContent);
+                    console.log('用戶點擊了參考鏈接:', link.href);
                     
                     try {
                         fetch('/api/link_click', {
@@ -414,7 +232,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 });
                 
-                // 添加懸停效果
                 link.addEventListener('mouseenter', () => {
                     link.style.transform = 'translateY(-1px)';
                 });
@@ -429,20 +246,12 @@ document.addEventListener('DOMContentLoaded', () => {
             this.isRunning = false;
             isTyping = false;
             
-            // 移除遊標
-            if (this.cursor && this.cursor.parentNode) {
-                this.cursor.remove();
-            }
-            
-            // 確保所有連結都有事件綁定
             this.bindLinkEvents();
             
-            // 確保"你可能想了解"區塊有正確的樣式
-            if (this.element.innerHTML.includes('💡 你可能想了解')) {
+            if (this.element.innerHTML.includes('💡 您可能想了解')) {
                 this.element.classList.add('has-references');
             }
             
-            // 執行完成回調
             if (this.onComplete) {
                 this.onComplete();
             }
@@ -455,49 +264,26 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             this.isRunning = false;
             isTyping = false;
-            
-            if (this.cursor && this.cursor.parentNode) {
-                this.cursor.remove();
-            }
-        }
-
-        addCursorAnimation() {
-            // 動態添加遊標動畫 CSS
-            if (!document.getElementById('typing-cursor-style')) {
-                const style = document.createElement('style');
-                style.id = 'typing-cursor-style';
-                style.textContent = `
-                    @keyframes blink {
-                        0%, 50% { opacity: 1; }
-                        51%, 100% { opacity: 0; }
-                    }
-                `;
-                document.head.appendChild(style);
-            }
         }
     }
 
     // 主要函數
     const handleSendMessage = async () => {
-        console.log("正在執行「對話歷史紀錄」版本 v2 的 chat.js"); // 新增測試日誌
+        console.log("執行簡化版 chat.js - 信任後端格式化");
         const message = chatInput.value.trim();
         if (!message || isLoading || isTyping) return;
 
-        // 步驟 1: 將用戶訊息添加到歷史紀錄
+        // 添加到對話歷史
         conversationHistory.push({ role: 'user', content: message });
 
-        // Add user message to UI
         addMessage(message, 'user');
         chatInput.value = '';
         updateUIState();
 
-        // Show thinking indicator
         const botMessageElement = addMessage('', 'bot', { isThinking: true });
         setLoading(true);
 
         try {
-            // 步驟 2: 發送包含歷史紀錄的請求
-            // 我們只發送最近10則訊息以避免請求過大
             const historyToSend = conversationHistory.slice(-10);
 
             const response = await fetch('api/chat', {
@@ -505,8 +291,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
                     message, 
-                    history: historyToSend, // 發送歷史
-                    session_id: sessionId 
+                    history: historyToSend,
+                    session_id: sessionId,
+                    format_for_frontend: true // 🔥 新增：告訴後端要預格式化
                 })
             });
 
@@ -517,97 +304,50 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const data = await response.json();
 
-            // 步驟 3: 將機器人回應添加到歷史紀錄
             conversationHistory.push({ role: 'assistant', content: data.response });
-
-            // 步驟 4: 管理歷史紀錄長度，避免無限增長
-            if (conversationHistory.length > 20) { // 保留最近的20則訊息
+            
+            if (conversationHistory.length > 20) {
                 conversationHistory = conversationHistory.slice(-20);
             }
             
-            // 使用智能打字效果渲染回應
+            // 🔥 關鍵：直接使用後端返回的內容，不做任何修改
             renderBotMessageWithTyping(botMessageElement, data.response, () => {
                 displayRecommendedQuestions(data.recommended_questions || []);
             });
 
         } catch (error) {
-            // 錯誤訊息不使用打字效果
             renderBotMessage(botMessageElement, `🚫 錯誤: ${error.message}`);
         } finally {
             setLoading(false);
         }
     };
 
-    // 帶打字效果的機器人回應渲染
-    const renderBotMessageWithTyping = (element, text, onComplete) => {
-    // 強制修復：無條件執行數字列表修復
-    console.log('🎭 原始文本:', text.substring(0, 300));
-    
-    // 方法1：修復句號後緊跟數字的情況
-    text = text.replace(/([。！？])(\d+\.)/g, '$1\n\n$2 ');
-    
-    // 方法2：修復任何非換行字符後緊跟數字的情況（更強力）
-    text = text.replace(/([^\n])(\d+\.\s)/g, (match, char, number) => {
-        // 如果前面的字符是句號、感嘆號或問號，插入雙換行
-        if (/[。！？]/.test(char)) {
-            return char + '\n\n' + number;
+    // 🔥 簡化的渲染函數 - 完全信任後端
+    const renderBotMessageWithTyping = (element, htmlContent, onComplete) => {
+        console.log('🎭 接收後端格式化內容，直接渲染:', htmlContent.substring(0, 200));
+        
+        // 停止任何正在進行的打字效果
+        if (currentTypingTimeout) {
+            currentTypingTimeout.stop();
         }
-        // 否則保持原樣
-        return match;
-    });
-    
-    console.log('🔧 修復後文本:', text.substring(0, 300));
-    
-    // 解析文本
-    const parser = new SmartTextParser(text);
-    const tokens = parser.getTokens();
-    
-    // 停止任何正在進行的打字效果
-    if (currentTypingTimeout) {
-        currentTypingTimeout.stop();
-    }
-    
-    // 開始新的打字效果
-    currentTypingTimeout = new TypingRenderer(element, tokens, onComplete);
-    currentTypingTimeout.start();
-};
+        
+        // 使用簡化渲染器
+        currentTypingTimeout = new SimpleTextRenderer(element, htmlContent, onComplete);
+        currentTypingTimeout.start();
+    };
 
     // 即時渲染函數（用於錯誤訊息等）
-    const renderBotMessage = (element, text) => {
+    const renderBotMessage = (element, htmlContent) => {
         element.classList.remove('thinking');
         
-        // 修正的數字列表修復：不要求數字後面必須有空格
-        if (/[。！？]\d+\./.test(text)) {
-            console.log('🔧 renderBotMessage 檢測到數字列表問題，執行修復');
-            console.log('修復前:', text.substring(0, 200));
-            text = text.replace(/([。！？])(\d+\.)/g, '$1\n\n$2 ');
-            console.log('修復後:', text.substring(0, 200));
-        }
+        // 🔥 完全信任內容，不做任何修改
+        element.innerHTML = htmlContent;
         
-        // 改進的連結渲染邏輯
-        let processedText = text;
-        
-        // 處理markdown格式的連結: [文本](URL)
-        const linkRegex = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g;
-        processedText = processedText.replace(linkRegex, (match, linkText, url) => {
-            return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="source-link">${linkText}</a>`;
-        });
-        
-        // 處理**加粗**文本
-        processedText = processedText.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-        
-        // 處理換行
-        processedText = processedText.replace(/\n/g, '<br>');
-        
-        // 安全地設置HTML內容
-        element.innerHTML = processedText;
-        
-        // 為連結添加點擊事件和統計
+        // 綁定鏈接事件
         const links = element.querySelectorAll('.source-link');
         links.forEach((link, index) => {
             link.addEventListener('click', (e) => {
-                console.log(`使用者點擊了參考連結 ${index + 1}:`, link.href);
-                console.log('連結標題:', link.textContent);
+                console.log(`用戶點擊了參考鏈接 ${index + 1}:`, link.href);
                 
                 try {
                     fetch('/api/link_click', {
@@ -625,7 +365,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
             
-            // 添加懸停效果
             link.addEventListener('mouseenter', () => {
                 link.style.transform = 'translateY(-1px)';
             });
@@ -635,8 +374,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
         
-        // 檢查是否包含參考區塊並添加相應樣式
-        if (processedText.includes('💡 你可能想了解')) {
+        if (htmlContent.includes('💡 您可能想了解')) {
             element.classList.add('has-references');
         }
     };
@@ -656,20 +394,16 @@ document.addEventListener('DOMContentLoaded', () => {
         return messageElement;
     };
 
-    // 完全替換為這個修正版本：
     const displayRecommendedQuestions = (questions) => {
         console.log('📄 處理推薦問題，數量:', questions ? questions.length : 0);
         
         const container = document.getElementById('recommended-questions-container');
         container.innerHTML = '';
         
-        // 修正：只處理推薦問題，完全不檢測參考連結
         if (questions && questions.length > 0) {
             console.log('✅ 顯示推薦問題');
             
             let content = '<br>';
-            
-            // 只顯示推薦問題按鈕，不添加任何標題
             content += '<div>';
             questions.forEach(q => {
                 content += `<button onclick="document.getElementById('chat-input').value='${q.replace(/'/g, "\\'")}'; document.querySelector('#send-button').click();" style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 20px; padding: 8px 16px; margin: 4px; cursor: pointer; font-size: 14px;">${q}</button>`;
@@ -678,9 +412,6 @@ document.addEventListener('DOMContentLoaded', () => {
             
             container.innerHTML = content;
             console.log('✅ 推薦問題已顯示');
-        } else {
-            console.log('❌ 沒有推薦問題，不顯示任何內容');
-            // 重要：什麼都不顯示
         }
     };
 
@@ -695,17 +426,14 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const updateUIState = () => {
-        // Char counter
         const len = chatInput.value.length;
         charCounter.textContent = `${len}/2000`;
         charCounter.className = 'char-counter';
         if (len > 2000) charCounter.classList.add('danger');
         else if (len > 1800) charCounter.classList.add('warning');
 
-        // Send button
         sendButton.disabled = len === 0 || len > 2000 || isLoading || isTyping;
 
-        // Textarea height
         chatInput.style.height = 'auto';
         chatInput.style.height = `${Math.min(chatInput.scrollHeight, 100)}px`;
     };
@@ -726,12 +454,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const scrollToBottom = () => {
         chatMessages.scrollTop = chatMessages.scrollHeight;
-    };
-    
-    const escapeHtml = (text) => {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
     };
 
     // 事件監聽器
@@ -759,7 +481,6 @@ document.addEventListener('DOMContentLoaded', () => {
         applyFontSize(sizeMap[e.target.value]);
     });
 
-    // 錯誤提示關閉按鈕
     const errorClose = document.getElementById('error-close');
     if (errorClose) {
         errorClose.addEventListener('click', () => {
@@ -767,7 +488,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 阻止在打字期間的意外操作
     document.addEventListener('keydown', (e) => {
         if (isTyping && (e.key === 'Enter' || e.key === 'Escape')) {
             e.preventDefault();
@@ -788,9 +508,7 @@ document.addEventListener('DOMContentLoaded', () => {
     updateUIState();
     chatInput.focus();
 
-    // 初始化完成日誌
-    console.log('聊天機器人界面初始化完成');
+    console.log('✨ 聊天機器人界面初始化完成 - 簡化版');
     console.log('會話ID:', sessionId);
-    console.log('智能打字效果已啟用');
-    console.log('🔧 數字列表修復功能已啟用 - 會在控制台顯示調試信息');
+    console.log('🔥 完全信任後端格式化 - 不做任何文本修改');
 });
