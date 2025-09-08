@@ -44,8 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('chat_session_id', sessionId);
     }
 
-    // 📝 新方案：簡化的文本渲染器 - 完全信任後端格式化
-    // 📝 新方案：簡化的文本渲染器 - 完全信任後端格式化
+    // 修復版文本渲染器 - 解決格式混合問題
     class SimpleTextRenderer {
         constructor(element, htmlContent, onComplete) {
             this.element = element;
@@ -111,47 +110,46 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
+        // 修復版預處理：安全處理各種輸入格式
         preprocessForTyping(content) {
-        console.log("🔍 原始內容:", content);
-        
-        let processed = content;
-        
-        // 🔥 關鍵判斷：如果內容已經包含HTML標籤，就不要過度處理
-        const hasHtmlTags = /<[^>]+>/g.test(content);
-        
-        if (hasHtmlTags) {
-            console.log("✅ 檢測到HTML標籤，使用保護模式");
+            console.log("內容處理:", content.substring(0, 100));
             
-            // 只做最基本的換行處理：將 \n 轉為 <br>
-            processed = processed.replace(/\n/g, '<br>');
+            let processed = content;
             
-            // 清理多餘的連續 <br>
-            processed = processed.replace(/(<br>\s*){3,}/gi, '<br><br>');
+            // 檢查是否包含HTML標籤
+            const hasHtmlTags = /<[^>]+>/g.test(content);
             
-            console.log("🔄 保護模式處理後:", processed);
+            if (hasHtmlTags) {
+                console.log("檢測到HTML標籤，基本清理模式");
+                // 如果已有HTML，只做基本的換行處理
+                processed = processed.replace(/\n/g, '<br>');
+                processed = processed.replace(/(<br>\s*){3,}/gi, '<br><br>');
+            } else {
+                console.log("純文本模式，進行格式轉換");
+                // 純文本模式：處理必要的markdown（主要是鏈接）
+                
+                // 1. 處理鏈接（為了向後相容）
+                processed = processed.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, 
+                    '<a href="$2" target="_blank" rel="noopener noreferrer" class="source-link">$1</a>');
+                
+                // 2. 移除粗體markdown（因為不要strong效果）
+                processed = processed.replace(/\*\*([^*]+)\*\*/g, '$1');
+                
+                // 3. 標準化換行
+                processed = processed.replace(/\r\n/g, '\n');
+                processed = processed.replace(/\r/g, '\n');
+                
+                // 4. 處理段落分隔
+                processed = processed.replace(/\n\n/g, '<br><br>');
+                processed = processed.replace(/\n/g, '<br>');
+                
+                // 5. 清理多餘的連續<br>
+                processed = processed.replace(/(<br>\s*){3,}/gi, '<br><br>');
+            }
+            
+            console.log("處理完成:", processed.substring(0, 100));
             return processed.trim();
         }
-        
-        // 如果沒有HTML標籤，才進行完整處理
-        console.log("📝 沒有HTML標籤，進行Markdown轉換");
-        
-        // 標準化換行
-        processed = processed.replace(/\r\n/g, '\n');
-        processed = processed.replace(/\r/g, '\n');
-        processed = processed.replace(/\n{3,}/g, '\n\n');
-        
-        // Markdown轉換
-        processed = processed.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, 
-            '<a href="$2" target="_blank" rel="noopener noreferrer" class="source-link">$1</a>');
-        processed = processed.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-        
-        // 換行轉換
-        processed = processed.replace(/\n\n/g, '<br><br>');
-        processed = processed.replace(/\n/g, '<br>');
-        
-        console.log("📝 Markdown模式處理後:", processed);
-        return processed.trim();
-    }
 
         addTextTokens(text) {
             if (!text) return;
@@ -279,7 +277,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 主要函數
     const handleSendMessage = async () => {
-        console.log("執行簡化版 chat.js - 信任後端格式化");
+        console.log("執行修復版 chat.js - 純文本後端輸入");
         const message = chatInput.value.trim();
         if (!message || isLoading || isTyping) return;
 
@@ -303,7 +301,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     message, 
                     history: historyToSend,
                     session_id: sessionId,
-                    format_for_frontend: true // 🔥 新增：告訴後端要預格式化
+                    format_for_frontend: true // 後端輸出純文本
                 })
             });
 
@@ -320,37 +318,35 @@ document.addEventListener('DOMContentLoaded', () => {
                 conversationHistory = conversationHistory.slice(-20);
             }
             
-            // 🔥 關鍵：直接使用後端返回的內容，不做任何修改
+            // 使用修復版渲染器
             renderBotMessageWithTyping(botMessageElement, data.response, () => {
                 displayRecommendedQuestions(data.recommended_questions || []);
             });
 
         } catch (error) {
-            renderBotMessage(botMessageElement, `🚫 錯誤: ${error.message}`);
+            renderBotMessage(botMessageElement, `錯誤: ${error.message}`);
         } finally {
             setLoading(false);
         }
     };
 
-    // 🔥 簡化的渲染函數 - 完全信任後端
+    // 修復版渲染函數
     const renderBotMessageWithTyping = (element, htmlContent, onComplete) => {
-        console.log('🎭 接收後端格式化內容，直接渲染:', htmlContent.substring(0, 200));
+        console.log('接收純文本內容，進行統一格式化:', htmlContent.substring(0, 200));
         
         // 停止任何正在進行的打字效果
         if (currentTypingTimeout) {
             currentTypingTimeout.stop();
         }
         
-        // 使用簡化渲染器
+        // 使用修復版渲染器
         currentTypingTimeout = new SimpleTextRenderer(element, htmlContent, onComplete);
         currentTypingTimeout.start();
     };
 
-    // 即時渲染函數（用於錯誤訊息等）
+    // 即時渲染函數（用於錯誤消息等）
     const renderBotMessage = (element, htmlContent) => {
         element.classList.remove('thinking');
-        
-        // 🔥 完全信任內容，不做任何修改
         element.innerHTML = htmlContent;
         
         // 綁定鏈接事件
@@ -358,21 +354,6 @@ document.addEventListener('DOMContentLoaded', () => {
         links.forEach((link, index) => {
             link.addEventListener('click', (e) => {
                 console.log(`用戶點擊了參考鏈接 ${index + 1}:`, link.href);
-                
-                try {
-                    fetch('/api/link_click', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            url: link.href,
-                            title: link.textContent,
-                            timestamp: new Date().toISOString(),
-                            session_id: sessionId
-                        })
-                    }).catch(err => console.log('統計記錄失敗:', err));
-                } catch (err) {
-                    console.log('統計記錄異常:', err);
-                }
             });
             
             link.addEventListener('mouseenter', () => {
@@ -405,13 +386,13 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const displayRecommendedQuestions = (questions) => {
-        console.log('📄 處理推薦問題，數量:', questions ? questions.length : 0);
+        console.log('處理推薦問題，數量:', questions ? questions.length : 0);
         
         const container = document.getElementById('recommended-questions-container');
         container.innerHTML = '';
         
         if (questions && questions.length > 0) {
-            console.log('✅ 顯示推薦問題');
+            console.log('顯示推薦問題');
             
             let content = '<br>';
             content += '<div>';
@@ -421,7 +402,7 @@ document.addEventListener('DOMContentLoaded', () => {
             content += '</div>';
             
             container.innerHTML = content;
-            console.log('✅ 推薦問題已顯示');
+            console.log('推薦問題已顯示');
         }
     };
 
@@ -518,7 +499,7 @@ document.addEventListener('DOMContentLoaded', () => {
     updateUIState();
     chatInput.focus();
 
-    console.log('✨ 聊天機器人界面初始化完成 - 簡化版');
+    console.log('聊天機器人界面初始化完成 - 修復版');
     console.log('會話ID:', sessionId);
-    console.log('🔥 完全信任後端格式化 - 不做任何文本修改');
+    console.log('純文本輸入 + 前端統一格式化模式');
 });
