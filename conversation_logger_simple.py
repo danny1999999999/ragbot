@@ -398,6 +398,120 @@ class PostgreSQLConversationLogger:
         except Exception as e:
             logger.error(f"❌ 獲取對話記錄失敗: {e}")
             return [], 0
+
+
+
+    def get_conversations_by_bot(self, bot_name: str, limit: int = 50, offset: int = 0, search: str = None) -> Tuple[List[Dict], int]:
+        """獲取特定機器人的所有對話記錄（包括使用和未使用知識庫的）"""
+        try:
+            where_conditions = []
+            params = []
+            
+            # 查詢條件：collection_used 匹配 OR user_id 包含機器人名稱
+            collection_name = f"collection_{bot_name}"
+            bot_pattern = f"%{bot_name}%"
+            
+            # 修正：使用正確的佔位符處理
+            if self.db_type == "sqlite":
+                where_conditions.append("(collection_used = ? OR user_id LIKE ?)")
+            else:  # postgresql
+                where_conditions.append("(collection_used = %s OR user_id LIKE %s)")
+            params.extend([collection_name, bot_pattern])
+            
+            # 搜尋條件修正
+            if search:
+                search_param = f"%{search}%"
+                if self.db_type == "sqlite":
+                    where_conditions.append("(user_query LIKE ? OR ai_response LIKE ?)")
+                else:  # postgresql
+                    where_conditions.append("(user_query LIKE %s OR ai_response LIKE %s)")
+                params.extend([search_param, search_param])
+            
+            where_clause = " AND ".join(where_conditions) if where_conditions else "1=1"
+            
+            # 獲取總數
+            count_query = f"SELECT COUNT(*) as count FROM conversations WHERE {where_clause}"
+            count_result = self.db_adapter.execute_query(count_query, params)
+            total = count_result[0]['count'] if count_result else 0
+            
+            # 獲取記錄 - 修正LIMIT/OFFSET處理
+            if self.db_type == "sqlite":
+                query = f"""
+                    SELECT * FROM conversations 
+                    WHERE {where_clause}
+                    ORDER BY timestamp DESC 
+                    LIMIT ? OFFSET ?
+                """
+            else:  # postgresql
+                query = f"""
+                    SELECT * FROM conversations 
+                    WHERE {where_clause}
+                    ORDER BY timestamp DESC 
+                    LIMIT %s OFFSET %s
+                """
+            
+            # 重新準備參數（因為上面的查詢已經消耗了params）
+            query_params = []
+            query_params.extend([collection_name, bot_pattern])
+            if search:
+                search_param = f"%{search}%"
+                query_params.extend([search_param, search_param])
+            query_params.extend([limit, offset])
+            
+            rows = self.db_adapter.execute_query(query, query_params)
+            
+            # 處理結果（與原方法相同）
+            conversations = []
+            try:
+                taipei_tz = pytz.timezone('Asia/Taipei')
+            except pytz.UnknownTimeZoneError:
+                taipei_tz = None
+
+            for row in rows:
+                conv = dict(row)
+                
+                # 處理 datetime 對象
+                for key, value in conv.items():
+                    if isinstance(value, datetime):
+                        if taipei_tz:
+                            value = value.replace(tzinfo=pytz.utc).astimezone(taipei_tz)
+                        conv[key] = value.isoformat()
+
+                # 解析 JSON 字段
+                try:
+                    conv['retrieved_docs'] = json.loads(conv.get('retrieved_docs') or '[]')
+                    conv['doc_similarities'] = json.loads(conv.get('doc_similarities') or '[]')
+                    chunk_refs = json.loads(conv.get('chunk_references') or '[]')
+                    conv['chunk_references'] = chunk_refs
+                    
+                    # 提取有效的 chunk 索引
+                    chunk_ids = []
+                    if isinstance(chunk_refs, list):
+                        for ref in chunk_refs:
+                            if isinstance(ref, dict) and 'index' in ref:
+                                index_val = ref['index']
+                                if isinstance(index_val, (int, float)) and index_val >= 0:
+                                    chunk_ids.append(int(index_val))
+                            elif isinstance(ref, (int, float)) and ref >= 0:
+                                chunk_ids.append(int(ref))
+                    
+                    conv['chunk_ids'] = chunk_ids
+                    
+                except json.JSONDecodeError as e:
+                    logger.warning(f"解析 JSON 字段失敗 (ID: {conv['id']}): {e}")
+                    conv['retrieved_docs'] = []
+                    conv['doc_similarities'] = []
+                    conv['chunk_references'] = []
+                    conv['chunk_ids'] = []
+                
+                conversations.append(conv)
+            
+            logger.info(f"獲取機器人 '{bot_name}' 對話記錄: {len(conversations)}/{total}")
+            return conversations, total
+            
+        except Exception as e:
+            logger.error(f"獲取機器人對話記錄失敗: {e}")
+            return [], 0
     
     def delete_conversation(self, conversation_id: int) -> bool:
         """刪除單筆對話"""
