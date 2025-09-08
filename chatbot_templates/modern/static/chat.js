@@ -112,24 +112,111 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         preprocessForTyping(content) {
-            let processed = content;
+        let processed = content;
+        
+        // Step 1: 保護已存在的HTML標籤，避免被重複處理
+        const htmlPlaceholders = {};
+        let placeholderCounter = 0;
+        
+        // 保護已存在的 <br> 標籤
+        processed = processed.replace(/<br\s*\/?>/gi, () => {
+            const placeholder = `__HTML_BR_${placeholderCounter++}__`;
+            htmlPlaceholders[placeholder] = '<br>';
+            return placeholder;
+        });
+        
+        // 保護已存在的 <a> 標籤
+        processed = processed.replace(/<a[^>]*>.*?<\/a>/gi, (match) => {
+            const placeholder = `__HTML_LINK_${placeholderCounter++}__`;
+            htmlPlaceholders[placeholder] = match;
+            return placeholder;
+        });
+        
+        // 保護已存在的 <strong> 標籤
+        processed = processed.replace(/<strong[^>]*>.*?<\/strong>/gi, (match) => {
+            const placeholder = `__HTML_STRONG_${placeholderCounter++}__`;
+            htmlPlaceholders[placeholder] = match;
+            return placeholder;
+        });
+        
+        // Step 2: 標準化換行符處理
+        // 將所有類型的換行符統一為 \n
+        processed = processed.replace(/\r\n/g, '\n');
+        processed = processed.replace(/\r/g, '\n');
+        
+        // 清理多餘的空白字符
+        processed = processed.replace(/[ \t]+\n/g, '\n'); // 移除行尾空白
+        processed = processed.replace(/\n[ \t]+/g, '\n'); // 移除行首空白
+        
+        // Step 3: 處理連續換行符
+        // 將3個或以上的連續換行縮減為最多2個
+        processed = processed.replace(/\n{3,}/g, '\n\n');
+        
+        // Step 4: 處理數字列表的特殊格式
+        // 確保數字列表前有適當的間距
+        processed = processed.replace(/([^\n])\n(\d+\.)/g, '$1\n\n$2');
+        
+        // Step 5: 處理 Markdown 語法轉換
+        // 處理鏈接格式 [文字](URL)
+        processed = processed.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, 
+            '<a href="$2" target="_blank" rel="noopener noreferrer" class="source-link">$1</a>');
+        
+        // 處理粗體格式 **文字**
+        processed = processed.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+        
+        // Step 6: 智能換行轉換
+        // 將雙換行符轉換為段落分隔，單換行符轉換為行內分隔
+        
+        // 先保護特殊的雙換行位置
+        const doubleBreakPlaceholder = '__DOUBLE_BREAK_PLACEHOLDER__';
+        processed = processed.replace(/\n\n/g, doubleBreakPlaceholder);
+        
+        // 將剩餘的單換行符轉換為 <br>
+        processed = processed.replace(/\n/g, '<br>');
+        
+        // 將雙換行符轉換為適當的段落間距
+        processed = processed.replace(new RegExp(doubleBreakPlaceholder, 'g'), '<br><br>');
+        
+        // Step 7: 清理HTML標籤周圍的多餘間距
+        // 移除HTML標籤後的多餘空白和換行
+        processed = processed.replace(/(<\/[^>]+>)<br>/g, '$1 ');
+        processed = processed.replace(/(<[^>]+>)<br>/g, '$1');
+        
+        // Step 8: 恢復受保護的HTML標籤
+        Object.keys(htmlPlaceholders).forEach(placeholder => {
+            processed = processed.replace(new RegExp(placeholder, 'g'), htmlPlaceholders[placeholder]);
+        });
+        
+        // Step 9: 最終清理
+        // 移除多餘的連續 <br> 標籤（超過2個的情況）
+        processed = processed.replace(/(<br>\s*){3,}/gi, '<br><br>');
+        
+        // 清理開頭和結尾的多餘 <br> 標籤
+        processed = processed.replace(/^(<br>\s*)+/i, '');
+        processed = processed.replace(/(<br>\s*)+$/i, '');
+        
+        // 清理多餘的空白字符
+        processed = processed.trim();
+        
+        // Step 10: 驗證和調試日誌
+        if (window.console && window.console.debug) {
+            const originalBrCount = (content.match(/<br/gi) || []).length;
+            const processedBrCount = (processed.match(/<br/gi) || []).length;
+            const originalNewlineCount = (content.match(/\n/g) || []).length;
             
-            // 處理 markdown 鏈接
-            processed = processed.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, 
-                '<a href="$2" target="_blank" rel="noopener noreferrer" class="source-link">$1</a>');
-            
-            // 處理粗體
-            processed = processed.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-            
-            // 修正換行問題
-            processed = processed.replace(/(<\/[^>]+>)\s*\n\s*/g, '$1 ');
-            processed = processed.replace(/(\d+\.)\s*\n\s*/g, '$1 ');
-            
-            // 轉換換行為HTML
-            processed = processed.replace(/\n/g, '<br>');
-            
-            return processed;
+            console.debug('preprocessForTyping 處理統計:', {
+                原始內容長度: content.length,
+                處理後長度: processed.length,
+                原始換行符數量: originalNewlineCount,
+                原始br標籤數量: originalBrCount,
+                處理後br標籤數量: processedBrCount,
+                原始內容預覽: content.substring(0, 100),
+                處理後預覽: processed.substring(0, 100)
+            });
         }
+        
+        return processed;
+    }
 
         addTextTokens(text) {
             if (!text) return;
