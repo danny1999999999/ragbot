@@ -299,8 +299,10 @@ class PostgreSQLConversationLogger:
                 params.extend([search_param, search_param])
             
             if collection:
-                where_conditions.append(f"collection_used = {self._get_placeholder()}")
-                params.append(collection)
+                # 修改：查詢該機器人的所有對話記錄（包括未使用知識庫的）
+                placeholder = self._get_placeholder()
+                where_conditions.append(f"(collection_used = {placeholder} OR (collection_used IS NULL AND user_id LIKE {placeholder}))")
+                params.extend([collection, f"%{collection.replace('collection_', '')}%"])
             
             if user_id:
                 where_conditions.append(f"user_id = {self._get_placeholder()}")
