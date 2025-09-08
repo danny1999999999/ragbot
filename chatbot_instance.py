@@ -928,24 +928,26 @@ class ChatbotInstance:
     回應內容：
     {main_answer}
 
-    格式化要求：
-    1. 數字列表項目前必須有雙換行分隔，但數字和內容要在同一行：
-    - 錯誤：「文字。1.\\n內容」
-    - 正確：「文字。\\n\\n1. 內容」
+    **格式化規則**：
+    1. **完全移除所有 \\n 換行符** - 只使用HTML標籤
+    2. **段落分隔**：普通段落間用 <br> 分隔
+    3. **列表分隔**：數字列表項前用 <br><br> 分隔  
+    4. **HTML轉換**：
+    - **文字** → <strong>文字</strong>
+    - [文字](URL) → <a href="URL" target="_blank" rel="noopener noreferrer" class="source-link">文字</a>
 
-    2. 轉換 Markdown 語法：
-    - 鏈接：[文字](URL) → <a href="URL" target="_blank" rel="noopener noreferrer" class="source-link">文字</a>
-    - 粗體：**文字** → <strong>文字</strong>
+    **範例輸出格式**：
+    ```
+    我理解您的需求！<br><br>1. <strong>游泳</strong> 這是很好的運動<br><br>2. <strong>跑步</strong> 能增強體力
+    ```
 
-    3. 段落處理：
-    - 普通段落間用單換行分隔
-    - 數字列表前用雙換行分隔
-    - 「💡 您可能想了解」區塊前用雙換行分隔
+    **重要約束**：
+    - 絕對不要輸出任何 \\n 字符
+    - 絕對不要使用代碼塊標記
+    - 數字和標題必須在同一行：`1. <strong>標題</strong> 描述`
+    - 只返回純HTML內容
 
-    4. 重要：不要添加任何代碼塊標記（如 ```html 或 ```），直接返回格式化的內容
-    5. 不要添加解釋文字，只返回格式化後的內容本身
-
-    格式化內容："""
+    格式化後的HTML內容："""
 
             try:
                 format_messages = [HumanMessage(content=format_prompt)]
