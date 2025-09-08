@@ -121,7 +121,7 @@ class PostgreSQLConversationLogger:
             
             self.db_adapter.execute_update(create_table_sql)
 
-            # 2. 定義所有應有的欄位及其類型
+            # 2. 定義所有應有的欄位及其類型 - 包含 bot_name
             required_columns = {
                 "collection_used": "TEXT",
                 "retrieved_docs": "TEXT",
@@ -134,7 +134,8 @@ class PostgreSQLConversationLogger:
                 "error_message": "TEXT",
                 "authenticated_user_id": "INTEGER",
                 "user_role": "TEXT DEFAULT 'anonymous'",
-                "created_at": timestamp_col
+                "created_at": timestamp_col,
+                "bot_name": "TEXT"  # 新增 bot_name 字段
             }
 
             # 3. 獲取當前表格的所有欄位
@@ -180,7 +181,8 @@ class PostgreSQLConversationLogger:
                 "CREATE INDEX IF NOT EXISTS idx_timestamp ON conversations(timestamp)",
                 "CREATE INDEX IF NOT EXISTS idx_collection ON conversations(collection_used)",
                 "CREATE INDEX IF NOT EXISTS idx_error ON conversations(error_occurred)",
-                "CREATE INDEX IF NOT EXISTS idx_image_gen ON conversations(is_image_generation)"
+                "CREATE INDEX IF NOT EXISTS idx_image_gen ON conversations(is_image_generation)",
+                "CREATE INDEX IF NOT EXISTS idx_bot_name ON conversations(bot_name)"  # 新增 bot_name 索引
             ]
             
             for index_sql in indexes:
@@ -195,6 +197,227 @@ class PostgreSQLConversationLogger:
         except Exception as e:
             logger.error(f"❌ 數據庫初始化失敗: {e}")
             raise
+
+    def log_conversation(self, 
+                    user_id: str,
+                    user_query: str,
+                    ai_response: str,
+                    collection_used: str = None,
+                    retrieved_docs: List[str] = None,
+                    doc_similarities: List[float] = None,
+                    processing_time_ms: int = 0,
+                    is_image_generation: bool = False,
+                    image_url: str = None,
+                    error_occurred: bool = False,
+                    error_message: str = None,
+                    authenticated_user_id: int = None,
+                    user_role: str = "anonymous",
+                    chunk_references: Optional[List[Dict]] = None,
+                    chunk_indices: Optional[List[int]] = None,
+                    bot_name: str = None) -> str:  # 新增 bot_name 參數
+        """記錄對話 - 修正版，支持 bot_name 參數"""
+        logger.info(f"Logging conversation for user_id: {user_id}, bot_name: {bot_name}")
+        try:
+            with self.db_adapter.transaction():
+                # 處理檢索文檔和相似度
+                retrieved_docs_json = json.dumps(retrieved_docs or [], ensure_ascii=False)
+                doc_similarities_json = json.dumps(doc_similarities or [], ensure_ascii=False)
+                
+                # 處理 chunk_references，確保前端兼容
+                if chunk_references is None:
+                    chunk_references = []
+                    if retrieved_docs and doc_similarities:
+                        for i, (doc, similarity) in enumerate(zip(retrieved_docs, doc_similarities)):
+                            actual_index = chunk_indices[i] if chunk_indices and i < len(chunk_indices) else None
+                            
+                            chunk_ref = {
+                                "id": f"chunk_{i+1}",  # 前端期望的 id 字段
+                                "chunk_id": f"chunk_{i+1}",  # 保持向後兼容
+                                "content_preview": doc[:100] + "..." if len(doc) > 100 else doc,
+                                "similarity": round(similarity, 4),
+                            }
+                            
+                            if actual_index is not None:
+                                chunk_ref["index"] = actual_index
+                            
+                            chunk_references.append(chunk_ref)
+                
+                # 確保 chunk_references 格式正確
+                for ref in chunk_references:
+                    if isinstance(ref, dict) and 'chunk_id' in ref and 'id' not in ref:
+                        ref['id'] = ref['chunk_id']  # 確保有 id 字段
+                
+                chunk_references_json = json.dumps(chunk_references, ensure_ascii=False)
+                
+                # 如果沒有 bot_name，嘗試從 collection_used 推斷
+                if not bot_name and collection_used:
+                    if collection_used.startswith('collection_'):
+                        bot_name = collection_used.replace('collection_', '')
+                
+                # INSERT 語句包含 bot_name
+                placeholders = self._get_placeholder(15)  # 15個參數
+                insert_sql = f'''
+                    INSERT INTO conversations (
+                        user_id, user_query, ai_response, collection_used,
+                        retrieved_docs, doc_similarities, chunk_references,
+                        processing_time_ms, is_image_generation, image_url,
+                        error_occurred, error_message, authenticated_user_id, user_role, bot_name
+                    ) VALUES ({placeholders})
+                '''
+                
+                conversation_id = self.db_adapter.execute_insert(insert_sql, (
+                    user_id, user_query, ai_response, collection_used,
+                    retrieved_docs_json, doc_similarities_json, chunk_references_json,
+                    processing_time_ms, is_image_generation, image_url,
+                    error_occurred, error_message, authenticated_user_id, user_role, bot_name
+                ))
+                
+                self._update_daily_stats()
+                
+                valid_chunk_count = len([ref for ref in chunk_references if 'index' in ref])
+                logger.info(f"✅ 記錄對話成功: ID {conversation_id}, bot: {bot_name}, chunks: {len(chunk_references)}, 有效索引: {valid_chunk_count}")
+                return f"conv_{conversation_id}"
+                
+        except Exception as e:
+            logger.error(f"❌ 記錄對話失敗: {e}")
+            return None
+
+    def get_conversations_by_bot(self, bot_name: str, limit: int = 50, offset: int = 0, search: str = None) -> Tuple[List[Dict], int]:
+        """獲取特定機器人的所有對話記錄（包括使用和未使用知識庫的）- 修正版"""
+        try:
+            where_conditions = []
+            params = []
+            
+            # 修正：使用更寬鬆但準確的查詢邏輯
+            collection_name = f"collection_{bot_name}"
+            bot_pattern = f"%{bot_name}%"
+            
+            if self.db_type == "sqlite":
+                # 查詢條件：1) bot_name 匹配 2) collection_used 匹配 3) user_id 包含機器人名（向後兼容）
+                where_conditions.append("(bot_name = ? OR collection_used = ? OR user_id LIKE ?)")
+            else:  # postgresql
+                where_conditions.append("(bot_name = %s OR collection_used = %s OR user_id LIKE %s)")
+            
+            params.extend([bot_name, collection_name, bot_pattern])
+            
+            # 搜尋條件
+            if search:
+                search_param = f"%{search}%"
+                if self.db_type == "sqlite":
+                    where_conditions.append("(user_query LIKE ? OR ai_response LIKE ?)")
+                else:  # postgresql
+                    where_conditions.append("(user_query LIKE %s OR ai_response LIKE %s)")
+                params.extend([search_param, search_param])
+            
+            where_clause = " AND ".join(where_conditions) if where_conditions else "1=1"
+            
+            # 獲取總數
+            count_query = f"SELECT COUNT(*) as count FROM conversations WHERE {where_clause}"
+            count_result = self.db_adapter.execute_query(count_query, params)
+            total = count_result[0]['count'] if count_result else 0
+            
+            # 獲取記錄
+            if self.db_type == "sqlite":
+                query = f"""
+                    SELECT * FROM conversations 
+                    WHERE {where_clause}
+                    ORDER BY timestamp DESC 
+                    LIMIT ? OFFSET ?
+                """
+            else:  # postgresql
+                query = f"""
+                    SELECT * FROM conversations 
+                    WHERE {where_clause}
+                    ORDER BY timestamp DESC 
+                    LIMIT %s OFFSET %s
+                """
+            
+            # 準備查詢參數
+            query_params = []
+            query_params.extend([bot_name, collection_name, bot_pattern])
+            if search:
+                search_param = f"%{search}%"
+                query_params.extend([search_param, search_param])
+            query_params.extend([limit, offset])
+            
+            rows = self.db_adapter.execute_query(query, query_params)
+            
+            # 安全地處理結果
+            conversations = []
+            try:
+                taipei_tz = pytz.timezone('Asia/Taipei')
+            except pytz.UnknownTimeZoneError:
+                taipei_tz = None
+
+            for row in rows:
+                conv = dict(row)
+                
+                # 處理 datetime 對象
+                for key, value in conv.items():
+                    if isinstance(value, datetime):
+                        if taipei_tz:
+                            value = value.replace(tzinfo=pytz.utc).astimezone(taipei_tz)
+                        conv[key] = value.isoformat()
+
+                # 安全地解析 JSON 字段
+                try:
+                    conv['retrieved_docs'] = json.loads(conv.get('retrieved_docs') or '[]')
+                    conv['doc_similarities'] = json.loads(conv.get('doc_similarities') or '[]')
+                    
+                    # 處理 chunk_references
+                    chunk_refs_raw = conv.get('chunk_references') or '[]'
+                    if isinstance(chunk_refs_raw, str):
+                        chunk_refs = json.loads(chunk_refs_raw)
+                    else:
+                        chunk_refs = chunk_refs_raw
+                    
+                    # 確保 chunk_references 有正確的格式
+                    processed_chunk_refs = []
+                    if isinstance(chunk_refs, list):
+                        for i, ref in enumerate(chunk_refs):
+                            if isinstance(ref, dict):
+                                # 確保有 id 字段給前端使用
+                                if 'id' not in ref:
+                                    if 'chunk_id' in ref:
+                                        ref['id'] = ref['chunk_id']
+                                    else:
+                                        ref['id'] = f"chunk_{i+1}"
+                                processed_chunk_refs.append(ref)
+                            elif isinstance(ref, (str, int)):
+                                # 處理舊格式
+                                processed_chunk_refs.append({
+                                    "id": f"chunk_{i+1}",
+                                    "chunk_id": str(ref),
+                                    "index": i
+                                })
+                    
+                    conv['chunk_references'] = processed_chunk_refs
+                    
+                    # 提取有效的 chunk 索引
+                    chunk_ids = []
+                    for ref in processed_chunk_refs:
+                        if isinstance(ref, dict) and 'index' in ref:
+                            idx = ref['index']
+                            if isinstance(idx, (int, float)) and idx >= 0:
+                                chunk_ids.append(int(idx))
+                    
+                    conv['chunk_ids'] = chunk_ids
+                    
+                except (json.JSONDecodeError, TypeError) as e:
+                    logger.warning(f"解析 JSON 字段失敗 (ID: {conv.get('id', 'unknown')}): {e}")
+                    conv['retrieved_docs'] = []
+                    conv['doc_similarities'] = []
+                    conv['chunk_references'] = []
+                    conv['chunk_ids'] = []
+                
+                conversations.append(conv)
+            
+            logger.info(f"獲取機器人 '{bot_name}' 對話記錄: {len(conversations)}/{total} (包含所有類型對話)")
+            return conversations, total
+            
+        except Exception as e:
+            logger.error(f"獲取機器人對話記錄失敗: {e}")
+            return [], 0
     
     def log_conversation(self, 
                     user_id: str,

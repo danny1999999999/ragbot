@@ -581,13 +581,13 @@ class ChatbotInstance:
             
             try:
                 data = await request.json()
-                # ✨ 新增調試日誌：印出收到的最原始的資料
+                # 新增調試日誌：印出收到的最原始的資料
                 logger.info(f"[Request Body] 收到的原始請求資料: {data}")
 
                 query = data.get("message")
-                history = data.get("history", []) # ✨ 新增：接收對話歷史
+                history = data.get("history", []) # 新增：接收對話歷史
                 session_id = data.get("session_id", "default_session")
-                # 🔥 新增：讀取格式化請求參數
+                # 新增：讀取格式化請求參數
                 format_for_frontend = data.get("format_for_frontend", False)
                 
                 if not query:
@@ -605,17 +605,17 @@ class ChatbotInstance:
                     self.session_counters[session_id] = 0
                 self.session_counters[session_id] += 1
                 self._current_query = query
-                logger.info(f"📩 機器人 '{self.bot_name}' 收到查詢 [{user_identifier}]: {query[:50]}...")
-                logger.info(f"📜 收到 {len(history)} 則對話歷史")
-                # 🔥 新增：記錄格式化請求
-                logger.info(f"🎨 格式化請求: {format_for_frontend}")
+                logger.info(f"機器人 '{self.bot_name}' 收到查詢 [{user_identifier}]: {query[:50]}...")
+                logger.info(f"收到 {len(history)} 則對話歷史")
+                # 新增：記錄格式化請求
+                logger.info(f"格式化請求: {format_for_frontend}")
 
-                # 🔧 修改：使用智慧向量搜尋
+                # 修改：使用智慧向量搜尋
                 context_docs = await self._search_vectors_smart(query, k=3)
                 
                 # 詳細調試檢索結果
-                logger.info(f"🔍 目前查詢: {query}")
-                logger.info(f"📄 檢索到 {len(context_docs) if context_docs else 0} 個文件")
+                logger.info(f"目前查詢: {query}")
+                logger.info(f"檢索到 {len(context_docs) if context_docs else 0} 個文件")
 
                 if context_docs:
                     for i, doc in enumerate(context_docs):
@@ -623,7 +623,7 @@ class ChatbotInstance:
                         metadata = getattr(doc, 'metadata', {})
                         contained_urls = metadata.get('contained_urls', '')
                         
-                        logger.info(f"📄 文件 {i+1}:")
+                        logger.info(f"文件 {i+1}:")
                         logger.info(f"  內容預覽: {content_preview}")
                         logger.info(f"  包含連結: {contained_urls}")
                         logger.info(f"  來源檔案: {metadata.get('filename', 'unknown')}")
@@ -645,23 +645,24 @@ class ChatbotInstance:
                         elif isinstance(doc, dict) and 'metadata' in doc:
                             metadata = doc['metadata']
                         
-                        # 修正：直接從 metadata 獲取真實的 chunk_id
-                        chunk_id = metadata.get('chunk_id', f'fallback_{i}')
+                        # 修正：統一字段名，確保前端兼容
+                        chunk_id = metadata.get('chunk_id', f'chunk_{i+1}')
 
                         chunk_ref = {
-                            "chunk_id": chunk_id,  # <-- 使用真實的 chunk_id
-                            "index": i, # 使用循環的索引 i 作為備用
+                            "id": chunk_id,  # 前端期望的字段名
+                            "chunk_id": chunk_id,  # 保持向後兼容
+                            "index": i,  # 使用循環索引
                             "content_preview": doc_content[:100] + "..." if len(doc_content) > 100 else doc_content,
                             "source": metadata.get('source', 'unknown'),
                             "filename": metadata.get('filename', metadata.get('original_filename', 'unknown'))
                         }
                         chunk_references.append(chunk_ref)
 
-                logger.info(f"🔍 機器人 '{self.bot_name}' 檢索結果: {len(context_docs)} 個文件, chunk_refs: {len(chunk_references)}")
+                logger.info(f"機器人 '{self.bot_name}' 檢索結果: {len(context_docs)} 個文件, chunk_refs: {len(chunk_references)}")
                 
-                # ✨ 修改：傳遞歷史記錄和格式化參數給生成器
+                # 修改：傳遞歷史記錄和格式化參數給生成器
                 system_prompt = self.config.get("system_role", "你是一個樂於助人的 AI 助理。")
-                # 🔥 關鍵修改：傳遞 format_for_frontend 參數
+                # 關鍵修改：傳遞 format_for_frontend 參數
                 response_text, recommended_questions = self._generate_response(
                     query, context, system_prompt, session_id, history, format_for_frontend
                 )
@@ -683,15 +684,15 @@ class ChatbotInstance:
                         
                         if url_sources:  # 確保過濾後還有連結
                             response_text += self._format_source_links(url_sources)
-                            logger.info(f"🔗 新增了 {len(url_sources)} 個參考連結")
+                            logger.info(f"新增了 {len(url_sources)} 個參考連結")
                         else:
-                            logger.info(f"📄 所有連結都是重複的，跳過顯示")
+                            logger.info(f"所有連結都是重複的，跳過顯示")
                     else:
-                        logger.info(f"🔍 未在文件內容中找到可引用的URL")
+                        logger.info(f"未在文件內容中找到可引用的URL")
 
                 processing_time_ms = int((time.time() - start_time) * 1000)
                 
-                # 記錄對話
+                # 記錄對話 - 添加 bot_name 參數
                 try:
                     conversation_id = self.logger.log_conversation(
                         user_id=user_identifier,
@@ -706,22 +707,23 @@ class ChatbotInstance:
                         error_message=None,
                         authenticated_user_id=user.id if user and hasattr(user, 'id') and user.id else None,
                         user_role=user.role if user and hasattr(user, 'role') else "anonymous",
-                        chunk_references=chunk_references
+                        chunk_references=chunk_references,
+                        bot_name=self.bot_name  # 修正：添加 bot_name 參數
                     )
                     
                     self.successful_conversations += 1
-                    logger.info(f"✅ 對話記錄成功：ID={conversation_id}, 機器人：{self.bot_name}, chunks={len(chunk_references)}")
+                    logger.info(f"對話記錄成功：ID={conversation_id}, 機器人：{self.bot_name}, chunks={len(chunk_references)}")
                     
                 except Exception as log_error:
-                    logger.error(f"❌ 記錄對話失敗（機器人：{self.bot_name}）: {log_error}")
+                    logger.error(f"記錄對話失敗（機器人：{self.bot_name}）: {log_error}")
 
-                logger.info(f"📤 機器人 '{self.bot_name}' API 回應調試:")
+                logger.info(f"機器人 '{self.bot_name}' API 回應調試:")
                 logger.info(f"  - response_text 長度: {len(response_text)}")
                 logger.info(f"  - recommended_questions: {recommended_questions}")
                 logger.info(f"  - 找到文件數量: {len(context_docs) if context_docs else 0}")
                 logger.info(f"  - chunk_references: {len(chunk_references)}")
                 logger.info(f"  - 處理時間: {processing_time_ms}ms")
-                # 🔥 新增：記錄是否使用了格式化
+                # 新增：記錄是否使用了格式化
                 logger.info(f"  - 使用LLM格式化: {format_for_frontend}")
 
                 return JSONResponse({
@@ -736,7 +738,7 @@ class ChatbotInstance:
                         "conversation_id": conversation_id,
                         "chunk_count": len(chunk_references),
                         "search_mode": self.search_mode,
-                        # 🔥 新增：回傳格式化狀態給前端
+                        # 新增：回傳格式化狀態給前端
                         "formatted_by_llm": format_for_frontend
                     }
                 })
@@ -761,14 +763,15 @@ class ChatbotInstance:
                         error_occurred=True,
                         error_message=error_message,
                         authenticated_user_id=user.id if user and hasattr(user, 'id') and user.id else None,
-                        user_role=user.role if user and hasattr(user, 'role') else "anonymous"
+                        user_role=user.role if user and hasattr(user, 'role') else "anonymous",
+                        bot_name=self.bot_name  # 修正：添加 bot_name 參數
                     )
                     
                     self.failed_conversations += 1
-                    logger.error(f"❌ HTTP錯誤記錄：{conversation_id}, 機器人：{self.bot_name}")
+                    logger.error(f"HTTP錯誤記錄：{conversation_id}, 機器人：{self.bot_name}")
                     
                 except Exception as log_error:
-                    logger.error(f"❌ HTTP錯誤對話記錄失敗（機器人：{self.bot_name}）: {log_error}")
+                    logger.error(f"HTTP錯誤對話記錄失敗（機器人：{self.bot_name}）: {log_error}")
                 
                 raise http_exc
                 
@@ -776,7 +779,7 @@ class ChatbotInstance:
                 error_message = str(e)
                 processing_time_ms = int((time.time() - start_time) * 1000)
                 
-                logger.error(f"❌ 機器人 '{self.bot_name}' 聊天 API 發生嚴重錯誤: {e}", exc_info=True)
+                logger.error(f"機器人 '{self.bot_name}' 聊天 API 發生嚴重錯誤: {e}", exc_info=True)
                 
                 try:
                     user_identifier = self.get_user_identifier(user, session_id) if 'session_id' in locals() else "unknown"
@@ -794,14 +797,15 @@ class ChatbotInstance:
                         error_occurred=True,
                         error_message=error_message,
                         authenticated_user_id=user.id if user and hasattr(user, 'id') and user.id else None,
-                        user_role=user.role if user and hasattr(user, 'role') else "anonymous"
+                        user_role=user.role if user and hasattr(user, 'role') else "anonymous",
+                        bot_name=self.bot_name  # 修正：添加 bot_name 參數
                     )
                     
                     self.failed_conversations += 1
-                    logger.error(f"❌ 系統錯誤記錄：{conversation_id}, 機器人：{self.bot_name}")
+                    logger.error(f"系統錯誤記錄：{conversation_id}, 機器人：{self.bot_name}")
                     
                 except Exception as log_error:
-                    logger.error(f"❌ 系統錯誤對話記錄失敗（機器人：{self.bot_name}）: {log_error}")
+                    logger.error(f"系統錯誤對話記錄失敗（機器人：{self.bot_name}）: {log_error}")
                 
                 return JSONResponse({
                     "response": f"抱歉，機器人 '{self.bot_name}' 發生內部錯誤，請稍後再試。",
@@ -816,7 +820,6 @@ class ChatbotInstance:
                         "formatted_by_llm": False
                     }
                 }, status_code=500)
-
 
 
         @self.app.get("/api/stats")
