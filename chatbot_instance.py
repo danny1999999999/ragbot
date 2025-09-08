@@ -918,58 +918,24 @@ class ChatbotInstance:
         main_response = llm.invoke(main_answer_messages)
         main_answer = main_response.content.strip()
 
-        # 🔥 新功能：如果前端要求格式化，則進行 LLM 格式化
+        # 在 _generate_response 方法中，修改格式化部分
+
         if format_for_frontend:
-            logger.info(f"🎨 前端請求格式化，開始 LLM 格式化處理...")
+            logger.info(f"前端請求格式化，但改為純文本輸出模式")
             
-            # 🔧 修改格式化提示，避免代碼塊標記
-            format_prompt = f"""請將以下AI回應格式化為適合網頁顯示的內容：
+            # 添加指示LLM輸出純文本的後處理
+            # 移除可能的markdown語法，保持純文本
+            main_answer = re.sub(r'\*\*([^*]+)\*\*', r'\1', main_answer)  # 移除粗體
+            main_answer = re.sub(r'\[([^\]]+)\]\([^)]+\)', r'\1', main_answer)  # 移除鏈接，保留文字
+            
+            # 保持💡區塊的標記，但確保格式一致
+            main_answer = re.sub(r'\n{3,}', '\n\n', main_answer)  # 標準化換行
+            
+            logger.info(f"純文本模式處理完成，保持參考區塊標記")
 
-    回應內容：
-    {main_answer}
-
-    **格式化規則**：
-    1. **完全移除所有 \\n 換行符** - 只使用HTML標籤
-    2. **段落分隔**：普通段落間用 <br> 分隔
-    3. **列表分隔**：數字列表項前用 <br><br> 分隔  
-    4. **HTML轉換**：
-    - **文字** → <strong>文字</strong>
-    - [文字](URL) → <a href="URL" target="_blank" rel="noopener noreferrer" class="source-link">文字</a>
-
-    **範例輸出格式**：
-    ```
-    我理解您的需求！<br><br>1. <strong>游泳</strong> 這是很好的運動<br><br>2. <strong>跑步</strong> 能增強體力
-    ```
-
-    **重要約束**：
-    - 絕對不要輸出任何 \\n 字符
-    - 絕對不要使用代碼塊標記
-    - 數字和標題必須在同一行：`1. <strong>標題</strong> 描述`
-    - 只返回純HTML內容
-
-    格式化後的HTML內容："""
-
-            try:
-                format_messages = [HumanMessage(content=format_prompt)]
-                formatted_response = llm.invoke(format_messages)
-                formatted_answer = formatted_response.content.strip()
-                
-                # 🔧 修復：清理 LLM 可能添加的代碼塊標記
-                formatted_answer = self._clean_llm_formatting(formatted_answer)
-                
-                # 驗證格式化結果
-                if len(formatted_answer) > 10 and not formatted_answer.startswith("我無法"):
-                    logger.info(f"✅ LLM 格式化成功，原長度: {len(main_answer)}, 格式化後長度: {len(formatted_answer)}")
-                    logger.debug(f"格式化前: {main_answer[:200]}...")
-                    logger.debug(f"格式化後: {formatted_answer[:200]}...")
-                    main_answer = formatted_answer
-                else:
-                    logger.warning(f"⚠️ LLM 格式化失敗，使用原始回答")
-                    
-            except Exception as format_error:
-                logger.error(f"❌ LLM 格式化過程出錯: {format_error}")
-                # 格式化失敗時使用原始回答
-                pass
+        # 基本修正保持不變
+        if not format_for_frontend:
+            main_answer = re.sub(r'([。！？])(\d+\.)\s*', r'\1\n\n\2 ', main_answer)
 
         # 🔥 基本修正：確保數字列表格式正確（作為備用機制）
         if not format_for_frontend:
