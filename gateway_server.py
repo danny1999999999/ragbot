@@ -503,21 +503,24 @@ async def get_knowledge_files(
 @app.get("/api/bots/{bot_name}/conversations")
 async def get_conversations(bot_name: str, page: int = 1, limit: int = 20, search: str = "", current_user: User = Depends(AdminAuth)):
     conv_logger = get_conversation_logger(bot_name)
-    # 將機器人名稱轉換為 collection 名稱格式
-    collection_name = f"collection_{bot_name}"
     
-    conversations, total = conv_logger.get_conversations(
+    # 使用新的專用方法
+    conversations, total = conv_logger.get_conversations_by_bot(
+        bot_name=bot_name,
         limit=limit, 
         offset=(page - 1) * limit, 
-        search=search if search else None,
-        collection=collection_name  # 添加這個參數來過濾
+        search=search if search else None
     )
     
-    logger.info(f"Conversations data for bot '{bot_name}': {conversations}")
+    logger.info(f"Conversations data for bot '{bot_name}': total={total}, returned={len(conversations)}")
     total_pages = (total + limit - 1) // limit if total > 0 else 1
     return JSONResponse({
-        "success": True, "conversations": conversations, "total": total,
-        "page": page, "limit": limit, "total_pages": total_pages
+        "success": True, 
+        "conversations": conversations, 
+        "total": total,
+        "page": page, 
+        "limit": limit, 
+        "total_pages": total_pages
     })
 
 @app.post("/api/bots/{bot_name}/knowledge/reset")

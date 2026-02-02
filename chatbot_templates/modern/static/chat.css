@@ -764,8 +764,84 @@ body {
         padding: 6px 15px;
         font-size: 11px;
     }
+/* 🆕 Safari 移動端專用修復 */
+:root {
+    /* 添加動態 viewport 變數 */
+    --vh: 1vh;
+    --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
 }
 
+/* Safari 特殊處理 - 修復 100vh 問題 */
+@supports (-webkit-touch-callout: none) {
+    body {
+        height: -webkit-fill-available;
+        min-height: -webkit-fill-available;
+    }
+    
+    #chat-container {
+        height: -webkit-fill-available;
+        min-height: -webkit-fill-available;
+    }
+}
+
+/* 移動端輸入區域修復 */
+@media (max-width: 768px) {
+    body {
+        /* 使用動態計算的高度 */
+        height: calc(var(--vh, 1vh) * 100);
+    }
+    
+    #chat-container {
+        height: calc(var(--vh, 1vh) * 100);
+        max-height: calc(var(--vh, 1vh) * 100);
+    }
+    
+    /* 輸入區域底部安全區域處理 */
+    #chat-input-container {
+        padding-bottom: calc(15px + var(--safe-area-inset-bottom) + 10px);
+        
+        /* 確保在 Safari 中固定在底部 */
+        position: sticky;
+        bottom: 0;
+        background-color: #fff;
+        
+        /* 硬體加速，提升性能 */
+        -webkit-transform: translateZ(0);
+        transform: translateZ(0);
+    }
+    
+    /* 聊天消息區域為底部輸入預留空間 */
+    #chat-messages {
+        padding-bottom: 30px;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    /* 輸入框防止 Safari 自動縮放 */
+    #chat-input {
+        font-size: 16px; /* 防止 iOS Safari 縮放 */
+        -webkit-appearance: none;
+    }
+}
+
+/* iPhone Home indicator 支援 */
+@supports (padding: max(0px)) {
+    @media (max-width: 768px) {
+        #chat-input-container {
+            padding-bottom: max(25px, calc(25px + env(safe-area-inset-bottom)));
+        }
+    }
+}
+
+/* 橫屏模式優化 */
+@media (max-width: 768px) and (orientation: landscape) {
+    #chat-input-container {
+        padding-bottom: calc(10px + var(--safe-area-inset-bottom));
+    }
+    
+    #chat-messages {
+        padding-bottom: 20px;
+    }
+}
 /* === PRINT STYLES === */
 @media print {
     .bot-message .source-link {

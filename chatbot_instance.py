@@ -1,13 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-chatbot_instance.py - (API相容版)
 
-修復內容：
-- __init__ 方法現在直接接收一個 config 字典，而不是 bot_name。
-- 移除了從檔案系統讀取 JSON 設定的 _load_config 方法。
-
-"""
 
 from dotenv import load_dotenv
 load_dotenv(override=True)
@@ -59,7 +52,7 @@ except ImportError:
 
 try:
     from langchain_openai import ChatOpenAI
-    from langchain_core.messages import HumanMessage, SystemMessage
+    from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
     OPENAI_AVAILABLE = True
 except ImportError:
     OPENAI_AVAILABLE = False
@@ -202,8 +195,7 @@ class ChatbotInstance:
             username=f"anonymous_{client_ip}", 
             role="anonymous", 
             email="anonymous@example.com", 
-            is_active=True,
-            password_hash=""
+            is_active=True
         )
 
     def get_user_identifier(self, user: Optional[User], session_id: str) -> str:
@@ -582,15 +574,21 @@ class ChatbotInstance:
 
         @self.app.post("/api/chat")
         async def chat(request: Request, user: User = Depends(OptionalAuth)):
-            """聊天API端點 - 支援API和直接兩種模式"""
+            """聊天API端點 - 支援格式化請求"""
             start_time = time.time()
             conversation_id = None
             chunk_references = []
             
             try:
                 data = await request.json()
+                # 新增調試日誌：印出收到的最原始的資料
+                logger.info(f"[Request Body] 收到的原始請求資料: {data}")
+
                 query = data.get("message")
+                history = data.get("history", []) # 新增：接收對話歷史
                 session_id = data.get("session_id", "default_session")
+                # 新增：讀取格式化請求參數
+                format_for_frontend = data.get("format_for_frontend", False)
                 
                 if not query:
                     raise HTTPException(status_code=400, detail="Message cannot be empty")
@@ -607,14 +605,17 @@ class ChatbotInstance:
                     self.session_counters[session_id] = 0
                 self.session_counters[session_id] += 1
                 self._current_query = query
-                logger.info(f"📩 機器人 '{self.bot_name}' 收到查詢 [{user_identifier}]: {query[:50]}...")
+                logger.info(f"機器人 '{self.bot_name}' 收到查詢 [{user_identifier}]: {query[:50]}...")
+                logger.info(f"收到 {len(history)} 則對話歷史")
+                # 新增：記錄格式化請求
+                logger.info(f"格式化請求: {format_for_frontend}")
 
-                # 🔧 修改：使用智慧向量搜尋
+                # 修改：使用智慧向量搜尋
                 context_docs = await self._search_vectors_smart(query, k=3)
                 
-                # 詳細偵錯檢索結果
-                logger.info(f"🔍 目前查詢: {query}")
-                logger.info(f"📄 檢索到 {len(context_docs) if context_docs else 0} 個文件")
+                # 詳細調試檢索結果
+                logger.info(f"目前查詢: {query}")
+                logger.info(f"檢索到 {len(context_docs) if context_docs else 0} 個文件")
 
                 if context_docs:
                     for i, doc in enumerate(context_docs):
@@ -622,9 +623,9 @@ class ChatbotInstance:
                         metadata = getattr(doc, 'metadata', {})
                         contained_urls = metadata.get('contained_urls', '')
                         
-                        logger.info(f"📄 文件 {i+1}:")
+                        logger.info(f"文件 {i+1}:")
                         logger.info(f"  內容預覽: {content_preview}")
-                        logger.info(f"  包含連線: {contained_urls}")
+                        logger.info(f"  包含連結: {contained_urls}")
                         logger.info(f"  來源檔案: {metadata.get('filename', 'unknown')}")
 
                 context = "\n".join([self._get_document_content(doc) for doc in context_docs]) if context_docs else ""
@@ -644,24 +645,26 @@ class ChatbotInstance:
                         elif isinstance(doc, dict) and 'metadata' in doc:
                             metadata = doc['metadata']
                         
-                        # 修正：直接從 metadata 獲取真實的 chunk_id
-                        chunk_id = metadata.get('chunk_id', f'fallback_{i}')
+                        # 修正：統一字段名，確保前端兼容
+                        chunk_id = metadata.get('chunk_id', f'chunk_{i+1}')
 
                         chunk_ref = {
-                            "chunk_id": chunk_id,  # <-- 使用真實的 chunk_id
-                            "index": i, # 使用循環的索引 i 作為備用
+                            "id": chunk_id,  # 前端期望的字段名
+                            "chunk_id": chunk_id,  # 保持向後兼容
+                            "index": i,  # 使用循環索引
                             "content_preview": doc_content[:100] + "..." if len(doc_content) > 100 else doc_content,
                             "source": metadata.get('source', 'unknown'),
                             "filename": metadata.get('filename', metadata.get('original_filename', 'unknown'))
                         }
                         chunk_references.append(chunk_ref)
 
-                logger.info(f"🔍 機器人 '{self.bot_name}' 檢索結果: {len(context_docs)} 個文件, chunk_refs: {len(chunk_references)}")
+                logger.info(f"機器人 '{self.bot_name}' 檢索結果: {len(context_docs)} 個文件, chunk_refs: {len(chunk_references)}")
                 
-                # 生成回應
+                # 修改：傳遞歷史記錄和格式化參數給生成器
                 system_prompt = self.config.get("system_role", "你是一個樂於助人的 AI 助理。")
+                # 關鍵修改：傳遞 format_for_frontend 參數
                 response_text, recommended_questions = self._generate_response(
-                    query, context, system_prompt, session_id
+                    query, context, system_prompt, session_id, history, format_for_frontend
                 )
                 
                 # 處理引用來源
@@ -675,21 +678,21 @@ class ChatbotInstance:
                     logger.info(f"[Cite Sources] Found {len(url_sources)} items with a 'url' key.")
                     
                     if url_sources:
-                        # 過濾重複連線
+                        # 過濾重複連結
                         url_sources = self._filter_duplicate_links(url_sources, session_id)
                         logger.info(f"[Cite Sources] After filtering duplicates, {len(url_sources)} sources remain.")
                         
-                        if url_sources:  # 確保過濾後還有連線
+                        if url_sources:  # 確保過濾後還有連結
                             response_text += self._format_source_links(url_sources)
-                            logger.info(f"🔗 新增了 {len(url_sources)} 個參考連結")
+                            logger.info(f"新增了 {len(url_sources)} 個參考連結")
                         else:
-                            logger.info("🔄 所有連線都是重複的，跳過顯示")
+                            logger.info(f"所有連結都是重複的，跳過顯示")
                     else:
-                        logger.info("📝 未在文件內容中找到可引用的URL")
+                        logger.info(f"未在文件內容中找到可引用的URL")
 
                 processing_time_ms = int((time.time() - start_time) * 1000)
                 
-                # 記錄對話
+                # 記錄對話 - 添加 bot_name 參數
                 try:
                     conversation_id = self.logger.log_conversation(
                         user_id=user_identifier,
@@ -704,21 +707,24 @@ class ChatbotInstance:
                         error_message=None,
                         authenticated_user_id=user.id if user and hasattr(user, 'id') and user.id else None,
                         user_role=user.role if user and hasattr(user, 'role') else "anonymous",
-                        chunk_references=chunk_references
+                        chunk_references=chunk_references,
+                        bot_name=self.bot_name  # 修正：添加 bot_name 參數
                     )
                     
                     self.successful_conversations += 1
-                    logger.info(f"✅ 對話記錄成功：ID={conversation_id}, 機器人：{self.bot_name}, chunks={len(chunk_references)}")
+                    logger.info(f"對話記錄成功：ID={conversation_id}, 機器人：{self.bot_name}, chunks={len(chunk_references)}")
                     
                 except Exception as log_error:
-                    logger.error(f"❌ 記錄對話失敗（機器人：{self.bot_name}）: {log_error}")
+                    logger.error(f"記錄對話失敗（機器人：{self.bot_name}）: {log_error}")
 
-                logger.info(f"📤 機器人 '{self.bot_name}' API 回應偵錯:")
+                logger.info(f"機器人 '{self.bot_name}' API 回應調試:")
                 logger.info(f"  - response_text 長度: {len(response_text)}")
                 logger.info(f"  - recommended_questions: {recommended_questions}")
                 logger.info(f"  - 找到文件數量: {len(context_docs) if context_docs else 0}")
                 logger.info(f"  - chunk_references: {len(chunk_references)}")
                 logger.info(f"  - 處理時間: {processing_time_ms}ms")
+                # 新增：記錄是否使用了格式化
+                logger.info(f"  - 使用LLM格式化: {format_for_frontend}")
 
                 return JSONResponse({
                     "response": response_text,
@@ -731,7 +737,9 @@ class ChatbotInstance:
                         "documents_found": len(context_docs) if context_docs else 0,
                         "conversation_id": conversation_id,
                         "chunk_count": len(chunk_references),
-                        "search_mode": self.search_mode
+                        "search_mode": self.search_mode,
+                        # 新增：回傳格式化狀態給前端
+                        "formatted_by_llm": format_for_frontend
                     }
                 })
 
@@ -755,14 +763,15 @@ class ChatbotInstance:
                         error_occurred=True,
                         error_message=error_message,
                         authenticated_user_id=user.id if user and hasattr(user, 'id') and user.id else None,
-                        user_role=user.role if user and hasattr(user, 'role') else "anonymous"
+                        user_role=user.role if user and hasattr(user, 'role') else "anonymous",
+                        bot_name=self.bot_name  # 修正：添加 bot_name 參數
                     )
                     
                     self.failed_conversations += 1
-                    logger.error(f"❌ HTTP錯誤記錄：{conversation_id}, 機器人：{self.bot_name}")
+                    logger.error(f"HTTP錯誤記錄：{conversation_id}, 機器人：{self.bot_name}")
                     
                 except Exception as log_error:
-                    logger.error(f"❌ HTTP錯誤對話記錄失敗（機器人：{self.bot_name}）: {log_error}")
+                    logger.error(f"HTTP錯誤對話記錄失敗（機器人：{self.bot_name}）: {log_error}")
                 
                 raise http_exc
                 
@@ -770,7 +779,7 @@ class ChatbotInstance:
                 error_message = str(e)
                 processing_time_ms = int((time.time() - start_time) * 1000)
                 
-                logger.error(f"❌ 機器人 '{self.bot_name}' 聊天 API 發生嚴重錯誤: {e}", exc_info=True)
+                logger.error(f"機器人 '{self.bot_name}' 聊天 API 發生嚴重錯誤: {e}", exc_info=True)
                 
                 try:
                     user_identifier = self.get_user_identifier(user, session_id) if 'session_id' in locals() else "unknown"
@@ -788,14 +797,15 @@ class ChatbotInstance:
                         error_occurred=True,
                         error_message=error_message,
                         authenticated_user_id=user.id if user and hasattr(user, 'id') and user.id else None,
-                        user_role=user.role if user and hasattr(user, 'role') else "anonymous"
+                        user_role=user.role if user and hasattr(user, 'role') else "anonymous",
+                        bot_name=self.bot_name  # 修正：添加 bot_name 參數
                     )
                     
                     self.failed_conversations += 1
-                    logger.error(f"❌ 系統錯誤記錄：{conversation_id}, 機器人：{self.bot_name}")
+                    logger.error(f"系統錯誤記錄：{conversation_id}, 機器人：{self.bot_name}")
                     
                 except Exception as log_error:
-                    logger.error(f"❌ 系統錯誤對話記錄失敗（機器人：{self.bot_name}）: {log_error}")
+                    logger.error(f"系統錯誤對話記錄失敗（機器人：{self.bot_name}）: {log_error}")
                 
                 return JSONResponse({
                     "response": f"抱歉，機器人 '{self.bot_name}' 發生內部錯誤，請稍後再試。",
@@ -806,9 +816,11 @@ class ChatbotInstance:
                         "bot_name": self.bot_name,
                         "processing_time_ms": processing_time_ms,
                         "conversation_id": conversation_id,
-                        "search_mode": self.search_mode
+                        "search_mode": self.search_mode,
+                        "formatted_by_llm": False
                     }
                 }, status_code=500)
+
 
         @self.app.get("/api/stats")
         async def get_bot_stats():
@@ -853,8 +865,10 @@ class ChatbotInstance:
                 "conversation_count": self.total_conversations
             })
 
-    def _generate_response(self, query: str, context: str, system_prompt: str, session_id: str) -> Tuple[str, List[str]]:
-        """生成回應"""
+    def _generate_response(self, query: str, context: str, system_prompt: str, session_id: str, history: List[Dict] = [], format_for_frontend: bool = False) -> Tuple[str, List[str]]:
+        """
+        生成回應 - 修復版：處理 LLM 格式化的輸出問題
+        """
         if not OPENAI_AVAILABLE:
             return "系統 AI 模組未載入。", []
 
@@ -865,27 +879,79 @@ class ChatbotInstance:
         llm = ChatOpenAI(
             model=self.config.get("model", "gpt-4o-mini"), 
             temperature=self.config.get("temperature", 0.7), 
+            max_tokens=self.config.get("max_tokens", 2000),
             api_key=openai_key
         )
 
-        # 生成主要回答
-        main_answer_messages = [
-            SystemMessage(content=system_prompt),
-            HumanMessage(content=f"""參考資料：
-{context}
+        # 🔥 關鍵更動：動態建立對話歷史
+        main_answer_messages = [SystemMessage(content=system_prompt)]
+        
+        # 添加歷史訊息
+        for message in history:
+            role = message.get("role")
+            content = message.get("content")
+            if role == "user":
+                main_answer_messages.append(HumanMessage(content=content))
+            elif role == "assistant":
+                main_answer_messages.append(AIMessage(content=content))
 
-使用者問題：{query}""" )
-        ]
+        # 添加當前問題
+        current_query_content = f"""參考資料：
+    {context}
+
+    使用者問題：{query}"""
+
+        main_answer_messages.append(HumanMessage(content=current_query_content))
+
+        # 🔥 關鍵調試：顯示發送給 LLM 的完整訊息
+        try:
+            loggable_messages = []
+            for msg in main_answer_messages:
+                loggable_messages.append({
+                    "type": msg.type,
+                    "content": msg.content
+                })
+            logger.info(f"\n{'-'*20} LLM Request Body {'-'*20}\n" \
+                        f"{json.dumps(loggable_messages, indent=2, ensure_ascii=False)}\n" \
+                        f"{'-'*58}")
+        except Exception as e:
+            logger.error(f"記錄 LLM 訊息時出錯: {e}")
+
+        # 第一步：生成主要回答
         main_response = llm.invoke(main_answer_messages)
         main_answer = main_response.content.strip()
 
-        # 生成推薦問題
+        # 在 _generate_response 方法中，修改格式化部分
+
+        if format_for_frontend:
+            logger.info(f"前端請求格式化，但改為純文本輸出模式")
+            
+            # 添加指示LLM輸出純文本的後處理
+            # 移除可能的markdown語法，保持純文本
+            main_answer = re.sub(r'\*\*([^*]+)\*\*', r'\1', main_answer)  # 移除粗體
+            main_answer = re.sub(r'\[([^\]]+)\]\([^)]+\)', r'\1', main_answer)  # 移除鏈接，保留文字
+            
+            # 保持💡區塊的標記，但確保格式一致
+            main_answer = re.sub(r'\n{3,}', '\n\n', main_answer)  # 標準化換行
+            
+            logger.info(f"純文本模式處理完成，保持參考區塊標記")
+
+        # 基本修正保持不變
+        if not format_for_frontend:
+            main_answer = re.sub(r'([。！？])(\d+\.)\s*', r'\1\n\n\2 ', main_answer)
+
+        # 🔥 基本修正：確保數字列表格式正確（作為備用機制）
+        if not format_for_frontend:
+            # 只有在未進行 LLM 格式化時才執行基本修正
+            main_answer = re.sub(r'([。！？])(\d+\.)\s*', r'\1\n\n\2 ', main_answer)
+
+        # 生成推薦問題（保持不變）
         recommended_questions = []
         should_recommend = self.config.get("dynamic_recommendations_enabled", False)
         recommend_count = self.config.get("dynamic_recommendations_count", 0)
         conversation_count = self.session_counters.get(session_id, 1)
 
-        logger.info(f"🔍 機器人 '{self.bot_name}' 推薦問題偵錯:")
+        logger.info(f"🔍 機器人 '{self.bot_name}' 推薦問題調試:")
         logger.info(f"  - should_recommend: {should_recommend}")
         logger.info(f"  - recommend_count: {recommend_count}")
         logger.info(f"  - conversation_count: {conversation_count}")
@@ -894,18 +960,18 @@ class ChatbotInstance:
             logger.info(f"✅ 機器人 '{self.bot_name}' 開始生成推薦問題...")
             
             recommend_prompt = f"""
-**原始對話**
-使用者問：「{query}」
-你的回答：「{main_answer}」
+    **原始對話**
+    使用者問：「{query}」
+    你的回答：「{main_answer}」
 
----
-**指令**
-根據以上對話，生成三個相關的延伸問題。
+    ---
+    **指令**
+    根據以上對話，生成三個相關的延伸問題。
 
-**格式**
-- 每個問題一行
-- 不要編號
-- 不要包含任何其他文字"""
+    **格式**
+    - 每個問題一行
+    - 不要編號
+    - 不要包含任何其他文字"""
             
             try:
                 recommend_messages = [HumanMessage(content=recommend_prompt)]
@@ -918,7 +984,7 @@ class ChatbotInstance:
                 questions_list = [q.strip() for q in questions_text.split('\n') if q.strip()]
                 recommended_questions = list(dict.fromkeys(questions_list))
                 
-                logger.info(f"📝 機器人 '{self.bot_name}' 解析後的推薦問題: {recommended_questions}")
+                logger.info(f"🔍 機器人 '{self.bot_name}' 解析後的推薦問題: {recommended_questions}")
                 
             except Exception as e:
                 logger.error(f"❌ 機器人 '{self.bot_name}' 生成推薦問題時發生錯誤: {e}", exc_info=True)
@@ -927,6 +993,34 @@ class ChatbotInstance:
             logger.info(f"❌ 機器人 '{self.bot_name}' 推薦問題未啟用或超出限制")
 
         return main_answer, recommended_questions
+
+    def _clean_llm_formatting(self, text: str) -> str:
+        """清理 LLM 格式化輸出中的多餘標記"""
+        try:
+            # 移除代碼塊標記
+            text = re.sub(r'^```html\s*', '', text, flags=re.MULTILINE)
+            text = re.sub(r'^```\s*', '', text, flags=re.MULTILINE)
+            text = re.sub(r'```$', '', text, flags=re.MULTILINE)
+            
+            # 移除開頭的 "html" 標記
+            text = re.sub(r'^html\s*', '', text, flags=re.IGNORECASE)
+            
+            # 修復數字列表格式：確保數字和內容在同一行
+            # 將 "1.\n內容" 改為 "1. 內容"
+            text = re.sub(r'(\d+\.)\s*\n\s*([^\n])', r'\1 \2', text)
+            
+            # 清理多餘的空行
+            text = re.sub(r'\n{3,}', '\n\n', text)
+            
+            # 清理開頭和結尾的空白
+            text = text.strip()
+            
+            logger.debug(f"清理後的內容: {text[:200]}...")
+            return text
+            
+        except Exception as e:
+            logger.error(f"清理 LLM 格式化輸出時出錯: {e}")
+            return text
     
     def _extract_links_from_content(self, content: str) -> List[dict]:
         """從文件內容中提取連結和標題（穩健判定 URL/標題順序）- 修復版本"""
